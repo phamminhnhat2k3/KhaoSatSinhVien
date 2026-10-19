@@ -5,6 +5,8 @@ import { z } from "zod";
 import { Role } from "@prisma/client";
 import { requireUser } from "@/lib/access";
 import { db } from "@/lib/db";
+import { hash } from "argon2";
+import { normalizeAcademicCode } from "@/modules/academic/rules";
 
 const campaignSchema = z.object({ title: z.string().trim().min(3).max(120), classId: z.string().min(1), startsAt: z.coerce.date(), endsAt: z.coerce.date() }).refine((v) => v.endsAt > v.startsAt, "Thời gian kết thúc phải sau thời gian bắt đầu.");
 
@@ -22,6 +24,45 @@ export async function createTemplate(_: string | undefined, formData: FormData) 
   ] } } });
   await db.auditLog.create({ data: { actorId: user.id, action: "CREATE", entity: "SurveyTemplate", entityId: template.id } });
   revalidatePath("/admin");
+}
+
+const courseClassSchema = z.object({
+  courseCode: z.string().trim().min(2).max(20).transform(normalizeAcademicCode),
+  courseName: z.string().trim().min(3).max(120),
+  classCode: z.string().trim().min(2).max(30).transform(normalizeAcademicCode),
+  semesterId: z.string().min(1), lecturerId: z.string().min(1)
+});
+
+export async function createCourseClass(_: string | undefined, formData: FormData) {
+  const user = await requireUser(Role.ADMIN);
+  const parsed = courseClassSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return parsed.error.issues[0].message;
+  try {
+    const courseClass = await db.$transaction(async (tx) => {
+      const course = await tx.course.upsert({ where: { code: parsed.data.courseCode }, update: { name: parsed.data.courseName }, create: { code: parsed.data.courseCode, name: parsed.data.courseName } });
+      return tx.courseClass.create({ data: { code: parsed.data.classCode, courseId: course.id, semesterId: parsed.data.semesterId, lecturerId: parsed.data.lecturerId } });
+    });
+    await db.auditLog.create({ data: { actorId: user.id, action: "CREATE", entity: "CourseClass", entityId: courseClass.id } });
+    revalidatePath("/admin");
+  } catch { return "Mã lớp học phần đã tồn tại."; }
+}
+
+const studentSchema = z.object({ name: z.string().trim().min(2).max(100), email: z.string().email(), studentCode: z.string().trim().min(3).max(30).transform(normalizeAcademicCode), password: z.string().min(8).max(100), classId: z.string().min(1) });
+
+export async function createStudent(_: string | undefined, formData: FormData) {
+  const actor = await requireUser(Role.ADMIN);
+  const parsed = studentSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return parsed.error.issues[0].message;
+  try {
+    const passwordHash = await hash(parsed.data.password);
+    const student = await db.$transaction(async (tx) => {
+      const user = await tx.user.create({ data: { email: parsed.data.email.toLowerCase(), name: parsed.data.name, passwordHash, roles: { create: { role: Role.STUDENT } }, student: { create: { studentCode: parsed.data.studentCode } } }, include: { student: true } });
+      await tx.enrollment.create({ data: { classId: parsed.data.classId, studentId: user.student!.id } });
+      return user.student!;
+    });
+    await db.auditLog.create({ data: { actorId: actor.id, action: "CREATE", entity: "StudentProfile", entityId: student.id } });
+    revalidatePath("/admin");
+  } catch { return "Email hoặc mã sinh viên đã tồn tại."; }
 }
 
 export async function createCampaign(_: string | undefined, formData: FormData) {
