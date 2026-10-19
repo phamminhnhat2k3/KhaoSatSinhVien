@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  LECTURER
+  ADMIN
+}
+
+enum QuestionType {
+  SINGLE
+  MULTIPLE
+  SCALE
+  TEXT
+}
+
+enum CampaignStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  CANCELLED
+}
+
+enum ParticipationStatus {
+  INVITED
+  DRAFT
+  COMPLETED
+}
+
+model User {
+  id           String @id @default(cuid())
+  email        String @unique
+  passwordHash String
+  name         String
+  active       Boolean @default(true)
+  roles        UserRole[]
+  student      StudentProfile?
+  lecturer     LecturerProfile?
+  auditLogs    AuditLog[]
+}
+
+model UserRole {
+  userId String
+  role   Role
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([userId, role])
+}
+
+model StudentProfile {
+  id            String @id @default(cuid())
+  studentCode   String @unique
+  userId        String @unique
+  user          User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrollments   Enrollment[]
+  participations SurveyParticipation[]
+}
+
+model LecturerProfile {
+  id          String @id @default(cuid())
+  lecturerCode String @unique
+  userId      String @unique
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  classes     CourseClass[]
+}
+
+model Semester {
+  id        String @id @default(cuid())
+  name      String
+  startsAt  DateTime
+  endsAt    DateTime
+  classes   CourseClass[]
+}
+
+model Course {
+  id      String @id @default(cuid())
+  code    String @unique
+  name    String
+  classes CourseClass[]
+}
+
+model CourseClass {
+  id          String @id @default(cuid())
+  code        String @unique
+  courseId    String
+  semesterId  String
+  lecturerId  String
+  course      Course @relation(fields: [courseId], references: [id])
+  semester    Semester @relation(fields: [semesterId], references: [id])
+  lecturer    LecturerProfile @relation(fields: [lecturerId], references: [id])
+  enrollments Enrollment[]
+  targets     SurveyTarget[]
+}
+
+model Enrollment {
+  classId   String
+  studentId String
+  class     CourseClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  @@id([classId, studentId])
+}
+
+model SurveyTemplate {
+  id        String @id @default(cuid())
+  title     String
+  version   Int @default(1)
+  createdAt DateTime @default(now())
+  questions Question[]
+  campaigns SurveyCampaign[]
+}
+
+model Question {
+  id         String @id @default(cuid())
+  templateId String
+  content    String
+  type       QuestionType
+  required   Boolean @default(true)
+  position   Int
+  template   SurveyTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  options    QuestionOption[]
+  answers    Answer[]
+  @@unique([templateId, position])
+}
+
+model QuestionOption {
+  id         String @id @default(cuid())
+  questionId String
+  label      String
+  value      String
+  position   Int
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model SurveyCampaign {
+  id          String @id @default(cuid())
+  title       String
+  templateId  String
+  status      CampaignStatus @default(DRAFT)
+  startsAt    DateTime
+  endsAt      DateTime
+  createdAt   DateTime @default(now())
+  publishedAt DateTime?
+  template    SurveyTemplate @relation(fields: [templateId], references: [id])
+  targets     SurveyTarget[]
+  participations SurveyParticipation[]
+  submissions Submission[]
+}
+
+model SurveyTarget {
+  campaignId String
+  classId    String
+  campaign   SurveyCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  class      CourseClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+  @@id([campaignId, classId])
+}
+
+model SurveyParticipation {
+  id          String @id @default(cuid())
+  campaignId  String
+  studentId   String
+  status      ParticipationStatus @default(INVITED)
+  draft       Json?
+  completedAt DateTime?
+  campaign    SurveyCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  student     StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  @@unique([campaignId, studentId])
+}
+
+model Submission {
+  id         String @id @default(cuid())
+  campaignId String
+  submittedAt DateTime @default(now())
+  campaign   SurveyCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  answers    Answer[]
+}
+
+model Answer {
+  id           String @id @default(cuid())
+  submissionId String
+  questionId   String
+  value        Json
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  question     Question @relation(fields: [questionId], references: [id])
+}
+
+model AuditLog {
+  id        String @id @default(cuid())
+  actorId   String
+  action    String
+  entity    String
+  entityId  String
+  createdAt DateTime @default(now())
+  actor     User @relation(fields: [actorId], references: [id])
+}

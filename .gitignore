@@ -1,2 +1,8 @@
 # Playwright CLI output (may contain credentials)
 .playwright-cli/
+node_modules/
+.next/
+playwright-report/
+test-results/
+.env
+*.tsbuildinfo

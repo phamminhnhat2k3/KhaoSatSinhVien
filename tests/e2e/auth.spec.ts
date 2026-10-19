@@ -1,0 +1,51 @@
+import { expect, test } from "@playwright/test";
+
+test("trang đăng nhập hiển thị biểu mẫu truy cập được", async ({ page }) => {
+  await page.goto("/login");
+  await expect(page.getByRole("heading", { name: "Lắng nghe để cùng tiến bộ." })).toBeVisible();
+  await expect(page.getByLabel("Email")).toBeVisible();
+  await expect(page.getByLabel("Mật khẩu")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Đăng nhập" })).toBeVisible();
+});
+
+test.describe("ba hành trình nghiệp vụ với dữ liệu seed", () => {
+  test.skip(!process.env.RUN_DB_E2E, "Đặt RUN_DB_E2E=1 sau khi khởi tạo MySQL và seed.");
+  const password = process.env.SEED_PASSWORD ?? "";
+
+  async function login(page: import("@playwright/test").Page, email: string) {
+    await page.goto("/login");
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Mật khẩu").fill(password);
+    await page.getByRole("button", { name: "Đăng nhập" }).click();
+  }
+
+  test("quản trị viên tạo và công bố đợt khảo sát", async ({ page }) => {
+    await login(page, "admin@demo.vn");
+    await expect(page.getByText("Trung tâm điều hành")).toBeVisible();
+    await page.getByLabel("Tên đợt khảo sát").fill(`Nghiệm thu ${Date.now()}`);
+    await page.getByLabel("Lớp học phần").selectOption({ index: 1 });
+    await page.getByRole("button", { name: "Tạo đợt khảo sát" }).click();
+    await page.getByRole("button", { name: "Công bố" }).first().click();
+    await expect(page.getByText("PUBLISHED").first()).toBeVisible();
+  });
+
+  test("sinh viên lưu nháp và gửi phản hồi", async ({ page }) => {
+    await login(page, "sinhvien1@demo.vn");
+    await page.getByRole("link", { name: "Thực hiện khảo sát" }).first().click();
+    await page.locator('input[type="radio"][value="5"]').first().check();
+    await page.locator('input[type="radio"]').nth(5).check();
+    await page.locator('input[type="checkbox"]').first().check();
+    await page.getByRole("button", { name: "Lưu bản nháp" }).click();
+    await expect(page.getByText("Đã lưu bản nháp.")).toBeVisible();
+    await page.getByRole("button", { name: "Gửi phản hồi" }).click();
+    await expect(page.getByText("Phản hồi đã được ghi nhận ẩn danh.")).toBeVisible();
+  });
+
+  test("giảng viên xem báo cáo không có danh tính sinh viên", async ({ page }) => {
+    await login(page, "giangvien@demo.vn");
+    await page.getByText("Khảo sát học phần đã hoàn tất").click();
+    await expect(page.getByText("Báo cáo tổng hợp")).toBeVisible();
+    await expect(page.getByText("Phản hồi ẩn danh")).toBeVisible();
+    await expect(page.getByText(/sinhvien\d@demo\.vn/)).toHaveCount(0);
+  });
+});
