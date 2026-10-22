@@ -6,6 +6,11 @@ test("trang đăng nhập hiển thị biểu mẫu truy cập được", async 
   await expect(page.getByLabel("Email")).toBeVisible();
   await expect(page.getByLabel("Mật khẩu")).toBeVisible();
   await expect(page.getByRole("button", { name: "Đăng nhập" })).toBeVisible();
+  await expect(page.locator("body")).toHaveCSS("font-family", /Segoe UI/);
+  await page.setViewportSize({ width: 320, height: 800 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByLabel("Email").fill("kiemtra@example.com");
+  await expect(page.getByLabel("Email")).toHaveValue("kiemtra@example.com");
 });
 
 test.describe("ba hành trình nghiệp vụ với dữ liệu seed", () => {
