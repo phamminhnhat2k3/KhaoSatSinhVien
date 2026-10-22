@@ -18,7 +18,7 @@ export async function getCampaignReport(db: PrismaClient, campaignId: string, le
     const values = campaign.submissions.flatMap((submission) => submission.answers.filter((answer) => answer.questionId === question.id).map((answer) => answer.value));
     const strings = values.flatMap((value) => Array.isArray(value) ? value.map(String) : [String(value)]);
     return {
-      id: question.id, content: question.content, type: question.type,
+      id: question.id, content: question.content, type: question.type, scaleMin: question.scaleMin, scaleMax: question.scaleMax,
       average: question.type === "SCALE" ? average(strings.map(Number)) : undefined,
       distribution: question.type === "SINGLE" || question.type === "MULTIPLE" ? question.options.map((option) => ({ label: option.label, count: strings.filter((value) => value === option.value).length })) : undefined,
       comments: question.type === "TEXT" ? strings.filter(Boolean) : undefined

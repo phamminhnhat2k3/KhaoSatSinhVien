@@ -121,6 +121,9 @@ model Question {
   type       QuestionType
   required   Boolean @default(true)
   position   Int
+  scaleMin   Int @default(1)
+  scaleMax   Int @default(5)
+  scaleStep  Int @default(1)
   template   SurveyTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
   options    QuestionOption[]
   answers    Answer[]

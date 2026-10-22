@@ -27,11 +27,13 @@ test.describe("ba hành trình nghiệp vụ với dữ liệu seed", () => {
   test("quản trị viên tạo và công bố đợt khảo sát", async ({ page }) => {
     await login(page, "admin@demo.vn");
     await expect(page.getByText("Trung tâm điều hành")).toBeVisible();
+    await page.getByRole("link", { name: /Tạo đợt mới/ }).click();
     await page.getByLabel("Tên đợt khảo sát").fill(`Nghiệm thu ${Date.now()}`);
-    await page.getByLabel("Lớp học phần").selectOption({ index: 1 });
+    await page.getByLabel("Mẫu khảo sát", { exact: true }).selectOption({ index: 1 });
+    await page.locator('input[name="classIds"]').first().check();
     await page.getByRole("button", { name: "Tạo đợt khảo sát" }).click();
     await page.getByRole("button", { name: "Công bố" }).first().click();
-    await expect(page.getByText("PUBLISHED").first()).toBeVisible();
+    await expect(page.getByText("Đã công bố", { exact: true }).first()).toBeVisible();
   });
 
   test("sinh viên lưu nháp và gửi phản hồi", async ({ page }) => {

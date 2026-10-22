@@ -73,5 +73,45 @@ table { width: 100%; border-collapse: collapse; }
 th, td { padding: .8rem; text-align: left; border-bottom: 1px solid var(--line); }
 .skip-link { position: absolute; top: -100px; left: 1rem; background: white; padding: .75rem; z-index: 10; }
 .skip-link:focus { top: .5rem; }
+.workspace-wide { grid-template-columns: 210px minmax(0, 1fr); }
+.workspace-wide > .context-sidebar { display: none; }
+.section-title { margin: 2rem 0 1rem; }
+.section-heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin: 1.5rem 0 1rem; }
+.section-heading h2, .section-heading p { margin-bottom: .3rem; }
+.text-button { color: var(--brand); font-weight: 600; cursor: pointer; background: none; border: 0; padding: .25rem 0; text-align: left; }
+.text-button:hover { text-decoration: underline; }
+.workspace-link { display: flex; flex-direction: column; }
+.workspace-link .text-button { margin-top: auto; }
+.builder-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; }
+.builder-layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 1rem; align-items: start; }
+.toolbox { position: sticky; top: 1rem; }
+.toolbox p { font-size: .85rem; }
+.tool-item { display: flex; align-items: center; gap: .75rem; width: 100%; padding: .85rem .6rem; background: white; border: 1px solid var(--line); border-radius: .5rem; text-align: left; cursor: grab; margin-bottom: .65rem; }
+.tool-item:hover { border-color: var(--brand); background: #edf5fc; }
+.tool-item span:last-child { margin-left: auto; }
+.tool-symbol { color: var(--brand); font-weight: 700; width: 20px; }
+.tool-item:disabled, .icon-button:disabled { opacity: .4; cursor: default; }
+.question-editor { display: grid; gap: 1rem; border-left: 3px solid var(--brand); }
+.question-editor-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
+.icon-button { border: 1px solid var(--line); background: white; color: var(--muted); border-radius: .3rem; padding: .3rem .6rem; cursor: pointer; min-height: 36px; }
+.icon-button:hover { background: #edf5fc; }
+.drag-handle { cursor: grab; }
+.text-danger { color: #a52b33; }
+.option-editor { display: flex; align-items: center; gap: .65rem; }
+.scale-settings { display: grid; gap: .75rem; background: #f5f8fa; padding: 1rem; border-radius: .5rem; }
+.form-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
+.drop-zone { padding: 2rem 1rem; text-align: center; border: 2px dashed #a8bed1; border-radius: .65rem; background: #edf5fc; color: #365d7e; }
+.drop-zone p { margin: .5rem 0 0; font-size: .9rem; }
+.template-intro { border-top: 4px solid var(--brand); }
+.template-intro p:last-child { margin: .75rem 0 0; }
+.title-input { font-size: 1.15rem; }
+.scale-options { display: flex; flex-wrap: wrap; gap: .6rem; }
+.scale-options label { display: flex; align-items: center; gap: .35rem; border: 1px solid var(--line); border-radius: .4rem; padding: .5rem .7rem; cursor: pointer; }
+.scale-options label:has(input:checked) { background: #edf5fc; border-color: var(--brand); }
+.empty-state { padding: 2rem; text-align: center; }
+.class-options { max-height: 320px; overflow: auto; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+@media (max-width: 1100px) { .builder-layout { grid-template-columns: minmax(0, 1fr); } .toolbox { position: static; } .tool-item { display: inline-flex; width: calc(50% - .4rem); margin-right: .4rem; } }
+@media (max-width: 760px) { .workspace-wide { grid-template-columns: minmax(0, 1fr); } .form-columns { grid-template-columns: minmax(0, 1fr); } .builder-toolbar .actions { width: 100%; } }
 @media (max-width: 1200px) { .workspace { grid-template-columns: 210px minmax(0, 1fr); max-width: 1100px; } .context-sidebar { grid-column: 2; } }
 @media (max-width: 760px) { .nav { gap: .75rem; flex-wrap: wrap; } .nav-description { display: none; } .nav-links { gap: 1rem; } .workspace { grid-template-columns: minmax(0, 1fr); padding-top: 1rem; gap: 1rem; } .sidebar { display: none; } .context-sidebar { grid-column: 1; } .nav-account { display: none; } .brand { font-size: 1rem; } .nav .button { min-height: 2.4rem; padding: .4rem .8rem; font-size: .85rem; } .card { padding: 1.1rem; } .login-card { padding: 1.5rem; } }

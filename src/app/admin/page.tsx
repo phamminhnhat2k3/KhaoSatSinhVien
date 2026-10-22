@@ -1,24 +1,26 @@
+import Link from "next/link";
 import { Role } from "@prisma/client";
 import { AppShell } from "@/components/AppShell";
-import { CampaignForm } from "@/components/CampaignForm";
-import { TemplateForm } from "@/components/TemplateForm";
-import { CourseClassForm, StudentForm } from "@/components/AcademicForms";
 import { requireUser } from "@/lib/access";
 import { db } from "@/lib/db";
 import { closeCampaign, publishCampaign } from "./actions";
 
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: { searchParams: Promise<{ created?: string }> }) {
   const user = await requireUser(Role.ADMIN);
-  const [campaigns, classes, users, templates, semesters, lecturers] = await Promise.all([
-    db.surveyCampaign.findMany({ include: { _count: { select: { participations: true, submissions: true } }, targets: { include: { class: { include: { course: true } } } } }, orderBy: { createdAt: "desc" } }),
-    db.courseClass.findMany({ include: { course: true, semester: true }, orderBy: { code: "asc" } }),
-    db.user.count(), db.surveyTemplate.count(), db.semester.findMany({ orderBy: { startsAt: "desc" } }), db.lecturerProfile.findMany({ include: { user: true }, orderBy: { lecturerCode: "asc" } })
+  const [campaigns, users, templates] = await Promise.all([
+    db.surveyCampaign.findMany({ include: { template: true, _count: { select: { participations: true, submissions: true, targets: true } } }, orderBy: { createdAt: "desc" } }), db.user.count(), db.surveyTemplate.count()
   ]);
-  return <AppShell name={user.name} role="Quản trị viên">
-    <p className="eyebrow">Trung tâm điều hành</p><h1>Mỗi phản hồi là một tín hiệu để cải tiến.</h1><p className="lead">Tạo đợt khảo sát, công bố đúng đối tượng và theo dõi tiến độ mà không xem danh tính người trả lời.</p>
-    <section className="grid"><article className="card"><span className="muted">Người dùng</span><div className="stat">{users}</div></article><article className="card"><span className="muted">Mẫu khảo sát</span><div className="stat">{templates}</div></article><article className="card"><span className="muted">Đợt đang mở</span><div className="stat">{campaigns.filter((c) => c.status === "PUBLISHED").length}</div></article></section>
-    <section className="grid"><article className="card"><h2>Tạo mẫu khảo sát</h2><p className="muted">Mẫu mới có đủ thang điểm, một lựa chọn, nhiều lựa chọn và tự luận.</p><TemplateForm /></article>
-      <article className="card"><h2>Tạo đợt mới</h2><p className="muted">Dùng mẫu khảo sát mới nhất với đủ bốn loại câu hỏi.</p><CampaignForm classes={classes.map((item) => ({ id: item.id, label: `${item.code} · ${item.course.name} · ${item.semester.name}` }))} /></article>
-    </section><h2 style={{marginTop: "2rem"}}>Dữ liệu học vụ</h2><section className="grid"><article className="card"><h3>Tạo học phần và lớp</h3><CourseClassForm semesters={semesters.map((item) => ({ id: item.id, label: item.name }))} lecturers={lecturers.map((item) => ({ id: item.id, label: `${item.lecturerCode} · ${item.user.name}` }))}/></article><article className="card"><h3>Tạo và ghi danh sinh viên</h3><StudentForm classes={classes.map((item) => ({ id: item.id, label: `${item.code} · ${item.course.name}` }))}/></article></section><article className="card" style={{marginTop: "1rem"}}><h2>Các đợt khảo sát</h2>{campaigns.length === 0 ? <p className="muted">Chưa có đợt khảo sát.</p> : <div className="stack">{campaigns.map((campaign) => <div className="question" key={campaign.id}><div className="actions" style={{justifyContent: "space-between"}}><div><strong>{campaign.title}</strong><div className="muted">{campaign.targets[0]?.class.course.name} · {campaign._count.submissions}/{campaign._count.participations} phản hồi</div></div><span className="pill">{campaign.status}</span></div><div className="actions" style={{marginTop: ".8rem"}}>{campaign.status === "DRAFT" && <form action={publishCampaign}><input type="hidden" name="id" value={campaign.id}/><button className="button">Công bố</button></form>}{campaign.status === "PUBLISHED" && <form action={closeCampaign}><input type="hidden" name="id" value={campaign.id}/><button className="button danger">Đóng khảo sát</button></form>}</div></div>)}</div>}</article>
+  return <AppShell name={user.name} role="Quản trị viên" wide>
+    <p className="eyebrow">Trung tâm điều hành</p><h1>Quản lý khảo sát</h1><p className="lead">Thiết kế câu hỏi, tổ chức đợt khảo sát và quản lý dữ liệu học vụ.</p>
+    {(await searchParams).created && <p className="notice" role="status">Đã tạo đợt ở trạng thái nháp. Kiểm tra trước khi công bố.</p>}
+    <section className="grid"><article className="card"><span className="muted">Người dùng</span><div className="stat">{users}</div></article><article className="card"><span className="muted">Mẫu khảo sát</span><div className="stat">{templates}</div></article><article className="card"><span className="muted">Đợt đang mở</span><div className="stat">{campaigns.filter(c => c.status === "PUBLISHED").length}</div></article></section>
+    <h2 className="section-title">Không gian làm việc</h2><div className="grid">{[
+      ["/admin/templates/new", "01", "Tạo mẫu khảo sát", "Kéo thả câu hỏi, cấu hình thang điểm và xem trước."],
+      ["/admin/campaigns/new", "02", "Tạo đợt mới", "Chọn mẫu, các lớp tham gia và thời gian tiếp nhận."],
+      ["/admin/classes/new", "03", "Tạo học phần và lớp", "Liên kết học phần, học kỳ và giảng viên phụ trách."],
+      ["/admin/students/new", "04", "Tạo và ghi danh sinh viên", "Tạo tài khoản và ghi danh đúng lớp học phần."]
+    ].map(([href, number, title, desc]) => <Link className="card workspace-link" key={href} href={href}><span className="eyebrow">{number} / QUẢN TRỊ</span><h3>{title}</h3><p className="muted">{desc}</p><span className="text-button">Mở trang →</span></Link>)}</div>
+    <div className="section-heading"><h2>Các đợt khảo sát</h2><Link className="text-button" href="/admin/templates">Thư viện mẫu →</Link></div>
+    <article className="card">{!campaigns.length ? <p className="muted">Chưa có đợt khảo sát. Bắt đầu bằng việc tạo mẫu và chọn đối tượng tham gia.</p> : <div className="stack">{campaigns.map(c => <section className="question" key={c.id}><div className="section-heading"><div><h3>{c.title}</h3><p className="muted">{c.template.title} · {c._count.targets} lớp · {c._count.submissions}/{c._count.participations} phản hồi</p><small className="muted">{c.startsAt.toLocaleDateString("vi-VN")} – {c.endsAt.toLocaleDateString("vi-VN")}</small></div><span className="pill">{{ DRAFT: "Bản nháp", PUBLISHED: "Đã công bố", CLOSED: "Đã đóng", CANCELLED: "Đã hủy" }[c.status]}</span></div><div className="actions">{c.status === "DRAFT" && <form action={publishCampaign}><input type="hidden" name="id" value={c.id}/><button className="button">Công bố</button></form>}{c.status === "PUBLISHED" && <form action={closeCampaign}><input type="hidden" name="id" value={c.id}/><button className="button danger">Đóng khảo sát</button></form>}</div></section>)}</div>}</article>
   </AppShell>;
 }

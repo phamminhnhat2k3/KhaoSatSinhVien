@@ -5,16 +5,7 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/access";
 import { db } from "@/lib/db";
 import { saveDraft, submitResponse } from "@/modules/response/service";
-import type { SurveyAnswers } from "@/modules/response/rules";
-
-function answersFrom(formData: FormData) {
-  const result: SurveyAnswers = {};
-  for (const key of new Set([...formData.keys()].filter((key) => key.startsWith("q_")))) {
-    const values = formData.getAll(key).map(String);
-    result[key.slice(2)] = values.length > 1 ? values : values[0];
-  }
-  return result;
-}
+import { answersFrom } from "@/modules/response/rules";
 
 async function studentId() {
   const user = await requireUser(Role.STUDENT);

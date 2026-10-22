@@ -22,7 +22,7 @@ describe("kiểm tra câu trả lời", () => {
     { id: "text", type: "TEXT" as const, required: false }
   ];
   it("bắt câu bắt buộc và giá trị ngoài lựa chọn", () => {
-    expect(validateAnswers(questions, { single: "maybe", scale: "6" })).toEqual({ single: "Lựa chọn không hợp lệ.", scale: "Thang điểm phải từ 1 đến 5." });
+    expect(validateAnswers(questions, { single: "maybe", scale: "6" })).toEqual({ single: "Lựa chọn không hợp lệ.", scale: "Điểm phải từ 1 đến 5, theo bước 1." });
   });
   it("chấp nhận dữ liệu hợp lệ", () => expect(validateAnswers(questions, { single: "yes", scale: "5" })).toEqual({}));
 });

@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { logoutAction } from "@/app/actions";
 
-export function AppShell({ name, role, children }: { name?: string | null; role: string; children: ReactNode }) {
+export function AppShell({ name, role, children, wide = false }: { name?: string | null; role: string; children: ReactNode; wide?: boolean }) {
   return <div className="shell">
     <a className="skip-link" href="#main-content">Đi đến nội dung chính</a>
     <header className="nav">
@@ -10,7 +10,7 @@ export function AppShell({ name, role, children }: { name?: string | null; role:
       <span className="nav-description">Cổng khảo sát sinh viên</span>
       <nav aria-label="Điều hướng chính" className="nav-links"><Link href="/dashboard" className="nav-home"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="m12 3 10 8h-3v10h-5v-7h-4v7H5V11H2z"/></svg><span>Trang chủ</span></Link><div className="nav-account"><span className="avatar avatar-small" aria-hidden="true">{name?.trim().slice(0, 1) || "L"}</span><span>{role}</span></div><form action={logoutAction}><button className="button secondary">Đăng xuất</button></form></nav>
     </header>
-    <div className="workspace">
+    <div className={`workspace${wide ? " workspace-wide" : ""}`}>
       <aside className="sidebar" aria-label="Thông tin tài khoản">
         <section className="card account-card"><div className="account-cover" aria-hidden="true"/><div className="account-content"><span className="avatar" aria-hidden="true">{name?.trim().slice(0, 1) || "L"}</span><h2>{name || "Tài khoản của bạn"}</h2><p className="muted">{role}</p><div className="account-caption">Cộng đồng học tập<br/><strong>Lắng nghe sinh viên</strong></div></div></section>
         <section className="card sidebar-note"><p className="eyebrow">Cùng nhau tiến bộ</p><h3>Mỗi ý kiến đều có giá trị.</h3><p className="muted">Góp ý chân thành để nâng cao chất lượng học tập và giảng dạy.</p></section>
