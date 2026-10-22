@@ -15,6 +15,7 @@ export function TemplateForm({ initial }: { initial?: TemplateInput }) {
   const [message, setMessage] = useState("");
   const dirty = useRef(false);
   const nextKey = useRef(0);
+  useEffect(() => { if (error && !pending) dirty.current = true; }, [error, pending]);
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => { if (dirty.current) { event.preventDefault(); event.returnValue = ""; } };
     window.addEventListener("beforeunload", warn);
@@ -41,6 +42,7 @@ export function TemplateForm({ initial }: { initial?: TemplateInput }) {
     else dirty.current = false;
   }}>
     <input type="hidden" name="template" value={JSON.stringify({ title, questions })}/>
+    <fieldset disabled={pending} className="builder-fields">
     <div className="builder-toolbar card"><div><strong>{questions.length} câu hỏi</strong><span className="muted"> · {questions.filter(q => q.required).length} bắt buộc</span></div><div className="actions"><button type="button" className="button secondary" onClick={() => setPreview(!preview)}>{preview ? "Tiếp tục chỉnh sửa" : "Xem trước"}</button><button className="button" disabled={pending}>{pending ? "Đang lưu…" : "Lưu mẫu khảo sát"}</button></div></div>
     <div className="builder-layout">
       <aside className="card toolbox"><p className="eyebrow">Thư viện câu hỏi</p><h2>Thêm nội dung</h2><p className="muted">Kéo vào vị trí muốn thêm, hoặc bấm để thêm cuối mẫu.</p>{Object.entries(questionTypes).map(([type, label], i) => <button key={type} type="button" draggable={!preview && !pending} disabled={preview || pending} className="tool-item" onDragStart={e => e.dataTransfer.setData("question-type", type)} onClick={() => add(type as QuestionInput["type"])}><span className="tool-symbol" aria-hidden="true">{["#", "◉", "☑", "T"][i]}</span><span>{label}</span><span aria-hidden="true">＋</span></button>)}<p className="muted">Có thể đổi thứ tự bằng các nút ↑ ↓. Tối đa 100 câu hỏi.</p></aside>
@@ -59,5 +61,6 @@ export function TemplateForm({ initial }: { initial?: TemplateInput }) {
         {!preview && <div className="drop-zone" onDragOver={e => e.preventDefault()} onDrop={e => drop(e, questions.length)}><strong>{questions.length ? "Thêm câu hỏi tiếp theo" : "Bắt đầu từ câu hỏi đầu tiên"}</strong><p>Kéo loại câu hỏi vào đây hoặc chọn trong thư viện bên trái.</p></div>}
       </div>
     </div>
+    </fieldset>
   </form>;
 }

@@ -1,6 +1,6 @@
 # Hệ thống khảo sát và phản hồi sinh viên
 
-Ứng dụng khảo sát sinh viên đang được phát triển theo [phương án kỹ thuật](docs/PHUONG_AN_KY_THUAT_MVP.md). Đã có các luồng cơ bản cho quản trị viên, sinh viên và giảng viên; nghiệm thu đầy đủ với cơ sở dữ liệu thật vẫn cần được thực hiện.
+Ứng dụng khảo sát sinh viên đang được phát triển theo [phương án kỹ thuật](docs/PHUONG_AN_KY_THUAT_MVP.md). Các luồng trình dựng, học vụ, hồ sơ và thông báo có nghiệm thu Playwright với dữ liệu MySQL riêng. Xem [báo cáo tiến độ](docs/TIEN_DO_2026-10-23.md) để phân biệt phần đã hoàn thành và phần chưa triển khai.
 
 ## Chạy local
 
@@ -72,11 +72,16 @@ Những lần sau, khi dịch vụ `MySQL80` đang chạy, chỉ cần `pnpm dev
 ## Chức năng chính
 
 - Auth.js Credentials, mật khẩu Argon2id và phân quyền máy chủ theo `STUDENT`, `LECTURER`, `ADMIN`.
-- Quản trị mẫu gồm bốn loại câu hỏi, tạo/công bố/đóng đợt khảo sát và chọn lớp học phần.
+- Quản trị có trang riêng cho mẫu, đợt, lớp và sinh viên. Trình dựng mẫu hỗ trợ kéo thả, nhân bản, đổi thứ tự bằng bàn phím, bắt buộc/tùy chọn, xem trước; lựa chọn tự nhập và thang số nguyên từ 0 đến 1.000 với bước nhảy tùy chỉnh. Mẫu đã lưu được bảo toàn, chỉnh tiếp bằng cách tạo bản sao.
+- Tạo đợt chọn mẫu cụ thể và nhiều lớp; khử trùng sinh viên giữa các lớp. Danh sách tham gia được chốt lúc tạo đợt.
 - Sinh viên chỉ thấy khảo sát được giao, có thể lưu nháp và chỉ gửi một lần.
 - Transaction đồng thời tạo phản hồi và ghi nhận hoàn thành; `Submission` không chứa khóa định danh sinh viên.
 - Báo cáo theo phạm vi giảng dạy, chỉ mở sau khi đóng và đủ `MIN_REPORT_RESPONSES`; hỗ trợ CSV.
 - Giao diện tiếng Việt, responsive và dữ liệu seed cho nghiệm thu.
+- `/profile`: hồ sơ cá nhân cho cả ba vai trò, thông tin nghiệp vụ chỉ đọc, chỉnh họ tên/liên hệ/đơn vị/giới thiệu/màu bìa và đổi mật khẩu có xác thực mật khẩu cũ. Chưa hỗ trợ tải ảnh đại diện; đổi mật khẩu không thu hồi các phiên đã đăng nhập.
+- `/notifications`: thông báo trong ứng dụng khi công bố/đóng đợt (sinh viên được mời, giảng viên phụ trách và admin thực hiện), hoặc khi tự đổi mật khẩu. Có bộ lọc, phân trang, đánh dấu đọc theo chủ sở hữu và số chưa đọc tự cập nhật mỗi 30 giây khi trang đang hiển thị. Chưa gửi email/push.
+
+Sau khi cập nhật mã nguồn, dừng dev server rồi chạy `pnpm db:migrate` và `pnpm exec prisma generate` trước khi `pnpm dev`. Các migration mới bổ sung cột/bảng và mở rộng độ dài nội dung, không cần chạy lại seed. Ngày khảo sát được hiểu theo giờ Việt Nam, bao gồm trọn ngày kết thúc.
 
 ## Kiểm tra chất lượng
 
@@ -90,3 +95,13 @@ pnpm test:e2e
 ```
 
 E2E đầy đủ cần MySQL đã seed và cấu hình `DATABASE_URL`, `AUTH_SECRET` trong `.env`. Đặt `$env:RUN_DB_E2E = '1'` và nhập lại `$env:SEED_PASSWORD` trước khi chạy `pnpm test:e2e`; nếu không, ba kịch bản dữ liệu sẽ bị bỏ qua. Chạy `pnpm exec playwright install chromium` một lần nếu máy chưa có trình duyệt Playwright. Các kịch bản này thay đổi dữ liệu, chỉ chạy trên cơ sở dữ liệu nghiệm thu riêng.
+
+Các bài nghiệm thu mới không cần seed hoặc mật khẩu demo. Chúng tạo tài khoản, học vụ và khảo sát có mã riêng rồi dọn đúng các bản ghi đã tạo khi kết thúc. Với CMD:
+
+```cmd
+set "RUN_FEATURE_E2E=1"
+pnpm test:e2e -- tests/e2e/builder.spec.ts tests/e2e/roles.spec.ts tests/e2e/academic.spec.ts
+set "RUN_FEATURE_E2E="
+```
+
+Cần MySQL đã áp dụng migration và `.env` hợp lệ. Không tắt tiến trình giữa chừng để bước dọn dữ liệu được thực hiện. Ảnh nghiệm thu được lưu trong `.playwright-cli/` (không đưa vào Git).

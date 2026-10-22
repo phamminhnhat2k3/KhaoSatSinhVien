@@ -39,6 +39,11 @@ model User {
   passwordHash String
   name         String
   active       Boolean @default(true)
+  phone        String @default("")
+  department   String @default("")
+  bio          String @default(dbgenerated("(_utf8mb4\\'\\')")) @db.Text
+  coverTheme   String @default("blue")
+  notifications Notification[]
   roles        UserRole[]
   student      StudentProfile?
   lecturer     LecturerProfile?
@@ -117,7 +122,7 @@ model SurveyTemplate {
 model Question {
   id         String @id @default(cuid())
   templateId String
-  content    String
+  content    String @db.Text
   type       QuestionType
   required   Boolean @default(true)
   position   Int
@@ -133,7 +138,7 @@ model Question {
 model QuestionOption {
   id         String @id @default(cuid())
   questionId String
-  label      String
+  label      String @db.VarChar(200)
   value      String
   position   Int
   question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
@@ -199,4 +204,16 @@ model AuditLog {
   entityId  String
   createdAt DateTime @default(now())
   actor     User @relation(fields: [actorId], references: [id])
+}
+
+model Notification {
+  id        String @id @default(cuid())
+  userId    String
+  title     String
+  body      String @db.Text
+  href      String
+  createdAt DateTime @default(now())
+  readAt    DateTime?
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, readAt, createdAt])
 }

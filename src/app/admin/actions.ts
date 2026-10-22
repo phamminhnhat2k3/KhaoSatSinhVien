@@ -8,8 +8,9 @@ import { requireUser } from "@/lib/access";
 import { db } from "@/lib/db";
 import { hash } from "argon2";
 import { normalizeAcademicCode } from "@/modules/academic/rules";
+import { notifyCampaign } from "@/modules/notifications/service";
+import { campaignSchema } from "@/modules/survey-campaign/input";
 
-const campaignSchema = z.object({ title: z.string().trim().min(3).max(120), templateId: z.string().min(1), classIds: z.array(z.string().min(1)).min(1), startsAt: z.coerce.date(), endsAt: z.coerce.date() }).refine(v => v.endsAt > v.startsAt, "Thời gian kết thúc phải sau thời gian bắt đầu.");
 const courseClassSchema = z.object({ courseCode: z.string().trim().min(2).max(20).transform(normalizeAcademicCode), courseName: z.string().trim().min(3).max(120), classCode: z.string().trim().min(2).max(30).transform(normalizeAcademicCode), semesterId: z.string().min(1), lecturerId: z.string().min(1) });
 const studentSchema = z.object({ name: z.string().trim().min(2).max(100), email: z.string().email(), studentCode: z.string().trim().min(3).max(30).transform(normalizeAcademicCode), password: z.string().min(8).max(100), classId: z.string().min(1) });
 
@@ -48,7 +49,7 @@ export async function createStudent(_: string | undefined, formData: FormData) {
 export async function createCampaign(_: string | undefined, formData: FormData) {
   const user = await requireUser(Role.ADMIN);
   const parsed = campaignSchema.safeParse({ ...Object.fromEntries(formData), classIds: formData.getAll("classIds") });
-  if (!parsed.success) return "Nhập tên đợt, chọn mẫu và ít nhất một lớp; ngày kết thúc phải sau ngày bắt đầu.";
+  if (!parsed.success) return "Nhập tên đợt, chọn mẫu và ít nhất một lớp; ngày kết thúc không được trước ngày bắt đầu.";
   try {
     await db.$transaction(async tx => {
       const { classIds, ...data } = parsed.data;
@@ -66,18 +67,20 @@ export async function createCampaign(_: string | undefined, formData: FormData) 
 export async function publishCampaign(formData: FormData) {
   const user = await requireUser(Role.ADMIN);
   const id = z.string().min(1).parse(formData.get("id"));
-  await db.$transaction([
-    db.surveyCampaign.update({ where: { id, status: "DRAFT" }, data: { status: "PUBLISHED", publishedAt: new Date() } }),
-    db.auditLog.create({ data: { actorId: user.id, action: "PUBLISH", entity: "SurveyCampaign", entityId: id } })
-  ]);
+  await db.$transaction(async tx => {
+    await tx.surveyCampaign.update({ where: { id, status: "DRAFT" }, data: { status: "PUBLISHED", publishedAt: new Date() } });
+    await tx.auditLog.create({ data: { actorId: user.id, action: "PUBLISH", entity: "SurveyCampaign", entityId: id } });
+    await notifyCampaign(tx, id, user.id, "PUBLISHED");
+  });
   revalidatePath("/admin");
 }
 export async function closeCampaign(formData: FormData) {
   const user = await requireUser(Role.ADMIN);
   const id = z.string().min(1).parse(formData.get("id"));
-  await db.$transaction([
-    db.surveyCampaign.update({ where: { id, status: "PUBLISHED" }, data: { status: "CLOSED" } }),
-    db.auditLog.create({ data: { actorId: user.id, action: "CLOSE", entity: "SurveyCampaign", entityId: id } })
-  ]);
+  await db.$transaction(async tx => {
+    await tx.surveyCampaign.update({ where: { id, status: "PUBLISHED" }, data: { status: "CLOSED" } });
+    await tx.auditLog.create({ data: { actorId: user.id, action: "CLOSE", entity: "SurveyCampaign", entityId: id } });
+    await notifyCampaign(tx, id, user.id, "CLOSED");
+  });
   revalidatePath("/admin");
 }

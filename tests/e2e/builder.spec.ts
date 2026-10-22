@@ -34,11 +34,13 @@ test.describe("nghiệm thu trình dựng với dữ liệu riêng", () => {
     await page.getByRole("link", { name: /Tạo mẫu khảo sát/ }).click();
     await page.getByRole("button", { name: /Thang điểm/ }).dragTo(page.locator(".drop-zone"));
     await page.getByLabel("Tên mẫu khảo sát", { exact: true }).fill(tag);
-    await page.getByLabel("Nội dung câu 1", { exact: true }).fill("Mức độ hài lòng với học phần?");
+    const longContent = `Mức độ hài lòng với học phần? ${"Nội dung chi tiết. ".repeat(14)}`;
+    await page.getByLabel("Nội dung câu 1", { exact: true }).fill(longContent);
     await page.getByLabel("Mẫu thang điểm").selectOption("100");
     await page.getByRole("button", { name: /Một lựa chọn/ }).click();
     await page.getByLabel("Nội dung câu 2", { exact: true }).fill("Hình thức học tập phù hợp?");
-    await page.getByLabel("Lựa chọn 1 của câu 2", { exact: true }).fill("Trực tiếp");
+    const longOption = "A".repeat(200);
+    await page.getByLabel("Lựa chọn 1 của câu 2", { exact: true }).fill(longOption);
     await page.getByLabel("Lựa chọn 2 của câu 2", { exact: true }).fill("Trực tuyến");
     await page.getByRole("button", { name: /Nhiều lựa chọn/ }).click();
     await page.getByLabel("Nội dung câu 3", { exact: true }).fill("Những nội dung cần cải thiện?");
@@ -61,7 +63,9 @@ test.describe("nghiệm thu trình dựng với dữ liệu riêng", () => {
     const template = await db.surveyTemplate.findFirstOrThrow({ where: { title: tag }, include: { questions: { orderBy: { position: "asc" }, include: { options: true } } } });
     expect(template.questions.map(q => q.type)).toEqual(["SCALE", "SINGLE", "TEXT", "MULTIPLE"]);
     expect(template.questions[0].scaleMax).toBe(100);
+    expect(template.questions[0].content).toBe(longContent.trim());
     expect(template.questions[1].options).toHaveLength(2);
+    expect(template.questions[1].options.some(o => o.label === longOption)).toBe(true);
     const invalid = await page.request.post("/api/admin/templates", { data: { title: tag, questions: [] } });
     expect(invalid.status()).toBe(400);
   });

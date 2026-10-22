@@ -29,7 +29,7 @@ test.describe("ba hành trình nghiệp vụ với dữ liệu seed", () => {
     await expect(page.getByText("Trung tâm điều hành")).toBeVisible();
     await page.getByRole("link", { name: /Tạo đợt mới/ }).click();
     await page.getByLabel("Tên đợt khảo sát").fill(`Nghiệm thu ${Date.now()}`);
-    await page.getByLabel("Mẫu khảo sát", { exact: true }).selectOption({ index: 1 });
+    await page.getByRole("combobox", { name: "Mẫu khảo sát", exact: true }).selectOption({ index: 1 });
     await page.locator('input[name="classIds"]').first().check();
     await page.getByRole("button", { name: "Tạo đợt khảo sát" }).click();
     await page.getByRole("button", { name: "Công bố" }).first().click();
