@@ -4,7 +4,7 @@
 
 ## Chạy local
 
-Yêu cầu: Node.js 20.19 trở lên, pnpm và MySQL Server 8.0 trở lên cài trực tiếp trên Windows. MySQL Workbench là công cụ quản lý tùy chọn.
+Yêu cầu: Node.js 22.13 trở lên (khuyến nghị Node.js 24), pnpm và MySQL Server 8.0 trở lên cài trực tiếp trên Windows. MySQL Workbench là công cụ quản lý tùy chọn.
 
 Kiểm tra dịch vụ MySQL đã chạy trong PowerShell:
 
@@ -44,6 +44,19 @@ pnpm db:check
 ```
 
 Tạo dữ liệu mẫu **chỉ trên cơ sở dữ liệu thử nghiệm trống**. Lệnh seed xóa dữ liệu nghiệp vụ hiện có trước khi tạo lại; không chạy trên dữ liệu cần giữ.
+
+`pnpm db:seed` tự nạp `DATABASE_URL` từ file `.env` ở thư mục gốc dự án. `SEED_PASSWORD` được đặt trong terminal hiện tại; biến môi trường của terminal được ưu tiên hơn giá trị trong `.env`.
+
+Nếu terminal là Command Prompt (CMD, dấu nhắc dạng `C:\KhaoSatSinhVien>`), dùng:
+
+```cmd
+set "SEED_PASSWORD=THAY_BANG_MAT_KHAU_TOI_THIEU_8_KY_TU"
+pnpm db:seed
+set "SEED_PASSWORD="
+pnpm dev
+```
+
+Nếu dùng PowerShell 7, dùng:
 
 ```powershell
 $env:SEED_PASSWORD = Read-Host -AsSecureString | ConvertFrom-SecureString -AsPlainText
