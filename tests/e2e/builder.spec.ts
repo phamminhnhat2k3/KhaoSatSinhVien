@@ -26,6 +26,7 @@ test.describe("nghiệm thu trình dựng với dữ liệu riêng", () => {
     await db.$disconnect();
   });
   test("kéo thả, sửa thang 100, xem trước và lưu đủ bốn loại câu", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
     await page.goto("/login");
     await page.getByLabel("Email", { exact: true }).fill(`${tag}@example.invalid`);
     await page.getByLabel("Mật khẩu", { exact: true }).fill(password);
@@ -33,6 +34,7 @@ test.describe("nghiệm thu trình dựng với dữ liệu riêng", () => {
     await expect(page).toHaveURL(/\/admin$/);
     await page.getByRole("link", { name: /Tạo mẫu khảo sát/ }).click();
     await page.getByRole("button", { name: /Thang điểm/ }).dragTo(page.locator(".drop-zone"));
+    await expect(page.getByText("Câu 1 · Thang điểm", { exact: true })).toBeVisible();
     await page.getByLabel("Tên mẫu khảo sát", { exact: true }).fill(tag);
     const longContent = `Mức độ hài lòng với học phần? ${"Nội dung chi tiết. ".repeat(14)}`;
     await page.getByLabel("Nội dung câu 1", { exact: true }).fill(longContent);

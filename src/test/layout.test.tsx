@@ -12,6 +12,9 @@ test("khung trang hiển thị tiếng Việt, điều hướng và co giãn kh�
   const browser = await chromium.launch();
   try {
     const page = await browser.newPage();
+    await page.route("http://layout.test/hcm-ute-logo.png", route => route.fulfill({ path: resolve("public/hcm-ute-logo.png"), contentType: "image/png" }));
+    await page.route("http://layout.test/", route => route.fulfill({ contentType: "text/html", body: "<html></html>" }));
+    await page.goto("http://layout.test/");
     const css = readFileSync(resolve("src/app/globals.css"), "utf8").replace('@import "tailwindcss";', "");
     const html = renderToStaticMarkup(createElement(AppShell, { name: "Nguyễn Minh Nhật", role: "Sinh viên", children: createElement("div", null,
       createElement("p", { className: "eyebrow" }, "Không gian của bạn"),
@@ -21,7 +24,10 @@ test("khung trang hiển thị tiếng Việt, điều hướng và co giãn kh�
       createElement("h2", { style: { marginTop: "2rem" } }, "Khảo sát được giao"),
       createElement("article", { className: "card stack" }, createElement("span", { className: "pill" }, "Mới"), createElement("h3", null, "Khảo sát chất lượng học phần"), createElement("p", { className: "muted" }, "Chia sẻ trải nghiệm học tập của bạn."), createElement("a", { className: "button", href: "/student/surveys/preview" }, "Thực hiện khảo sát"))
     ) }));
-    await page.setContent(`<html lang="vi"><head><meta charset="UTF-8"><style>${css}</style></head><body>${html}</body></html>`);
+    await page.setContent(`<html lang="vi"><head><base href="http://layout.test/"><meta charset="UTF-8"><style>${css}</style></head><body>${html}</body></html>`);
+    const logo = page.getByRole("img", { name: /HCM-UTE/ });
+    expect(await logo.evaluate(el => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+    expect(await page.locator("header .brand-mark").count()).toBe(0);
     for (const width of [1440, 1024, 390, 320]) {
       await page.setViewportSize({ width, height: 1000 });
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

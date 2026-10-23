@@ -74,6 +74,7 @@ Những lần sau, khi dịch vụ `MySQL80` đang chạy, chỉ cần `pnpm dev
 - Auth.js Credentials, mật khẩu Argon2id và phân quyền máy chủ theo `STUDENT`, `LECTURER`, `ADMIN`.
 - Quản trị có trang riêng cho mẫu, đợt, lớp và sinh viên. Trình dựng mẫu hỗ trợ kéo thả, nhân bản, đổi thứ tự bằng bàn phím, bắt buộc/tùy chọn, xem trước; lựa chọn tự nhập và thang số nguyên từ 0 đến 1.000 với bước nhảy tùy chỉnh. Mẫu đã lưu được bảo toàn, chỉnh tiếp bằng cách tạo bản sao.
 - Tạo đợt chọn mẫu cụ thể và nhiều lớp; khử trùng sinh viên giữa các lớp. Danh sách tham gia được chốt lúc tạo đợt.
+- Admin bấm tên khảo sát hoặc “Xem bài đánh giá” để mở danh sách phiếu đã nộp và xem từng câu trả lời ngay khi có phiếu gửi. Phiếu không gắn tên/mã sinh viên; quyền này chỉ dành cho admin, không thay đổi điều kiện mở báo cáo tổng hợp của giảng viên.
 - Sinh viên chỉ thấy khảo sát được giao, có thể lưu nháp và chỉ gửi một lần.
 - Transaction đồng thời tạo phản hồi và ghi nhận hoàn thành; `Submission` không chứa khóa định danh sinh viên.
 - Báo cáo theo phạm vi giảng dạy, chỉ mở sau khi đóng và đủ `MIN_REPORT_RESPONSES`; hỗ trợ CSV.

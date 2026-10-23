@@ -105,6 +105,23 @@ test.describe("hồ sơ, thông báo và khảo sát xuyên vai trò", () => {
     await expect(page.getByRole("checkbox", { name: "Tài liệu", exact: true })).toBeChecked();
     await page.getByRole("button", { name: "Gửi phản hồi", exact: true }).click();
     await expect(page).toHaveURL(/submitted=1/);
+    const submission = await db.submission.findFirstOrThrow({ where: { campaignId: campaign.id } });
+    await page.goto(`/admin/campaigns/${campaign.id}/responses/${submission.id}`);
+    await expect(page).toHaveURL(/\/unauthorized$/);
+    await login(page, 0);
+    await expect(page.getByRole("img", { name: /HCM-UTE/ })).toBeVisible();
+    await row.getByRole("link", { name: "Xem bài đánh giá (1)", exact: true }).click();
+    await page.getByRole("link", { name: /Phiếu 1/ }).click();
+    await expect(page.locator(".submitted-answer").first()).toHaveText("100 điểm · Thang 0–100");
+    await expect(page.locator(".submitted-answer").nth(1)).toHaveText("Tài liệu");
+    await expect(page.locator("main")).not.toContainText(users[2].email);
+    await expect(page.locator("main")).not.toContainText(`${tag} STUDENT 2`);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.screenshot({ path: ".playwright-cli/admin-submission.png", fullPage: true });
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    const missing = await page.goto(`/admin/campaigns/not-this-campaign/responses/${submission.id}`);
+    expect(missing?.status()).toBe(404);
     for (const index of [3, 4, 5, 6]) {
       await login(page, index);
       const response = await page.request.post(`/api/surveys/${campaign.id}/submit`, { data: { [questions[0].id]: "100", [questions[1].id]: ["material"] } });
@@ -115,6 +132,8 @@ test.describe("hồ sơ, thông báo và khảo sát xuyên vai trò", () => {
     await expect(row.getByText("Đã đóng", { exact: true })).toBeVisible();
     expect(await db.notification.count({ where: { userId: { in: users.map(u => u.id) } } })).toBe(14);
     await login(page, 1);
+    await page.goto(`/admin/campaigns/${campaign.id}/responses/${submission.id}`);
+    await expect(page).toHaveURL(/\/unauthorized$/);
     const report = await page.request.get(`/api/reports/campaigns/${campaign.id}`);
     expect(report.status()).toBe(200);
     const json = await report.json();

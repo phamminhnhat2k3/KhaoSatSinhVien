@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { ReactNode } from "react";
 import { logoutAction } from "@/app/actions";
 import { NotificationLink } from "./NotificationLink";
@@ -7,7 +8,7 @@ export function AppShell({ name, role, children, wide = false }: { name?: string
   return <div className="shell">
     <a className="skip-link" href="#main-content">Đi đến nội dung chính</a>
     <header className="nav">
-      <Link href="/dashboard" className="brand"><span className="brand-mark">L</span><span>Lắng nghe</span></Link>
+      <Link href="/dashboard" className="university-brand"><Image src="/hcm-ute-logo.png" alt="HCM-UTE – Trường Đại học Công nghệ Kỹ thuật TP. Hồ Chí Minh" width={2005} height={593} className="university-logo" priority unoptimized/></Link>
       <span className="nav-description">Cổng khảo sát sinh viên</span>
       <nav aria-label="Điều hướng chính" className="nav-links"><Link href="/dashboard" className="nav-home"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="m12 3 10 8h-3v10h-5v-7h-4v7H5V11H2z"/></svg><span>Trang chủ</span></Link><NotificationLink/><Link href="/profile" className="nav-profile"><span className="avatar avatar-small" aria-hidden="true">{name?.trim().slice(0, 1) || "L"}</span><span>Hồ sơ</span></Link><form action={logoutAction}><button className="button secondary">Đăng xuất</button></form></nav>
     </header>
