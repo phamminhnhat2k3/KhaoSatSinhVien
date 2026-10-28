@@ -4,7 +4,7 @@ import { startTransition, useActionState } from "react";
 import { saveDraftAction, submitAction } from "@/app/student/actions";
 import { QuestionFields } from "./QuestionFields";
 
-type Question = { id: string; content: string; type: "SINGLE" | "MULTIPLE" | "SCALE" | "TEXT"; required: boolean; scaleMin: number; scaleMax: number; scaleStep: number; options: { id: string; label: string; value: string }[] };
+type Question = { id: string; sectionTitle?: string; content: string; type: "SINGLE" | "MULTIPLE" | "SCALE" | "TEXT"; required: boolean; scaleMin: number; scaleMax: number; scaleStep: number; options: { id: string; label: string; value: string }[] };
 
 export function SurveyForm({ campaignId, questions, draft }: { campaignId: string; questions: Question[]; draft: Record<string, string | string[]> }) {
   const [saveMessage, save, saving] = useActionState(saveDraftAction, undefined);
@@ -16,7 +16,7 @@ export function SurveyForm({ campaignId, questions, draft }: { campaignId: strin
     startTransition(() => { if (button?.value === "save") save(data); else submit(data); });
   }}>
     <input type="hidden" name="campaignId" value={campaignId}/>
-    {questions.map((question, index) => <fieldset className="question" key={question.id}><legend><strong>{index + 1}. {question.content}</strong>{question.required && <span className="error"> *</span>}</legend>
+    {questions.map((question, index) => <fieldset className="question" key={question.id}><legend>{question.sectionTitle && <span className="pill">{question.sectionTitle}</span>}<br/><strong>{index + 1}. {question.content}</strong>{question.required && <span className="error"> *</span>}</legend>
       <QuestionFields question={question} name={`q_${question.id}`} value={draft[question.id]}/>
     </fieldset>)}
     {(saveMessage || submitError) && <p className={submitError ? "error" : "notice"} role="status">{submitError ?? saveMessage}</p>}

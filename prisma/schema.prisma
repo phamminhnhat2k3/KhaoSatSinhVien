@@ -33,6 +33,29 @@ enum ParticipationStatus {
   COMPLETED
 }
 
+enum SurveyScope {
+  LEGACY_CLASS
+  FACULTY
+  UNIVERSITY
+}
+
+model Faculty {
+  id String @id @default(cuid())
+  code String @unique
+  name String
+  classes AcademicClass[]
+  campaigns SurveyCampaign[]
+}
+
+model AcademicClass {
+  id String @id @default(cuid())
+  code String @unique
+  name String
+  facultyId String
+  faculty Faculty @relation(fields: [facultyId], references: [id])
+  students StudentProfile[]
+}
+
 model User {
   id           String @id @default(cuid())
   email        String @unique
@@ -61,6 +84,8 @@ model StudentProfile {
   id            String @id @default(cuid())
   studentCode   String @unique
   userId        String @unique
+  academicClassId String?
+  academicClass AcademicClass? @relation(fields: [academicClassId], references: [id])
   user          User @relation(fields: [userId], references: [id], onDelete: Cascade)
   enrollments   Enrollment[]
   participations SurveyParticipation[]
@@ -80,6 +105,7 @@ model Semester {
   startsAt  DateTime
   endsAt    DateTime
   classes   CourseClass[]
+  campaigns SurveyCampaign[]
 }
 
 model Course {
@@ -87,6 +113,9 @@ model Course {
   code    String @unique
   name    String
   classes CourseClass[]
+  campaignTargets CampaignCourse[]
+  assignments ParticipationCourse[]
+  answers Answer[]
 }
 
 model CourseClass {
@@ -116,7 +145,8 @@ model SurveyTemplate {
   version   Int @default(1)
   createdAt DateTime @default(now())
   questions Question[]
-  campaigns SurveyCampaign[]
+  campaigns SurveyCampaign[] @relation("CommonTemplate")
+  courseCampaigns SurveyCampaign[] @relation("CourseTemplate")
 }
 
 model Question {
@@ -148,12 +178,20 @@ model SurveyCampaign {
   id          String @id @default(cuid())
   title       String
   templateId  String
+  scope SurveyScope @default(LEGACY_CLASS)
+  facultyId String?
+  semesterId String?
+  courseTemplateId String?
+  faculty Faculty? @relation(fields: [facultyId], references: [id], onDelete: Restrict)
+  semester Semester? @relation(fields: [semesterId], references: [id], onDelete: Restrict)
+  courseTemplate SurveyTemplate? @relation("CourseTemplate", fields: [courseTemplateId], references: [id], onDelete: Restrict)
+  courseTargets CampaignCourse[]
   status      CampaignStatus @default(DRAFT)
   startsAt    DateTime
   endsAt      DateTime
   createdAt   DateTime @default(now())
   publishedAt DateTime?
-  template    SurveyTemplate @relation(fields: [templateId], references: [id])
+  template    SurveyTemplate @relation("CommonTemplate", fields: [templateId], references: [id])
   targets     SurveyTarget[]
   participations SurveyParticipation[]
   submissions Submission[]
@@ -174,6 +212,7 @@ model SurveyParticipation {
   status      ParticipationStatus @default(INVITED)
   draft       Json?
   completedAt DateTime?
+  courses ParticipationCourse[]
   campaign    SurveyCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   student     StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
   @@unique([campaignId, studentId])
@@ -191,9 +230,27 @@ model Answer {
   id           String @id @default(cuid())
   submissionId String
   questionId   String
+  courseId String?
+  course Course? @relation(fields: [courseId], references: [id], onDelete: Restrict)
   value        Json
   submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
   question     Question @relation(fields: [questionId], references: [id])
+}
+
+model CampaignCourse {
+  campaignId String
+  courseId String
+  campaign SurveyCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id])
+  @@id([campaignId, courseId])
+}
+
+model ParticipationCourse {
+  participationId String
+  courseId String
+  participation SurveyParticipation @relation(fields: [participationId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id])
+  @@id([participationId, courseId])
 }
 
 model AuditLog {

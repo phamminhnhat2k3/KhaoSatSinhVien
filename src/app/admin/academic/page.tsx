@@ -1,0 +1,12 @@
+import Link from "next/link";
+import { Role } from "@prisma/client";
+import { AppShell } from "@/components/AppShell";
+import { AcademicClassForm, FacultyForm, SemesterForm } from "@/components/AcademicSetupForms";
+import { requireUser } from "@/lib/access";
+import { db } from "@/lib/db";
+
+export default async function AcademicPage() {
+  const user = await requireUser(Role.ADMIN);
+  const [faculties, classes, semesters] = await Promise.all([db.faculty.findMany({ orderBy: { code: "asc" } }), db.academicClass.findMany({ include: { faculty: true, _count: { select: { students: true } } }, orderBy: { code: "asc" } }), db.semester.findMany({ orderBy: { startsAt: "desc" } })]);
+  return <AppShell name={user.name} role="Quản trị viên" wide><Link className="text-button" href="/admin">← Trung tâm điều hành</Link><p className="eyebrow">Danh mục học vụ</p><h1>Khoa, lớp hành chính và học kỳ</h1><p className="lead">Lớp hành chính là lớp quản lý sinh viên thuộc một khoa. Lớp học phần là lớp đăng ký học một môn trong một học kỳ.</p><div className="grid"><section className="card"><h2>Thêm khoa</h2><FacultyForm/></section><section className="card"><h2>Thêm lớp hành chính</h2><AcademicClassForm faculties={faculties.map(f => ({ id: f.id, label: `${f.code} · ${f.name}` }))}/></section><section className="card"><h2>Thêm học kỳ</h2><SemesterForm/></section></div><h2 className="section-title">Các khoa</h2><div className="card">{faculties.length ? faculties.map(f => <p key={f.id}><strong>{f.code}</strong> · {f.name}</p>) : <p>Chưa có khoa.</p>}</div><h2 className="section-title">Lớp hành chính</h2><div className="card table-wrap"><table><thead><tr><th>Mã lớp</th><th>Tên lớp</th><th>Khoa</th><th>Sinh viên</th></tr></thead><tbody>{classes.map(c => <tr key={c.id}><td>{c.code}</td><td>{c.name}</td><td>{c.faculty.name}</td><td><Link className="text-button" href={`/admin/students?academicClassId=${c.id}`}>{c._count.students} sinh viên →</Link></td></tr>)}</tbody></table>{!classes.length && <p>Chưa có lớp hành chính.</p>}</div><h2 className="section-title">Học kỳ</h2><div className="card">{semesters.map(s => <p key={s.id}><strong>{s.name}</strong> · {s.startsAt.toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })} – {s.endsAt.toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}</p>)}</div></AppShell>;
+}

@@ -10,9 +10,10 @@ import { hash } from "argon2";
 import { normalizeAcademicCode } from "@/modules/academic/rules";
 import { notifyCampaign } from "@/modules/notifications/service";
 import { campaignSchema } from "@/modules/survey-campaign/input";
+import { publishToAudience } from "@/modules/survey-campaign/audience";
+import { studentSchema } from "@/modules/academic/students";
 
 const courseClassSchema = z.object({ courseCode: z.string().trim().min(2).max(20).transform(normalizeAcademicCode), courseName: z.string().trim().min(3).max(120), classCode: z.string().trim().min(2).max(30).transform(normalizeAcademicCode), semesterId: z.string().min(1), lecturerId: z.string().min(1) });
-const studentSchema = z.object({ name: z.string().trim().min(2).max(100), email: z.string().email(), studentCode: z.string().trim().min(3).max(30).transform(normalizeAcademicCode), password: z.string().min(8).max(100), classId: z.string().min(1) });
 
 export async function createCourseClass(_: string | undefined, formData: FormData) {
   const user = await requireUser(Role.ADMIN);
@@ -33,46 +34,50 @@ export async function createCourseClass(_: string | undefined, formData: FormDat
 
 export async function createStudent(_: string | undefined, formData: FormData) {
   const actor = await requireUser(Role.ADMIN);
-  const parsed = studentSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return "Kiểm tra họ tên, email, mã sinh viên, mật khẩu từ 8 ký tự và lớp ghi danh.";
+  const parsed = studentSchema.safeParse({ ...Object.fromEntries(formData), courseClassIds: formData.getAll("courseClassIds") });
+  if (!parsed.success) return "Kiểm tra họ tên, email, mã sinh viên, mật khẩu từ 8 ký tự và lớp hành chính.";
   try {
     const passwordHash = await hash(parsed.data.password);
     await db.$transaction(async tx => {
-      const user = await tx.user.create({ data: { email: parsed.data.email.toLowerCase(), name: parsed.data.name, passwordHash, roles: { create: { role: Role.STUDENT } }, student: { create: { studentCode: parsed.data.studentCode } } }, include: { student: true } });
-      await tx.enrollment.create({ data: { classId: parsed.data.classId, studentId: user.student!.id } });
+      const user = await tx.user.create({ data: { email: parsed.data.email.toLowerCase(), name: parsed.data.name, passwordHash, roles: { create: { role: Role.STUDENT } }, student: { create: { studentCode: parsed.data.studentCode, academicClassId: parsed.data.academicClassId } } }, include: { student: true } });
+      const classIds = [...new Set(parsed.data.courseClassIds)];
+      if (classIds.length) await tx.enrollment.createMany({ data: classIds.map(classId => ({ classId, studentId: user.student!.id })) });
       await tx.auditLog.create({ data: { actorId: actor.id, action: "CREATE", entity: "StudentProfile", entityId: user.student!.id } });
     });
-  } catch { return "Không thể ghi danh. Email hoặc mã sinh viên có thể đã tồn tại, hoặc lớp không còn khả dụng."; }
-  revalidatePath("/admin"); redirect("/admin/students/new?saved=1");
+  } catch { return "Không thể tạo sinh viên. Email/mã sinh viên có thể trùng, hoặc lớp không còn khả dụng."; }
+  revalidatePath("/admin"); revalidatePath("/admin/students"); redirect("/admin/students?created=1");
 }
 
 export async function createCampaign(_: string | undefined, formData: FormData) {
   const user = await requireUser(Role.ADMIN);
-  const parsed = campaignSchema.safeParse({ ...Object.fromEntries(formData), classIds: formData.getAll("classIds") });
-  if (!parsed.success) return "Nhập tên đợt, chọn mẫu và ít nhất một lớp; ngày kết thúc không được trước ngày bắt đầu.";
+  const parsed = campaignSchema.safeParse({ ...Object.fromEntries(formData), courseIds: formData.getAll("courseIds") });
+  if (!parsed.success) return parsed.error.issues[0].message;
   try {
     await db.$transaction(async tx => {
-      const { classIds, ...data } = parsed.data;
-      const ids = [...new Set(classIds)];
-      const campaign = await tx.surveyCampaign.create({ data: { ...data, targets: { create: ids.map(classId => ({ classId })) } } });
-      const enrollments = await tx.enrollment.findMany({ where: { classId: { in: ids } }, select: { studentId: true } });
-      const students = [...new Set(enrollments.map(e => e.studentId))];
-      if (students.length) await tx.surveyParticipation.createMany({ data: students.map(studentId => ({ campaignId: campaign.id, studentId })) });
+      const { courseIds, facultyId, courseTemplateId, ...data } = parsed.data;
+      const ids = [...new Set(courseIds)];
+      const matching = await tx.course.count({ where: { id: { in: ids }, classes: { some: { semesterId: data.semesterId } } } });
+      if (matching !== ids.length) throw new Error("Môn học phải có lớp học phần trong học kỳ đã chọn.");
+      const campaign = await tx.surveyCampaign.create({ data: { ...data, facultyId: facultyId || null, courseTemplateId: courseTemplateId || null, courseTargets: { create: ids.map(courseId => ({ courseId })) } } });
       await tx.auditLog.create({ data: { actorId: user.id, action: "CREATE", entity: "SurveyCampaign", entityId: campaign.id } });
     });
-  } catch { return "Chưa tạo được đợt. Kiểm tra mẫu và các lớp được chọn rồi thử lại."; }
+  } catch { return "Chưa tạo được đợt. Kiểm tra khoa, học kỳ, mẫu và môn học thuộc học kỳ đã chọn."; }
   revalidatePath("/admin"); redirect("/admin?created=1");
 }
 
-export async function publishCampaign(formData: FormData) {
+export async function publishCampaign(_: string | undefined, formData: FormData) {
   const user = await requireUser(Role.ADMIN);
   const id = z.string().min(1).parse(formData.get("id"));
-  await db.$transaction(async tx => {
-    await tx.surveyCampaign.update({ where: { id, status: "DRAFT" }, data: { status: "PUBLISHED", publishedAt: new Date() } });
-    await tx.auditLog.create({ data: { actorId: user.id, action: "PUBLISH", entity: "SurveyCampaign", entityId: id } });
-    await notifyCampaign(tx, id, user.id, "PUBLISHED");
-  });
+  try {
+    await db.$transaction(async tx => {
+      await publishToAudience(tx, id);
+      await tx.auditLog.create({ data: { actorId: user.id, action: "PUBLISH", entity: "SurveyCampaign", entityId: id } });
+      await notifyCampaign(tx, id, user.id, "PUBLISHED");
+    }, { timeout: 30000 });
+  } catch (error) { return error instanceof Error && error.message.startsWith("Chưa có sinh viên") ? error.message : "Không thể công bố. Đợt có thể đã đổi trạng thái hoặc dữ liệu không còn hợp lệ."; }
   revalidatePath("/admin");
+  revalidatePath("/student");
+  redirect("/admin?published=1");
 }
 export async function closeCampaign(formData: FormData) {
   const user = await requireUser(Role.ADMIN);

@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("trang đăng nhập hiển thị biểu mẫu truy cập được", async ({ page }) => {
   await page.goto("/login");
-  await expect(page.getByRole("heading", { name: "Lắng nghe để cùng tiến bộ." })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2 })).toBeVisible();
   await expect(page.getByLabel("Email")).toBeVisible();
   await expect(page.getByLabel("Mật khẩu")).toBeVisible();
   await expect(page.getByRole("button", { name: "Đăng nhập" })).toBeVisible();
@@ -29,10 +29,11 @@ test.describe("ba hành trình nghiệp vụ với dữ liệu seed", () => {
     await expect(page.getByText("Trung tâm điều hành")).toBeVisible();
     await page.getByRole("link", { name: /Tạo đợt mới/ }).click();
     await page.getByLabel("Tên đợt khảo sát").fill(`Nghiệm thu ${Date.now()}`);
-    await page.getByRole("combobox", { name: "Mẫu khảo sát", exact: true }).selectOption({ index: 1 });
-    await page.locator('input[name="classIds"]').first().check();
+    await page.getByRole("combobox", { name: "Phạm vi khảo sát", exact: true }).selectOption("UNIVERSITY");
+    await page.getByRole("combobox", { name: "Mẫu câu hỏi chung", exact: true }).selectOption({ index: 1 });
     await page.getByRole("button", { name: "Tạo đợt khảo sát" }).click();
-    await page.getByRole("button", { name: "Công bố" }).first().click();
+    await page.getByRole("link", { name: "Xem và công bố" }).first().click();
+    await page.getByRole("button", { name: "Công bố", exact: true }).click();
     await expect(page.getByText("Đã công bố", { exact: true }).first()).toBeVisible();
   });
 

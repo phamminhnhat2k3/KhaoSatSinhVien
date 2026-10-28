@@ -73,16 +73,20 @@ Những lần sau, khi dịch vụ `MySQL80` đang chạy, chỉ cần `pnpm dev
 
 - Auth.js Credentials, mật khẩu Argon2id và phân quyền máy chủ theo `STUDENT`, `LECTURER`, `ADMIN`.
 - Quản trị có trang riêng cho mẫu, đợt, lớp và sinh viên. Trình dựng mẫu hỗ trợ kéo thả, nhân bản, đổi thứ tự bằng bàn phím, bắt buộc/tùy chọn, xem trước; lựa chọn tự nhập và thang số nguyên từ 0 đến 1.000 với bước nhảy tùy chỉnh. Mẫu đã lưu được bảo toàn, chỉnh tiếp bằng cách tạo bản sao.
-- Tạo đợt chọn mẫu cụ thể và nhiều lớp; khử trùng sinh viên giữa các lớp. Danh sách tham gia được chốt lúc tạo đợt.
+- Tạo đợt theo khoa hoặc toàn trường, gắn học kỳ và mẫu câu hỏi chung. Đợt khoa có thể kèm mẫu đánh giá môn; mỗi sinh viên chỉ nhận các môn thực học trong học kỳ thuộc phạm vi đã chọn. Người nhận và phần môn được chốt khi công bố, không phải khi tạo nháp.
+- `/admin/academic`: tạo khoa, lớp hành chính và học kỳ. Lớp hành chính quản lý sinh viên theo khoa; lớp học phần là lớp đăng ký môn với giảng viên trong một học kỳ.
+- `/admin/students`: danh sách tất cả sinh viên có tìm MSSV/tên/email, lọc khoa/lớp hành chính và phân trang. Hồ sơ học vụ cho phép phân lớp và bổ sung đăng ký lớp học phần; tạo sinh viên không bắt buộc ghi danh môn ngay.
 - Admin bấm tên khảo sát hoặc “Xem bài đánh giá” để mở danh sách phiếu đã nộp và xem từng câu trả lời ngay khi có phiếu gửi. Phiếu không gắn tên/mã sinh viên; quyền này chỉ dành cho admin, không thay đổi điều kiện mở báo cáo tổng hợp của giảng viên.
 - Sinh viên chỉ thấy khảo sát được giao, có thể lưu nháp và chỉ gửi một lần.
 - Transaction đồng thời tạo phản hồi và ghi nhận hoàn thành; `Submission` không chứa khóa định danh sinh viên.
-- Báo cáo theo phạm vi giảng dạy, chỉ mở sau khi đóng và đủ `MIN_REPORT_RESPONSES`; hỗ trợ CSV.
+- Báo cáo theo phạm vi giảng dạy, chỉ mở sau khi đóng và đủ `MIN_REPORT_RESPONSES` cho từng môn; hỗ trợ CSV với số người được giao và số phiếu thực tế của từng phần. Giảng viên không được xem phần chung của khoa/toàn trường qua báo cáo môn.
 - Giao diện tiếng Việt, responsive và dữ liệu seed cho nghiệm thu.
 - `/profile`: hồ sơ cá nhân cho cả ba vai trò, thông tin nghiệp vụ chỉ đọc, chỉnh họ tên/liên hệ/đơn vị/giới thiệu/màu bìa và đổi mật khẩu có xác thực mật khẩu cũ. Chưa hỗ trợ tải ảnh đại diện; đổi mật khẩu không thu hồi các phiên đã đăng nhập.
 - `/notifications`: thông báo trong ứng dụng khi công bố/đóng đợt (sinh viên được mời, giảng viên phụ trách và admin thực hiện), hoặc khi tự đổi mật khẩu. Có bộ lọc, phân trang, đánh dấu đọc theo chủ sở hữu và số chưa đọc tự cập nhật mỗi 30 giây khi trang đang hiển thị. Chưa gửi email/push.
 
 Sau khi cập nhật mã nguồn, dừng dev server rồi chạy `pnpm db:migrate` và `pnpm exec prisma generate` trước khi `pnpm dev`. Các migration mới bổ sung cột/bảng và mở rộng độ dài nội dung, không cần chạy lại seed. Ngày khảo sát được hiểu theo giờ Việt Nam, bao gồm trọn ngày kết thúc.
+
+Xem [hướng dẫn khảo sát theo khoa/toàn trường](docs/KHAO_SAT_THEO_PHAM_VI.md). Sinh viên cũ chưa có lớp hành chính cần được phân lớp trong danh sách sinh viên trước khi nhận đợt khoa; đợt khảo sát cũ và các phản hồi vẫn giữ nguyên. Trường `department` tự nhập trong hồ sơ không quyết định khoa.
 
 ## Kiểm tra chất lượng
 
@@ -106,3 +110,12 @@ set "RUN_FEATURE_E2E="
 ```
 
 Cần MySQL đã áp dụng migration và `.env` hợp lệ. Không tắt tiến trình giữa chừng để bước dọn dữ liệu được thực hiện. Ảnh nghiệm thu được lưu trong `.playwright-cli/` (không đưa vào Git).
+
+Nghiệm thu đầy đủ mô hình khoa/toàn trường dùng database MySQL riêng, không gửi phiếu/thông báo thử cho tài khoản thật:
+
+```cmd
+pnpm build
+pnpm test:e2e:isolated
+```
+
+Tài khoản MySQL trong `.env` cần quyền tạo/xóa database thử. Script chỉ tạo và dọn database ngẫu nhiên mang tiền tố `student_survey_test_`, chạy production server ở cổng 3015 với một worker. Ngưỡng báo cáo trong database thử là 2 để kiểm tra môn đủ/thiếu phản hồi; cấu hình ứng dụng thật không thay đổi. Không chạy seed. Nếu tiến trình bị đóng cưỡng bức, database thử có thể còn lại. Ba bài cũ phụ thuộc seed vẫn được bỏ qua.

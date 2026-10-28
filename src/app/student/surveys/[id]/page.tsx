@@ -5,11 +5,12 @@ import { SurveyForm } from "@/components/SurveyForm";
 import { requireUser } from "@/lib/access";
 import { db } from "@/lib/db";
 import type { SurveyAnswers } from "@/modules/response/rules";
+import { assignedQuestions } from "@/modules/response/questions";
 
 export default async function SurveyPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser(Role.STUDENT);
   const student = await db.studentProfile.findUniqueOrThrow({ where: { userId: user.id } });
-  const participation = await db.surveyParticipation.findUnique({ where: { campaignId_studentId: { campaignId: (await params).id, studentId: student.id } }, include: { campaign: { include: { template: { include: { questions: { include: { options: { orderBy: { position: "asc" } } }, orderBy: { position: "asc" } } } } } } } });
+  const participation = await db.surveyParticipation.findUnique({ where: { campaignId_studentId: { campaignId: (await params).id, studentId: student.id } }, include: { courses: { include: { course: true }, orderBy: { course: { code: "asc" } } }, campaign: { include: { faculty: true, semester: true, template: { include: { questions: { include: { options: { orderBy: { position: "asc" } } }, orderBy: { position: "asc" } } } }, courseTemplate: { include: { questions: { include: { options: { orderBy: { position: "asc" } } }, orderBy: { position: "asc" } } } } } } } });
   if (!participation || participation.status === "COMPLETED") notFound();
-  return <AppShell name={user.name} role="Sinh viên"><p className="eyebrow">Phiếu khảo sát</p><h1>{participation.campaign.title}</h1><p className="lead">Các câu có dấu * là bắt buộc. Bạn có thể lưu bản nháp và quay lại trước hạn.</p><SurveyForm campaignId={participation.campaignId} questions={participation.campaign.template.questions} draft={(participation.draft ?? {}) as SurveyAnswers}/></AppShell>;
+  return <AppShell name={user.name} role="Sinh viên"><p className="eyebrow">{participation.campaign.faculty?.name ?? (participation.campaign.scope === "UNIVERSITY" ? "Khảo sát toàn trường" : "Phiếu khảo sát")} · {participation.campaign.semester?.name}</p><h1>{participation.campaign.title}</h1><p className="lead">Các câu có dấu * là bắt buộc. Phần môn học chỉ gồm các môn bạn đăng ký trong học kỳ và được chốt khi đợt công bố.</p><SurveyForm campaignId={participation.campaignId} questions={assignedQuestions(participation.campaign, participation.courses)} draft={(participation.draft ?? {}) as SurveyAnswers}/></AppShell>;
 }

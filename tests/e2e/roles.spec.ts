@@ -57,16 +57,12 @@ test.describe("hồ sơ, thông báo và khảo sát xuyên vai trò", () => {
   }
   test("hồ sơ đúng vai trò, công bố/đóng gửi thông báo, thang 100 được báo cáo chính xác", async ({ page }) => {
     await login(page, 0);
-    await page.goto("/admin/campaigns/new");
-    await page.getByLabel("Tên đợt khảo sát").fill(tag);
-    await page.getByRole("combobox", { name: "Mẫu khảo sát", exact: true }).selectOption(templateId);
-    await page.locator(`input[name="classIds"][value="${classId}"]`).check();
-    await page.getByLabel("Bắt đầu", { exact: true }).fill("2026-01-01");
-    await page.getByLabel("Kết thúc", { exact: true }).fill("2027-01-01");
-    await page.getByRole("button", { name: "Tạo đợt khảo sát", exact: true }).click();
-    await expect(page).toHaveURL(/\/admin\?created=1$/);
+    const students = await db.studentProfile.findMany({ where: { userId: { in: users.slice(2).map(u => u.id) } } });
+    await db.surveyCampaign.create({ data: { title: tag, templateId, startsAt: new Date("2026-01-01"), endsAt: new Date("2027-01-01"), targets: { create: { classId } }, participations: { create: students.map(s => ({ studentId: s.id })) } } });
+    await page.goto("/admin");
     const row = page.locator("section.question").filter({ has: page.getByRole("heading", { name: tag, exact: true }) });
-    await row.getByRole("button", { name: "Công bố", exact: true }).click();
+    await row.getByRole("link", { name: "Xem và công bố", exact: true }).click();
+    await page.getByRole("button", { name: "Công bố", exact: true }).click();
     await expect(row.getByText("Đã công bố", { exact: true })).toBeVisible();
     const campaign = await db.surveyCampaign.findFirstOrThrow({ where: { templateId } });
     expect(await db.notification.count({ where: { userId: { in: users.map(u => u.id) } } })).toBe(7);

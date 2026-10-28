@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { submitResponse } from "./service";
 
-function database(status: "INVITED" | "COMPLETED" = "INVITED") {
+function database(status: "INVITED" | "COMPLETED" = "INVITED", active = true) {
   const tx = {
     surveyParticipation: {
-      findUnique: vi.fn().mockResolvedValue({ id: "p1", status, campaign: { status: "PUBLISHED", startsAt: new Date("2026-01-01"), endsAt: new Date("2026-12-31"), template: { questions: [{ id: "q1", type: "SCALE", required: true, options: [] }] } } }),
+      findUnique: vi.fn().mockResolvedValue({ id: "p1", status, student: { user: { active, roles: [{ role: "STUDENT" }] } }, campaign: { status: "PUBLISHED", startsAt: new Date("2026-01-01"), endsAt: new Date("2026-12-31"), template: { questions: [{ id: "q1", type: "SCALE", required: true, options: [] }] } } }),
       updateMany: vi.fn().mockResolvedValue({ count: 1 })
     },
     submission: { create: vi.fn().mockResolvedValue({ id: "anonymous-submission" }) }
@@ -28,6 +28,11 @@ describe("gửi phản hồi trong transaction", () => {
     const { db, tx } = database();
     tx.surveyParticipation.updateMany.mockResolvedValue({ count: 0 });
     await expect(submitResponse(db as never, "c1", "s1", { q1: "5" }, new Date("2026-10-19"))).rejects.toThrow("đã hoàn thành");
+    expect(tx.submission.create).not.toHaveBeenCalled();
+  });
+  it("tài khoản bị khóa sau công bố không thể gửi bằng API với phiên cũ", async () => {
+    const { db, tx } = database("INVITED", false);
+    await expect(submitResponse(db as never, "c1", "s1", { q1: "5" }, new Date("2026-10-19"))).rejects.toThrow("không còn quyền");
     expect(tx.submission.create).not.toHaveBeenCalled();
   });
 });

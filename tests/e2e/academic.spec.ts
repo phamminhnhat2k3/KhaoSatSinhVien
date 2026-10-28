@@ -10,7 +10,7 @@ test.describe("trang học vụ và ghi danh", () => {
   test.use({ actionTimeout: 15000 });
   const tag = `ACA-${randomUUID().slice(0, 8)}`.toUpperCase(), password = randomUUID();
   const adminEmail = `${tag}-admin@example.invalid`, studentEmail = `${tag}-student@example.invalid`;
-  let db: PrismaClient, adminId: string, lecturerId: string, lecturerUserId: string, semesterId: string;
+  let db: PrismaClient, adminId: string, lecturerId: string, lecturerUserId: string, semesterId: string, facultyId: string, academicClassId: string;
   test.beforeAll(async () => {
     loadEnvFile(".env"); db = new PrismaClient();
     const passwordHash = await hash(password);
@@ -18,6 +18,8 @@ test.describe("trang học vụ và ghi danh", () => {
     const teacher = await db.user.create({ data: { name: tag, email: `${tag}-lecturer@example.invalid`, passwordHash, roles: { create: { role: "LECTURER" } }, lecturer: { create: { lecturerCode: tag } } }, include: { lecturer: true } });
     lecturerUserId = teacher.id; lecturerId = teacher.lecturer!.id;
     semesterId = (await db.semester.create({ data: { name: tag, startsAt: new Date("2026-01-01"), endsAt: new Date("2027-01-01") } })).id;
+    facultyId = (await db.faculty.create({ data: { code: tag, name: `Khoa ${tag}` } })).id;
+    academicClassId = (await db.academicClass.create({ data: { code: tag, name: tag, facultyId } })).id;
   });
   test.afterAll(async () => {
     if (!db) return;
@@ -27,6 +29,11 @@ test.describe("trang học vụ và ghi danh", () => {
     const ids = [adminId, lecturerUserId].filter(Boolean);
     await db.auditLog.deleteMany({ where: { actorId: { in: ids } } });
     await db.user.deleteMany({ where: { OR: [{ id: { in: ids } }, { email: studentEmail.toLowerCase() }] } });
+    await db.academicClass.deleteMany({ where: { code: `${tag}-EXHC` } });
+    await db.faculty.deleteMany({ where: { code: `${tag}-EX` } });
+    await db.semester.deleteMany({ where: { name: `${tag}-EX` } });
+    if (academicClassId) await db.academicClass.delete({ where: { id: academicClassId } });
+    if (facultyId) await db.faculty.delete({ where: { id: facultyId } });
     await db.$disconnect();
   });
   test("tạo lớp, không ghi đè tên học phần cũ, tạo tài khoản và ghi danh thật", async ({ page }) => {
@@ -35,11 +42,30 @@ test.describe("trang học vụ và ghi danh", () => {
     await page.getByLabel("Mật khẩu", { exact: true }).fill(password);
     await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
     await expect(page).toHaveURL(/\/admin$/);
+    await page.goto("/admin/academic");
+    const facultyForm = page.locator("section.card").filter({ has: page.getByRole("heading", { name: "Thêm khoa", exact: true }) });
+    await facultyForm.getByLabel("Mã khoa", { exact: true }).fill(`${tag}-EX`);
+    await facultyForm.getByLabel("Tên khoa", { exact: true }).fill(`Khoa ${tag}-EX`);
+    await facultyForm.getByRole("button", { name: "Tạo khoa", exact: true }).click();
+    await expect(facultyForm.getByRole("status")).toHaveText("Đã tạo khoa.");
+    const extraFaculty = await db.faculty.findUniqueOrThrow({ where: { code: `${tag}-EX` } });
+    const homeroom = page.locator("section.card").filter({ has: page.getByRole("heading", { name: "Thêm lớp hành chính", exact: true }) });
+    await homeroom.getByRole("combobox", { name: "Khoa của lớp", exact: true }).selectOption(extraFaculty.id);
+    await homeroom.getByLabel("Mã lớp hành chính", { exact: true }).fill(`${tag}-EXHC`);
+    await homeroom.getByLabel("Tên lớp hành chính", { exact: true }).fill("Lớp hành chính kiểm thử");
+    await homeroom.getByRole("button", { name: "Tạo lớp hành chính", exact: true }).click();
+    await expect(homeroom.getByRole("status")).toHaveText("Đã tạo lớp hành chính.");
+    const semesterForm = page.locator("section.card").filter({ has: page.getByRole("heading", { name: "Thêm học kỳ", exact: true }) });
+    await semesterForm.getByLabel("Tên học kỳ", { exact: true }).fill(`${tag}-EX`);
+    await semesterForm.getByLabel("Ngày bắt đầu học kỳ", { exact: true }).fill("2026-01-01");
+    await semesterForm.getByLabel("Ngày kết thúc học kỳ", { exact: true }).fill("2027-01-01");
+    await semesterForm.getByRole("button", { name: "Tạo học kỳ", exact: true }).click();
+    await expect(semesterForm.getByRole("status")).toHaveText("Đã tạo học kỳ.");
     await page.goto("/admin/classes/new");
     async function fillClass(name: string, code: string) {
       await page.getByLabel("Mã học phần", { exact: true }).fill(tag);
       await page.getByLabel("Tên học phần", { exact: true }).fill(name);
-      await page.getByLabel("Mã lớp", { exact: true }).fill(code);
+      await page.getByLabel("Mã lớp học phần", { exact: true }).fill(code);
       await page.getByRole("combobox", { name: "Học kỳ", exact: true }).selectOption(semesterId);
       await page.getByRole("combobox", { name: "Giảng viên", exact: true }).selectOption(lecturerId);
       await page.getByRole("button", { name: "Tạo lớp học phần", exact: true }).click();
@@ -55,11 +81,14 @@ test.describe("trang học vụ và ghi danh", () => {
     await page.getByLabel("Mã sinh viên", { exact: true }).fill(tag);
     await page.getByLabel("Email", { exact: true }).fill(studentEmail);
     await page.getByLabel("Mật khẩu khởi tạo", { exact: true }).fill(password);
-    await page.getByRole("combobox", { name: "Ghi danh vào lớp", exact: true }).selectOption(courseClass.id);
-    await page.getByRole("button", { name: "Tạo và ghi danh sinh viên", exact: true }).click();
-    await expect(page.getByRole("status")).toHaveText("Đã tạo tài khoản sinh viên và ghi danh thành công.");
+    await page.getByRole("combobox", { name: "Khoa", exact: true }).selectOption(facultyId);
+    await page.getByRole("combobox", { name: "Lớp hành chính", exact: true }).selectOption(academicClassId);
+    await page.locator(`input[name="courseClassIds"][value="${courseClass.id}"]`).check();
+    await page.getByRole("button", { name: "Tạo sinh viên", exact: true }).click();
+    await expect(page.getByRole("status")).toHaveText("Đã tạo sinh viên thành công.");
     const student = await db.studentProfile.findUniqueOrThrow({ where: { studentCode: tag }, include: { user: { include: { roles: true } }, enrollments: true } });
     expect(student.user.roles.map(r => r.role)).toEqual(["STUDENT"]);
     expect(student.enrollments.map(e => e.classId)).toEqual([courseClass.id]);
+    expect(student.academicClassId).toBe(academicClassId);
   });
 });
