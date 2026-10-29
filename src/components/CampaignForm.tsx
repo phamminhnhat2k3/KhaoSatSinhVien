@@ -1,9 +1,16 @@
 "use client";
-import { startTransition, useActionState, useState } from "react";
+import { startTransition, useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createCampaign, publishCampaign } from "@/app/admin/actions";
 
 type Option = { id: string; label: string };
 export function CampaignForm({ faculties, semesters, templates, courses }: { faculties: Option[]; semesters: Option[]; templates: Option[]; courses: (Option & { semesterIds: string[]; facultyId: string | null })[] }) {
+  const router = useRouter();
+  useEffect(() => {
+    const refresh = () => router.refresh();
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
+  }, [router]);
   const [error, action, pending] = useActionState(createCampaign, undefined);
   const [faculty, setFaculty] = useState("");
   const [scope, setScope] = useState("FACULTY");
@@ -12,6 +19,8 @@ export function CampaignForm({ faculties, semesters, templates, courses }: { fac
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" });
   const nextMonth = new Date(Date.now() + 30 * 86400000).toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" });
   return <form className="stack" method="post" onSubmit={e => { e.preventDefault(); const data = new FormData(e.currentTarget); startTransition(() => action(data)); }}>
+    <div className="actions"><a className="button secondary" href="/admin/templates/new" target="_blank" rel="noopener noreferrer">Tạo mẫu khảo sát mới ↗</a><button className="button secondary" type="button" onClick={() => router.refresh()}>Cập nhật danh sách mẫu</button></div>
+    <p className="muted">Tạo mẫu ở tab mới để giữ thông tin đợt đang nhập. Khi quay lại, danh sách mẫu sẽ tự cập nhật; bạn cũng có thể bấm Cập nhật danh sách mẫu.</p>
     <label className="field">Tên đợt khảo sát<input className="input" name="title" required minLength={3} maxLength={120} placeholder="Đánh giá chất lượng học kỳ"/></label>
     <label className="field">Phạm vi khảo sát<select className="input" name="scope" value={scope} onChange={e => { setScope(e.target.value); setCourseTemplate(""); }}><option value="FACULTY">Theo khoa</option><option value="UNIVERSITY">Toàn trường</option></select></label>
     <label className="field">Học kỳ khảo sát<select className="input" name="semesterId" value={semester} onChange={e => setSemester(e.target.value)} required><option value="">Chọn học kỳ</option>{semesters.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}</select></label>
