@@ -10,13 +10,13 @@ test.describe("trang học vụ và ghi danh", () => {
   test.use({ actionTimeout: 15000 });
   const tag = `ACA-${randomUUID().slice(0, 8)}`.toUpperCase(), password = randomUUID();
   const adminEmail = `${tag}-admin@example.invalid`, studentEmail = `${tag}-student@example.invalid`;
-  let db: PrismaClient, adminId: string, lecturerId: string, lecturerUserId: string, semesterId: string, facultyId: string, academicClassId: string;
+  let db: PrismaClient, adminId: string, lecturerUserId: string, semesterId: string, facultyId: string, academicClassId: string;
   test.beforeAll(async () => {
     loadEnvFile(".env"); db = new PrismaClient();
     const passwordHash = await hash(password);
     adminId = (await db.user.create({ data: { name: tag, email: adminEmail, passwordHash, roles: { create: { role: "ADMIN" } } } })).id;
     const teacher = await db.user.create({ data: { name: tag, email: `${tag}-lecturer@example.invalid`, passwordHash, roles: { create: { role: "LECTURER" } }, lecturer: { create: { lecturerCode: tag } } }, include: { lecturer: true } });
-    lecturerUserId = teacher.id; lecturerId = teacher.lecturer!.id;
+    lecturerUserId = teacher.id;
     semesterId = (await db.semester.create({ data: { name: tag, startsAt: new Date("2026-01-01"), endsAt: new Date("2027-01-01") } })).id;
     facultyId = (await db.faculty.create({ data: { code: tag, name: `Khoa ${tag}` } })).id;
     academicClassId = (await db.academicClass.create({ data: { code: tag, name: tag, facultyId } })).id;
@@ -67,7 +67,9 @@ test.describe("trang học vụ và ghi danh", () => {
       await page.getByLabel("Tên học phần", { exact: true }).fill(name);
       await page.getByLabel("Mã lớp học phần", { exact: true }).fill(code);
       await page.getByRole("combobox", { name: "Học kỳ", exact: true }).selectOption(semesterId);
-      await page.getByRole("combobox", { name: "Giảng viên", exact: true }).selectOption(lecturerId);
+      await page.getByRole("combobox", { name: "Khoa", exact: true }).selectOption(facultyId);
+      await page.getByRole("combobox", { name: "Hệ đào tạo", exact: true }).selectOption("PART_TIME");
+      await page.getByLabel("Sĩ số", { exact: true }).fill("40");
       await page.getByRole("button", { name: "Tạo lớp học phần", exact: true }).click();
     }
     await fillClass(`Học phần ${tag}`, `${tag}.01`);
@@ -89,6 +91,9 @@ test.describe("trang học vụ và ghi danh", () => {
     const student = await db.studentProfile.findUniqueOrThrow({ where: { studentCode: tag }, include: { user: { include: { roles: true } }, enrollments: true } });
     expect(student.user.roles.map(r => r.role)).toEqual(["STUDENT"]);
     expect(student.enrollments.map(e => e.classId)).toEqual([courseClass.id]);
+    expect(courseClass.lecturerId).toBeNull();
+    expect(courseClass.capacity).toBe(40);
+    expect(courseClass.educationSystem).toBe("PART_TIME");
     expect(student.academicClassId).toBe(academicClassId);
   });
 });

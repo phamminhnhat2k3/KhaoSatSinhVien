@@ -11,6 +11,7 @@ enum Role {
   STUDENT
   LECTURER
   ADMIN
+  DEAN
 }
 
 enum QuestionType {
@@ -40,6 +41,8 @@ enum SurveyScope {
 }
 
 model Faculty {
+  lecturers LecturerProfile[]
+  courses Course[]
   id String @id @default(cuid())
   code String @unique
   name String
@@ -92,6 +95,9 @@ model StudentProfile {
 }
 
 model LecturerProfile {
+  facultyId String?
+  faculty Faculty? @relation(fields: [facultyId], references: [id])
+  courses Course[]
   id          String @id @default(cuid())
   lecturerCode String @unique
   userId      String @unique
@@ -109,6 +115,9 @@ model Semester {
 }
 
 model Course {
+  facultyId String?
+  faculty Faculty? @relation(fields: [facultyId], references: [id])
+  lecturers LecturerProfile[]
   id      String @id @default(cuid())
   code    String @unique
   name    String
@@ -119,14 +128,16 @@ model Course {
 }
 
 model CourseClass {
+  educationSystem String @default("REGULAR")
+  capacity Int @default(50)
   id          String @id @default(cuid())
   code        String @unique
   courseId    String
   semesterId  String
-  lecturerId  String
+  lecturerId  String?
   course      Course @relation(fields: [courseId], references: [id])
   semester    Semester @relation(fields: [semesterId], references: [id])
-  lecturer    LecturerProfile @relation(fields: [lecturerId], references: [id])
+  lecturer    LecturerProfile? @relation(fields: [lecturerId], references: [id], onDelete: Restrict)
   enrollments Enrollment[]
   targets     SurveyTarget[]
 }
@@ -175,6 +186,9 @@ model QuestionOption {
 }
 
 model SurveyCampaign {
+  approvedAt DateTime?
+  approvedBy String?
+  reviewNote String? @db.Text
   id          String @id @default(cuid())
   title       String
   templateId  String

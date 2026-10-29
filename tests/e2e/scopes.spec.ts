@@ -23,7 +23,7 @@ test.describe("khảo sát khoa / toàn trường và danh sách sinh viên", ()
     semesterId = (await db.semester.create({ data: { name: `${tag} Học kỳ 1`, startsAt: new Date("2026-01-01"), endsAt: new Date("2027-01-01") } })).id;
     const previous = await db.semester.create({ data: { name: `${tag} Học kỳ cũ`, startsAt: new Date("2025-01-01"), endsAt: new Date("2025-12-31") } });
     for (const letter of ["A", "B", "C", "D", "E"]) {
-      const c = await db.course.create({ data: { code: `${tag}-${letter}`, name: `Môn ${letter}` } });
+      const c = await db.course.create({ data: { code: `${tag}-${letter}`, name: `Môn ${letter}`, facultyId } });
       courses[letter] = { id: c.id, classId: (await db.courseClass.create({ data: { code: `${tag}-${letter}.01`, courseId: c.id, semesterId, lecturerId: teacher.lecturer!.id } })).id };
     }
     for (let i = 0; i < 5; i++) {

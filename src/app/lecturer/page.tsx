@@ -6,9 +6,10 @@ import { getCampaignReport } from "@/modules/reporting/service";
 
 export default async function LecturerPage({ searchParams }: { searchParams: Promise<{ campaign?: string }> }) {
   const user = await requireUser(Role.LECTURER);
+  if (user.roles.includes("DEAN")) { const { redirect } = await import("next/navigation"); redirect("/dean"); }
   const lecturer = await db.lecturerProfile.findUniqueOrThrow({ where: { userId: user.id } });
-  const related = await db.surveyCampaign.findMany({ where: { OR: [{ targets: { some: { class: { lecturerId: lecturer.id } } } }, { courseTargets: { some: { course: { classes: { some: { lecturerId: lecturer.id } } } } } }] }, include: { faculty: true, courseTargets: { include: { course: { include: { classes: { select: { lecturerId: true, semesterId: true } } } } } }, targets: { include: { class: { include: { course: true } } } }, _count: { select: { submissions: true } } }, orderBy: { createdAt: "desc" } });
-  const campaigns = related.filter(c => c.scope === "LEGACY_CLASS" || c.courseTargets.some(t => t.course.classes.some(x => x.lecturerId === lecturer.id && x.semesterId === c.semesterId)));
+  const related = await db.surveyCampaign.findMany({ where: { OR: [{ courseTargets: { some: { course: { lecturers: { some: { id: lecturer.id } } } } } }, { targets: { some: { class: { lecturerId: lecturer.id } } } }, { courseTargets: { some: { course: { classes: { some: { lecturerId: lecturer.id } } } } } }] }, include: { faculty: true, courseTargets: { include: { course: { include: { lecturers: { select: { id: true } }, classes: { select: { lecturerId: true, semesterId: true } } } } } }, targets: { include: { class: { include: { course: true } } } }, _count: { select: { submissions: true } } }, orderBy: { createdAt: "desc" } });
+  const campaigns = related.filter(c => c.scope === "LEGACY_CLASS" || c.courseTargets.some(t => t.course.lecturers.some(l => l.id === lecturer.id) || t.course.classes.some(x => x.lecturerId === lecturer.id && x.semesterId === c.semesterId)));
   const selected = (await searchParams).campaign;
   let report: Awaited<ReturnType<typeof getCampaignReport>> | undefined;
   let reportError: string | undefined;

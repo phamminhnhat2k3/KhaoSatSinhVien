@@ -16,3 +16,15 @@ test("thông báo công bố gửi đúng vai trò, không trùng giảng viên 
   expect(rows.map((r: { href: string }) => r.href)).toEqual(["/student", "/lecturer", "/admin"]);
   expect(rows.every((r: { body: string }) => !r.body.includes("student"))).toBe(true);
 });
+
+test("lớp không có giảng viên vẫn thông báo theo môn và trưởng khoa", async () => {
+  const tx = {
+    surveyCampaign: { findUniqueOrThrow: vi.fn().mockResolvedValue({ title: "Khoa", facultyId: "f", semesterId: "s", startsAt: new Date(), endsAt: new Date(), participations: [], targets: [{ class: { lecturer: null } }], courseTargets: [{ course: { classes: [{ semesterId: "s", lecturer: null }], lecturers: [{ userId: "teacher" }] } }] }) },
+    lecturerProfile: { findMany: vi.fn().mockResolvedValue([{ userId: "dean" }]) },
+    notification: { createMany: vi.fn() }
+  };
+  await notifyCampaign(tx as never, "campaign", "admin", "PUBLISHED");
+  const rows = tx.notification.createMany.mock.calls[0][0].data;
+  expect(rows.map((r: { userId: string; href: string }) => [r.userId, r.href])).toEqual([["teacher", "/lecturer"], ["dean", "/dean"], ["admin", "/admin"]]);
+  expect(tx.lecturerProfile.findMany.mock.calls[0][0].where.facultyId).toBe("f");
+});

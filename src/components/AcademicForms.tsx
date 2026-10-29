@@ -5,13 +5,15 @@ import { createCourseClass, createStudent } from "@/app/admin/actions";
 
 type Option = { id: string; label: string };
 
-export function CourseClassForm({ semesters, lecturers }: { semesters: Option[]; lecturers: Option[] }) {
+export function CourseClassForm({ semesters, faculties }: { semesters: Option[]; faculties: Option[] }) {
   const [error, action, pending] = useActionState(createCourseClass, undefined);
   return <form action={action} className="stack">
     <div className="grid" style={{marginTop: 0}}><label className="field">Mã học phần<input className="input" name="courseCode" required placeholder="SE401" /></label><label className="field">Tên học phần<input className="input" name="courseName" required placeholder="Kiến trúc phần mềm" /></label></div>
     <label className="field">Mã lớp học phần<input className="input" name="classCode" required placeholder="SE401.02" /></label>
     <label className="field">Học kỳ<select className="input" name="semesterId" required><option value="">Chọn học kỳ</option>{semesters.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
-    <label className="field">Giảng viên<select className="input" name="lecturerId" required><option value="">Chọn giảng viên</option>{lecturers.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+    <label className="field">Khoa<select className="input" name="facultyId" required><option value="">Chọn khoa</option>{faculties.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}</select></label>
+    <label className="field">Hệ đào tạo<select className="input" name="educationSystem"><option value="REGULAR">Chính quy</option><option value="PART_TIME">Vừa học vừa làm</option><option value="DISTANCE">Đào tạo từ xa</option></select></label>
+    <label className="field">Sĩ số<input className="input" name="capacity" type="number" min={1} max={10000} defaultValue={50} required/></label>
     {error && <p className="error" role="alert">{error}</p>}<button className="button" disabled={pending}>{pending ? "Đang tạo…" : "Tạo lớp học phần"}</button>
   </form>;
 }

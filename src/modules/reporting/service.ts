@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { average, ensureReportAvailable, participationRate } from "./report";
 
-export async function getCampaignReport(db: PrismaClient, campaignId: string, lecturerId?: string) {
+export async function getCampaignReport(db: PrismaClient, campaignId: string, lecturerId?: string, facultyId?: string) {
   const campaign = await db.surveyCampaign.findUnique({
     where: { id: campaignId },
     include: {
@@ -10,13 +10,14 @@ export async function getCampaignReport(db: PrismaClient, campaignId: string, le
       submissions: { include: { answers: true } },
       template: { include: { questions: { include: { options: true }, orderBy: { position: "asc" } } } },
       courseTemplate: { include: { questions: { include: { options: true }, orderBy: { position: "asc" } } } },
-      courseTargets: { include: { course: { include: { classes: { select: { lecturerId: true, semesterId: true } } } } } },
+      courseTargets: { include: { course: { include: { lecturers: { select: { id: true } }, classes: { select: { lecturerId: true, semesterId: true } } } } } },
       targets: { include: { class: { include: { course: true } } } }
     }
   });
   if (!campaign) throw new Error("Không tìm thấy báo cáo trong phạm vi được phân công.");
+  if (facultyId && (campaign.scope !== "FACULTY" || campaign.facultyId !== facultyId)) throw new Error("Không tìm thấy báo cáo trong khoa được phân công.");
   const legacy = campaign.scope === "LEGACY_CLASS";
-  const targets = campaign.courseTargets.filter(t => !lecturerId || t.course.classes.some(c => c.lecturerId === lecturerId && c.semesterId === campaign.semesterId));
+  const targets = campaign.courseTargets.filter(t => !lecturerId || t.course.lecturers?.some(l => l.id === lecturerId) || t.course.classes.some(c => c.lecturerId === lecturerId && c.semesterId === campaign.semesterId));
   if (lecturerId && (legacy ? !campaign.targets.some(t => t.class.lecturerId === lecturerId) : !targets.length)) throw new Error("Không tìm thấy báo cáo trong phạm vi được phân công.");
   const allowedCourses = new Set(targets.map(t => t.courseId));
   const participants = lecturerId && !legacy ? campaign.participations.filter(p => p.courses.some(c => allowedCourses.has(c.courseId))) : campaign.participations;

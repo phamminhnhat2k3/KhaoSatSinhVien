@@ -1,0 +1,10 @@
+ALTER TABLE `UserRole` MODIFY `role` ENUM('STUDENT','LECTURER','ADMIN','DEAN') NOT NULL;
+ALTER TABLE `LecturerProfile` ADD `facultyId` VARCHAR(191) NULL;
+ALTER TABLE `Course` ADD `facultyId` VARCHAR(191) NULL;
+ALTER TABLE `CourseClass` MODIFY `lecturerId` VARCHAR(191) NULL, ADD `educationSystem` VARCHAR(191) NOT NULL DEFAULT 'REGULAR', ADD `capacity` INTEGER NOT NULL DEFAULT 50;
+ALTER TABLE `SurveyCampaign` ADD `approvedAt` DATETIME(3) NULL, ADD `approvedBy` VARCHAR(191) NULL, ADD `reviewNote` TEXT NULL;
+ALTER TABLE `LecturerProfile` ADD CONSTRAINT `LecturerProfile_facultyId_fkey` FOREIGN KEY (`facultyId`) REFERENCES `Faculty`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `Course` ADD CONSTRAINT `Course_facultyId_fkey` FOREIGN KEY (`facultyId`) REFERENCES `Faculty`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+CREATE TABLE `_CourseToLecturerProfile` (`A` VARCHAR(191) NOT NULL, `B` VARCHAR(191) NOT NULL, UNIQUE INDEX `_CourseToLecturerProfile_AB_unique`(`A`,`B`), INDEX `_CourseToLecturerProfile_B_index`(`B`)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+ALTER TABLE `_CourseToLecturerProfile` ADD CONSTRAINT `_CourseToLecturerProfile_A_fkey` FOREIGN KEY (`A`) REFERENCES `Course`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `_CourseToLecturerProfile` ADD CONSTRAINT `_CourseToLecturerProfile_B_fkey` FOREIGN KEY (`B`) REFERENCES `LecturerProfile`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

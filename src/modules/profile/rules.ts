@@ -1,5 +1,5 @@
 import { z } from "zod";
-export const roleLabels = { ADMIN: "Quản trị viên", LECTURER: "Giảng viên", STUDENT: "Sinh viên" };
+export const roleLabels = { ADMIN: "Quản trị viên", DEAN: "Trưởng khoa", LECTURER: "Giảng viên", STUDENT: "Sinh viên" };
 export const profileSchema = z.object({
   name: z.string().trim().min(2, "Họ tên cần ít nhất 2 ký tự.").max(100),
   phone: z.string().trim().max(20).refine(v => !v || /^\+?[\d ()-]{8,20}$/.test(v), "Số điện thoại không hợp lệ."),

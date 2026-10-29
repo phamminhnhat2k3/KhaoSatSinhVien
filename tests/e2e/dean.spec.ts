@@ -1,0 +1,61 @@
+import { test, expect, type Page } from "@playwright/test";
+import { PrismaClient } from "@prisma/client";
+import { hash } from "argon2";
+import { randomUUID } from "node:crypto";
+test.use({ actionTimeout: 15000 });
+test("admin bổ nhiệm trưởng khoa; xét duyệt và quản lý đúng khoa", async ({ page }) => {
+  test.skip(!process.env.ISOLATED_FEATURE_DB, "Chỉ chạy database nghiệm thu riêng");
+  test.setTimeout(120000);
+  const db = new PrismaClient();
+  const tag = `DEAN-${randomUUID().slice(0,6)}`, password = randomUUID();
+  async function login(p: Page, email: string) {
+    await p.context().clearCookies(); await p.goto("/login");
+    await p.getByLabel("Email", { exact: true }).fill(email);
+    await p.getByLabel("Mật khẩu", { exact: true }).fill(password);
+    await p.getByRole("button", { name: "Đăng nhập", exact: true }).click();
+    await p.waitForURL(/\/(admin|dean|lecturer)$/);
+  }
+  try {
+    const faculty = await db.faculty.create({ data: { code: tag, name: tag } });
+    const other = await db.faculty.create({ data: { code: `${tag}-OTHER`, name: `${tag} khác` } });
+    const passwordHash = await hash(password);
+    const admin = `${tag}-admin@example.invalid`, dean = `${tag}-dean@example.invalid`;
+    await db.user.create({ data: { email: admin, name: tag, passwordHash, roles: { create: { role: "ADMIN" } } } });
+    const course = await db.course.create({ data: { code: tag, name: "Môn trong khoa", facultyId: faculty.id } });
+    const template = await db.surveyTemplate.create({ data: { title: tag, questions: { create: { content: "Chất lượng", type: "SCALE", position: 1 } } } });
+    const campaign = await db.surveyCampaign.create({ data: { title: tag, scope: "FACULTY", facultyId: faculty.id, templateId: template.id, startsAt: new Date("2026-01-01"), endsAt: new Date("2027-01-01") } });
+    const foreign = await db.surveyCampaign.create({ data: { title: `${tag}-PRIVATE`, scope: "FACULTY", facultyId: other.id, templateId: template.id, startsAt: new Date(), endsAt: new Date() } });
+    await login(page, admin); await page.goto("/admin/lecturers");
+    const form = page.locator("section.card").filter({ has: page.getByRole("heading", { name: "Thêm giảng viên", exact: true }) });
+    await form.getByLabel("Họ tên", { exact: true }).fill("Trưởng khoa kiểm thử");
+    await form.getByLabel("Email", { exact: true }).fill(dean);
+    await form.getByLabel("Mã giảng viên", { exact: true }).fill(tag);
+    await form.getByRole("combobox", { name: "Khoa", exact: true }).selectOption(faculty.id);
+    await form.getByLabel("Mật khẩu khởi tạo", { exact: true }).fill(password);
+    await form.locator(`input[name=courseIds][value="${course.id}"]`).check();
+    await form.getByLabel("Cấp quyền Trưởng khoa").check();
+    await form.getByRole("button", { name: "Lưu giảng viên" }).click();
+    await expect(form.getByRole("status")).toHaveText("Đã lưu giảng viên.");
+    await login(page, dean); await expect(page).toHaveURL(/\/dean$/);
+    await expect(page.getByRole("heading", { name: tag, exact: true }).first()).toBeVisible();
+    await expect(page.getByText(`${tag}-PRIVATE`, { exact: true })).toHaveCount(0);
+    await page.getByRole("button", { name: "Lưu xét duyệt", exact: true }).click();
+    await expect(page.getByText(/Đã duyệt/)).toBeVisible();
+    expect((await db.surveyCampaign.findUniqueOrThrow({ where: { id: campaign.id } })).approvedAt).not.toBeNull();
+    await page.screenshot({ path: ".playwright-cli/dean-dashboard.png", fullPage: true });
+    const response = await page.request.get(`/api/reports/campaigns/${foreign.id}`);
+    expect(response.ok()).toBe(false);
+    await page.goto("/admin/lecturers");
+    await expect(page.getByLabel("Cấp quyền Trưởng khoa")).toHaveCount(0);
+    await expect(page.getByRole("combobox", { name: "Khoa", exact: true }).first().locator("option")).toHaveCount(2);
+    await form.getByLabel("Họ tên", { exact: true }).fill("Giảng viên thường");
+    await form.getByLabel("Email", { exact: true }).fill(`${tag}-regular@example.invalid`);
+    await form.getByLabel("Mã giảng viên", { exact: true }).fill(`${tag}-R`);
+    await form.getByRole("combobox", { name: "Khoa", exact: true }).selectOption(faculty.id);
+    await form.getByLabel("Mật khẩu khởi tạo", { exact: true }).fill(password);
+    await form.getByRole("button", { name: "Lưu giảng viên" }).click();
+    await expect(form.getByRole("status")).toHaveText("Đã lưu giảng viên.");
+    await login(page, `${tag}-regular@example.invalid`); await expect(page).toHaveURL(/\/lecturer$/);
+    await page.goto("/dean"); await expect(page).toHaveURL(/\/unauthorized$/);
+  } finally { await db.$disconnect(); }
+});

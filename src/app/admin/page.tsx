@@ -14,10 +14,10 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     <p className="eyebrow">Trung tâm điều hành</p><h1>Quản lý khảo sát</h1><p className="lead">Thiết kế câu hỏi, tổ chức đợt khảo sát và quản lý dữ liệu học vụ.</p>
     {(await searchParams).created && <p className="notice" role="status">Đã tạo đợt ở trạng thái nháp. Kiểm tra trước khi công bố.</p>}
     <section className="grid"><article className="card"><span className="muted">Người dùng</span><div className="stat">{users}</div></article><article className="card"><span className="muted">Mẫu khảo sát</span><div className="stat">{templates}</div></article><article className="card"><span className="muted">Đợt đang mở</span><div className="stat">{campaigns.filter(c => c.status === "PUBLISHED").length}</div></article></section>
-    <div className="section-heading"><h2>Không gian làm việc</h2><div className="actions"><Link className="button secondary" href="/admin/students">Tất cả sinh viên</Link><Link className="button secondary" href="/admin/academic">Khoa / Lớp hành chính / Học kỳ</Link></div></div><div className="grid">{[
+    <div className="section-heading"><h2>Không gian làm việc</h2><Link className="button secondary" href="/admin/lecturers">Giảng viên / Trưởng khoa</Link><div className="actions"><Link className="button secondary" href="/admin/students">Tất cả sinh viên</Link><Link className="button secondary" href="/admin/academic">Khoa / Lớp hành chính / Học kỳ</Link></div></div><div className="grid">{[
       ["/admin/templates/new", "01", "Tạo mẫu khảo sát", "Kéo thả câu hỏi, cấu hình thang điểm và xem trước."],
       ["/admin/campaigns/new", "02", "Tạo đợt mới", "Khảo sát theo khoa hoặc toàn trường trong học kỳ."],
-      ["/admin/classes/new", "03", "Tạo học phần và lớp học phần", "Đăng ký môn học theo học kỳ và giảng viên phụ trách."],
+      ["/admin/classes/new", "03", "Tạo học phần và lớp học phần", "Môn, khoa, học kỳ, hệ đào tạo và sĩ số."],
       ["/admin/students/new", "04", "Thêm sinh viên", "Phân khoa/lớp hành chính và đăng ký môn học riêng."]
     ].map(([href, number, title, desc]) => <Link className="card workspace-link" key={href} href={href}><span className="eyebrow">{number} / QUẢN TRỊ</span><h3>{title}</h3><p className="muted">{desc}</p><span className="text-button">Mở trang →</span></Link>)}</div>
     <div className="section-heading"><h2>Các đợt khảo sát</h2><Link className="text-button" href="/admin/templates">Thư viện mẫu →</Link></div>

@@ -13,18 +13,19 @@ import { campaignSchema } from "@/modules/survey-campaign/input";
 import { publishToAudience } from "@/modules/survey-campaign/audience";
 import { studentSchema } from "@/modules/academic/students";
 
-const courseClassSchema = z.object({ courseCode: z.string().trim().min(2).max(20).transform(normalizeAcademicCode), courseName: z.string().trim().min(3).max(120), classCode: z.string().trim().min(2).max(30).transform(normalizeAcademicCode), semesterId: z.string().min(1), lecturerId: z.string().min(1) });
+const courseClassSchema = z.object({ courseCode: z.string().trim().min(2).max(20).transform(normalizeAcademicCode), courseName: z.string().trim().min(3).max(120), classCode: z.string().trim().min(2).max(30).transform(normalizeAcademicCode), semesterId: z.string().min(1), facultyId: z.string().min(1), educationSystem: z.enum(["REGULAR", "PART_TIME", "DISTANCE"]), capacity: z.coerce.number().int().min(1).max(10000) });
 
 export async function createCourseClass(_: string | undefined, formData: FormData) {
   const user = await requireUser(Role.ADMIN);
   const parsed = courseClassSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return "Kiểm tra mã, tên học phần, lớp, học kỳ và giảng viên.";
+  if (!parsed.success) return "Kiểm tra mã, tên môn, lớp, học kỳ, khoa, hệ đào tạo và sĩ số.";
   try {
     await db.$transaction(async tx => {
       const existing = await tx.course.findUnique({ where: { code: parsed.data.courseCode } });
       if (existing && existing.name !== parsed.data.courseName) throw new Error("Mã học phần đã có tên khác. Vui lòng sử dụng đúng tên học phần hiện có.");
-      const course = existing ?? await tx.course.create({ data: { code: parsed.data.courseCode, name: parsed.data.courseName } });
-      const item = await tx.courseClass.create({ data: { code: parsed.data.classCode, courseId: course.id, semesterId: parsed.data.semesterId, lecturerId: parsed.data.lecturerId } });
+      if (existing?.facultyId && existing.facultyId !== parsed.data.facultyId) throw new Error("Mã học phần thuộc khoa khác.");
+      const course = existing ? await tx.course.update({ where: { id: existing.id }, data: { facultyId: parsed.data.facultyId } }) : await tx.course.create({ data: { code: parsed.data.courseCode, name: parsed.data.courseName, facultyId: parsed.data.facultyId } });
+      const item = await tx.courseClass.create({ data: { code: parsed.data.classCode, courseId: course.id, semesterId: parsed.data.semesterId, educationSystem: parsed.data.educationSystem, capacity: parsed.data.capacity } });
       await tx.auditLog.create({ data: { actorId: user.id, action: "CREATE", entity: "CourseClass", entityId: item.id } });
     });
   } catch (e) { return e instanceof Error && e.message.startsWith("Mã học phần") ? e.message : "Không thể tạo lớp. Kiểm tra mã lớp trùng hoặc học kỳ, giảng viên đã thay đổi."; }
@@ -56,10 +57,14 @@ export async function createCampaign(_: string | undefined, formData: FormData) 
     await db.$transaction(async tx => {
       const { courseIds, facultyId, courseTemplateId, ...data } = parsed.data;
       const ids = [...new Set(courseIds)];
-      const matching = await tx.course.count({ where: { id: { in: ids }, classes: { some: { semesterId: data.semesterId } } } });
+      const matching = await tx.course.count({ where: { id: { in: ids }, ...(data.scope === "FACULTY" ? { facultyId } : {}), classes: { some: { semesterId: data.semesterId } } } });
       if (matching !== ids.length) throw new Error("Môn học phải có lớp học phần trong học kỳ đã chọn.");
       const campaign = await tx.surveyCampaign.create({ data: { ...data, facultyId: facultyId || null, courseTemplateId: courseTemplateId || null, courseTargets: { create: ids.map(courseId => ({ courseId })) } } });
       await tx.auditLog.create({ data: { actorId: user.id, action: "CREATE", entity: "SurveyCampaign", entityId: campaign.id } });
+      if (facultyId) {
+        const deans = await tx.lecturerProfile.findMany({ where: { facultyId, user: { active: true, roles: { some: { role: "DEAN" } } } }, select: { userId: true } });
+        await tx.notification.createMany({ data: deans.map(d => ({ userId: d.userId, title: "Đợt khảo sát chờ xét duyệt", body: campaign.title, href: "/dean" })) });
+      }
     });
   } catch { return "Chưa tạo được đợt. Kiểm tra khoa, học kỳ, mẫu và môn học thuộc học kỳ đã chọn."; }
   revalidatePath("/admin"); redirect("/admin?created=1");

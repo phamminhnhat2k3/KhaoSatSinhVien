@@ -9,6 +9,6 @@ export async function requireUser(role?: Role) {
   const user = await db.user.findUnique({ where: { id: session.user.id }, include: { roles: true } });
   if (!user?.active) redirect("/login");
   const roles = user.roles.map(r => r.role);
-  if (role && !roles.includes(role)) redirect("/unauthorized");
+  if (role && !roles.includes(role) && !(role === "DEAN" && roles.includes("ADMIN"))) redirect("/unauthorized");
   return { id: user.id, name: user.name, email: user.email, roles };
 }
