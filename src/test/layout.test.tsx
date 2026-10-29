@@ -7,6 +7,7 @@ import { expect, test, vi } from "vitest";
 import { AppShell } from "@/components/AppShell";
 
 vi.mock("@/app/actions", () => ({ logoutAction: async () => {} }));
+vi.mock("next/navigation", () => ({ usePathname: () => "/student", useRouter: () => ({ push: vi.fn() }) }));
 
 test("khung trang hiển thị tiếng Việt, điều hướng và co giãn không tràn ngang", async () => {
   const browser = await chromium.launch();
@@ -15,7 +16,7 @@ test("khung trang hiển thị tiếng Việt, điều hướng và co giãn kh�
     await page.route("http://layout.test/hcm-ute-logo.png", route => route.fulfill({ path: resolve("public/hcm-ute-logo.png"), contentType: "image/png" }));
     await page.route("http://layout.test/", route => route.fulfill({ contentType: "text/html", body: "<html></html>" }));
     await page.goto("http://layout.test/");
-    const css = readFileSync(resolve("src/app/globals.css"), "utf8").replace('@import "tailwindcss";', "");
+    const css = readFileSync(resolve("src/app/globals.css"), "utf8").replace('@import "tailwindcss";', "") + readFileSync(resolve("src/app/management.css"), "utf8");
     const html = renderToStaticMarkup(createElement(AppShell, { name: "Nguyễn Minh Nhật", role: "Sinh viên", children: createElement("div", null,
       createElement("p", { className: "eyebrow" }, "Không gian của bạn"),
       createElement("h1", null, "Ý kiến của bạn tạo nên thay đổi."),

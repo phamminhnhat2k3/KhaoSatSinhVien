@@ -9,7 +9,7 @@ import { canManageFaculty } from "@/modules/academic/permissions";
 export async function saveLecturer(_: string | undefined, form: FormData) {
   const actor = await requireUser();
   const own = await db.lecturerProfile.findUnique({ where: { userId: actor.id } });
-  const parsed = z.object({ id: z.string(), name: z.string().trim().min(2).max(120), email: z.email(), lecturerCode: z.string().trim().min(2).max(30), facultyId: z.string().min(1), password: z.string().max(100) }).safeParse(Object.fromEntries(form));
+  const parsed = z.object({ id: z.string(), phone: z.string().trim().max(30).default(""), name: z.string().trim().min(2).max(120), email: z.email(), lecturerCode: z.string().trim().min(2).max(30), facultyId: z.string().min(1), password: z.string().max(100) }).safeParse(Object.fromEntries(form));
   if (!parsed.success) return "Kiểm tra thông tin giảng viên và khoa.";
   const { id, password, ...data } = parsed.data;
   if (!canManageFaculty(actor.roles, own?.facultyId, data.facultyId)) return "Không có quyền quản lý khoa này.";
@@ -22,7 +22,7 @@ export async function saveLecturer(_: string | undefined, form: FormData) {
       if (previous && (!canManageFaculty(actor.roles, own?.facultyId, previous.facultyId) || (!actor.roles.includes("ADMIN") && previous.user.roles.some(r => r.role === "DEAN")))) throw new Error("FORBIDDEN");
       const courseIds = [...new Set(form.getAll("courseIds").map(String))];
       if (await tx.course.count({ where: { id: { in: courseIds }, facultyId: data.facultyId } }) !== courseIds.length) throw new Error("COURSE");
-      const userData = { name: data.name, email: data.email.toLowerCase() };
+      const userData = { name: data.name, phone: data.phone, email: data.email.toLowerCase() };
       const lecturer = previous ? await tx.lecturerProfile.update({ where: { id }, data: { lecturerCode: data.lecturerCode, faculty: { connect: { id: data.facultyId } }, courses: { set: courseIds.map(id => ({ id })) }, user: { update: userData } } }) : await tx.lecturerProfile.create({ data: { lecturerCode: data.lecturerCode, faculty: { connect: { id: data.facultyId } }, courses: { connect: courseIds.map(id => ({ id })) }, user: { create: { ...userData, passwordHash: await hash(password), roles: { create: { role: "LECTURER" as const } } } } } });
       if (actor.roles.includes("ADMIN")) {
         if (dean) await tx.userRole.upsert({ where: { userId_role: { userId: lecturer.userId, role: "DEAN" } }, create: { userId: lecturer.userId, role: "DEAN" }, update: {} });
@@ -31,6 +31,6 @@ export async function saveLecturer(_: string | undefined, form: FormData) {
       await tx.auditLog.create({ data: { actorId: actor.id, action: previous ? "UPDATE" : "CREATE", entity: "LecturerProfile", entityId: lecturer.id } });
     });
   } catch { return "Không lưu được. Kiểm tra email/mã trùng, khoa, môn học hoặc quyền truy cập."; }
-  revalidatePath("/admin/lecturers"); revalidatePath("/dean");
+  revalidatePath("/admin/lecturers"); revalidatePath("/dean"); revalidatePath("/admin/users");
   return "Đã lưu giảng viên.";
 }

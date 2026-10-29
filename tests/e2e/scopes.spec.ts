@@ -71,16 +71,16 @@ test.describe("khảo sát khoa / toàn trường và danh sách sinh viên", ()
   test("phân phối đúng A/B/C và A/D/E, chốt khi công bố, toàn trường không lọc khoa, lọc sinh viên theo lớp hành chính", async ({ page }) => {
     await login(page, "admin");
     await page.goto(`/admin/students?q=${tag}`);
-    await expect(page.getByRole("heading", { name: "5 sinh viên phù hợp", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "5 người dùng phù hợp", exact: true })).toBeVisible();
     await page.getByRole("combobox", { name: "Lọc theo khoa", exact: true }).selectOption(facultyId);
-    await page.getByRole("button", { name: "Lọc sinh viên", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "4 sinh viên phù hợp", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Lọc người dùng", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "4 người dùng phù hợp", exact: true })).toBeVisible();
     await page.getByRole("combobox", { name: "Lọc theo lớp hành chính", exact: true }).selectOption(classes[1]);
-    await page.getByRole("button", { name: "Lọc sinh viên", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "1 sinh viên phù hợp", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Lọc người dùng", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "1 người dùng phù hợp", exact: true })).toBeVisible();
     await page.goto(`/admin/students?q=${tag}-SV0`);
     await expect(page.locator("main tbody tr")).toHaveCount(1);
-    await page.getByRole("link", { name: "Xem hồ sơ", exact: true }).click();
+    await page.locator(`a[href="/admin/students/${students[0].id}"]`).click();
     await expect(page.getByRole("heading", { name: "Đăng ký môn học", exact: true })).toBeVisible();
     const faculty = await createCampaign(page, "FACULTY", `${tag} Đợt khoa`);
     await expect(page.locator("main")).toContainText("Dự kiến 2 sinh viên");

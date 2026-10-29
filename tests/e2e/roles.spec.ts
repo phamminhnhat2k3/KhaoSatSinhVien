@@ -87,7 +87,7 @@ test.describe("hồ sơ, thông báo và khảo sát xuyên vai trò", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const countResponse = await page.request.get("/api/notifications");
-    expect(await countResponse.json()).toEqual({ unread: 1 });
+    expect(await countResponse.json()).toMatchObject({ unread: 1 });
     expect((await page.request.get("/api/admin/templates")).status()).toBe(403);
     await page.goto(`/student/surveys/${campaign.id}`);
     await page.getByRole("radio", { name: "100", exact: true }).check();

@@ -46,7 +46,7 @@ export async function createStudent(_: string | undefined, formData: FormData) {
       await tx.auditLog.create({ data: { actorId: actor.id, action: "CREATE", entity: "StudentProfile", entityId: user.student!.id } });
     });
   } catch { return "Không thể tạo sinh viên. Email/mã sinh viên có thể trùng, hoặc lớp không còn khả dụng."; }
-  revalidatePath("/admin"); revalidatePath("/admin/students"); redirect("/admin/students?created=1");
+  revalidatePath("/admin"); revalidatePath("/admin/students"); redirect("/admin/users?created=1&role=STUDENT");
 }
 
 export async function createCampaign(_: string | undefined, formData: FormData) {

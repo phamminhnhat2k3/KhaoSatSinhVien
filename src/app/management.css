@@ -1,0 +1,21 @@
+.management-filters { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1rem; }
+.management-dialog { border: 1px solid #dce2e8; border-radius: 16px; width: min(720px, calc(100vw - 32px)); max-height: 90dvh; padding: 24px; color: #172b3a; background: white; }
+.management-dialog::backdrop, .notification-drawer::backdrop { background: rgb(18 31 45 / 35%); }
+.management-dialog .section-heading { margin-top: 0; }
+.management-dialog .option { white-space: normal; }
+.notification-trigger { position: relative; border: 0; background: none; color: inherit; cursor: pointer; font: inherit; }
+.notification-drawer { position: fixed; inset: 0 0 0 auto; margin: 0; border: 0; border-left: 1px solid #dde3ea; width: min(460px, 100vw); max-width: 100vw; height: 100dvh; max-height: 100dvh; padding: 0; background: #f7f9fc; color: #172b3a; }
+.notification-drawer[open] { animation: drawer-in .24s ease-out; }
+.notification-drawer header { position: sticky; top: 0; padding: 20px; background: white; border-bottom: 1px solid #dde3ea; z-index: 1; }
+.notification-drawer header .section-heading { margin: 0 0 12px; }
+.notification-drawer h2 { margin: 0; font-size: 1.35rem; }
+.notification-drawer .notification-list { padding: 16px; display: grid; gap: 12px; }
+.notification-drawer .notification-card { background: white; border: 1px solid #dce2e8; border-radius: 12px; padding: 16px; overflow-wrap: anywhere; }
+.notification-drawer .notification-unread { border-left: 4px solid #0a66c2; }
+.notification-drawer .notification-card h3 { font-size: 1rem; margin: 0 0 8px; }
+.notification-drawer .notification-card p { white-space: pre-wrap; }
+.notification-drawer .notification-card time { font-size: .8rem; color: #637384; }
+.notification-toast { position: fixed; right: 24px; top: 115px; z-index: 1000; width: min(350px, calc(100vw - 32px)); padding: 18px; border: 1px solid #bbd4ee; border-radius: 12px; background: white; box-shadow: 0 8px 28px #172b3a25; color: #172b3a; animation: drawer-in .24s ease-out; }
+@keyframes drawer-in { from { transform: translateX(100%); opacity: .3; } to { transform: translateX(0); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .notification-drawer[open], .notification-toast { animation: none; } }
+@media (max-width: 640px) { .management-filters { grid-template-columns: 1fr; } .management-dialog { padding: 16px; } .notification-toast { right: 16px; } }
