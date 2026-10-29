@@ -78,8 +78,24 @@ test.describe("hồ sơ, thông báo và khảo sát xuyên vai trò", () => {
       await page.goto("/profile");
       await expect(page.getByText(users[index].email, { exact: true })).toBeVisible();
       if (index === 0) {
-        const png = await page.evaluate(() => { const canvas = document.createElement("canvas"); canvas.width = canvas.height = 80; const ctx = canvas.getContext("2d")!; ctx.fillStyle = "#0a66c2"; ctx.fillRect(0,0,80,80); return canvas.toDataURL("image/png").split(",")[1]; });
+        const png = await page.evaluate(() => { const canvas = document.createElement("canvas"); canvas.width = 160; canvas.height = 80; const ctx = canvas.getContext("2d")!; ctx.fillStyle = "#0a66c2"; ctx.fillRect(0,0,40,80); return canvas.toDataURL("image/png").split(",")[1]; });
         await page.getByLabel("Ảnh đại diện", { exact: true }).setInputFiles({ name: "avatar.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") });
+        await expect(page.getByRole("img", {name:"Xem trước ảnh đại diện"})).toBeVisible();
+        await page.getByLabel("Phóng to ảnh", {exact:true}).focus();
+        await page.keyboard.press("End");
+        await expect(page.getByLabel("Phóng to ảnh", {exact:true})).toHaveValue("3");
+        const preview=await page.locator(".avatar-crop").boundingBox();
+        await page.mouse.move(preview!.x+120,preview!.y+120);await page.mouse.down();await page.mouse.move(preview!.x+160,preview!.y+160);await page.mouse.up();
+        expect(Number(await page.getByLabel("Vị trí ngang", {exact:true}).inputValue())).toBeLessThan(0);
+        await page.getByRole("button", {name:"Căn giữa lại",exact:true}).click();
+        await expect(page.getByLabel("Phóng to ảnh", {exact:true})).toHaveValue("1");
+        await expect(page.getByLabel("Vị trí ngang", {exact:true})).toHaveValue("0");
+        await page.getByLabel("Phóng to ảnh", {exact:true}).focus();await page.keyboard.press("Home");
+        await expect(page.getByLabel("Phóng to ảnh", {exact:true})).toHaveValue("0.1");
+        await page.setViewportSize({width:390,height:844});
+        expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+        await page.screenshot({path:".playwright-cli/avatar-crop-mobile.png",fullPage:true});
+        await page.setViewportSize({width:1440,height:1000});
         await page.getByRole("button", { name: "Lưu ảnh đại diện", exact: true }).click();
         await expect(page.getByText("Đã cập nhật ảnh đại diện.", { exact: true })).toBeVisible();
         const avatar = await page.request.get(`/api/avatars?id=${users[0].id}`);
@@ -87,6 +103,7 @@ test.describe("hồ sơ, thông báo và khảo sát xuyên vai trò", () => {
         await page.reload();
         await expect(page.locator(".profile-avatar img")).toBeVisible();
         await expect.poll(()=>page.locator(".profile-avatar img").evaluate((el: HTMLImageElement)=>el.naturalWidth)).toBeGreaterThan(0);
+        await expect(page.locator(".profile-avatar .avatar-initial")).toBeHidden();
       }
       await page.getByLabel("Khoa / đơn vị").fill(`Đơn vị ${index}`);
       await page.getByLabel("Giới thiệu", { exact: true }).fill("Hồ sơ nghiệm thu riêng, không gắn với phản hồi.");

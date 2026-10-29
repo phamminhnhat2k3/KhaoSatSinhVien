@@ -79,7 +79,7 @@ export async function publishCampaign(_: string | undefined, formData: FormData)
       await tx.auditLog.create({ data: { actorId: user.id, action: "PUBLISH", entity: "SurveyCampaign", entityId: id } });
       await notifyCampaign(tx, id, user.id, "PUBLISHED");
     }, { timeout: 30000 });
-  } catch (error) { return error instanceof Error && error.message.startsWith("Chưa có sinh viên") ? error.message : "Không thể công bố. Đợt có thể đã đổi trạng thái hoặc dữ liệu không còn hợp lệ."; }
+  } catch (error) { return error instanceof Error && ["Chưa có sinh viên", "Môn học đã thay đổi", "Phạm vi, khoa"].some(prefix=>error.message.startsWith(prefix)) ? error.message : "Không thể công bố. Đợt có thể đã đổi trạng thái hoặc dữ liệu không còn hợp lệ."; }
   revalidatePath("/admin");
   revalidatePath("/student");
   redirect("/admin?published=1");
