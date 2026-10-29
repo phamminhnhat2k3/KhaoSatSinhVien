@@ -1,3 +1,4 @@
+import { Avatar } from "./Avatar";
 import Link from "next/link";
 import Image from "next/image";
 import type { ReactNode } from "react";
@@ -10,11 +11,11 @@ export function AppShell({ name, role, children, wide = false }: { name?: string
     <header className="nav">
       <Link href="/dashboard" className="university-brand"><Image src="/hcm-ute-logo.png" alt="HCM-UTE – Trường Đại học Công nghệ Kỹ thuật TP. Hồ Chí Minh" width={2005} height={593} className="university-logo" priority unoptimized/></Link>
       <span className="nav-description">Cổng khảo sát sinh viên</span>
-      <nav aria-label="Điều hướng chính" className="nav-links"><Link href="/dashboard" className="nav-home"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="m12 3 10 8h-3v10h-5v-7h-4v7H5V11H2z"/></svg><span>Trang chủ</span></Link><NotificationLink/><Link href="/profile" className="nav-profile"><span className="avatar avatar-small" aria-hidden="true">{name?.trim().slice(0, 1) || "L"}</span><span>Hồ sơ</span></Link><form action={logoutAction}><button className="button secondary">Đăng xuất</button></form></nav>
+      <nav aria-label="Điều hướng chính" className="nav-links"><Link href="/dashboard" className="nav-home"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="m12 3 10 8h-3v10h-5v-7h-4v7H5V11H2z"/></svg><span>Trang chủ</span></Link><NotificationLink/><Link href="/profile" className="nav-profile"><Avatar name={name} className="avatar-small"/><span>Hồ sơ</span></Link><form action={logoutAction}><button className="button secondary">Đăng xuất</button></form></nav>
     </header>
     <div className={`workspace${wide ? " workspace-wide" : ""}`}>
       <aside className="sidebar" aria-label="Thông tin tài khoản">
-        <section className="card account-card"><div className="account-cover" aria-hidden="true"/><div className="account-content"><span className="avatar" aria-hidden="true">{name?.trim().slice(0, 1) || "L"}</span><h2>{name || "Tài khoản của bạn"}</h2><p className="muted">{role}</p><div className="account-caption">Cộng đồng học tập<br/><strong>Lắng nghe sinh viên</strong></div></div></section>
+        <section className="card account-card"><div className="account-cover" aria-hidden="true"/><div className="account-content"><Avatar name={name}/><h2>{name || "Tài khoản của bạn"}</h2><p className="muted">{role}</p><div className="account-caption">Cộng đồng học tập<br/><strong>Lắng nghe sinh viên</strong></div></div></section>
         <section className="card sidebar-note"><p className="eyebrow">Cùng nhau tiến bộ</p><h3>Mỗi ý kiến đều có giá trị.</h3><p className="muted">Góp ý chân thành để nâng cao chất lượng học tập và giảng dạy.</p></section>
         <nav className="card stack" aria-label="Truy cập nhanh"><Link className="text-button" href="/profile">Hồ sơ cá nhân</Link><NotificationShortcut/>{role.includes("Trưởng khoa") && <><Link className="text-button" href="/dean">Điều hành khoa</Link><Link className="text-button" href="/admin/lecturers">Giảng viên trong khoa</Link></>}{role.includes("Quản trị viên") && <><Link className="text-button" href="/admin">Quản trị khảo sát</Link><Link className="text-button" href="/admin/users">Tất cả người dùng</Link><Link className="text-button" href="/admin/academic">Quản lý khoa</Link><Link className="text-button" href="/admin/templates">Thư viện mẫu</Link></>}</nav>
       </aside>

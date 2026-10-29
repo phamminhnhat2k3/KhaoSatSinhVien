@@ -2,6 +2,8 @@ import { expect, test, type Page } from "@playwright/test";
 import { PrismaClient, type Role } from "@prisma/client";
 import { hash } from "argon2";
 import { randomUUID } from "node:crypto";
+import { unlink } from "node:fs/promises";
+import { join } from "node:path";
 import { loadEnvFile } from "node:process";
 
 test.describe("hồ sơ, thông báo và khảo sát xuyên vai trò", () => {
@@ -45,6 +47,7 @@ test.describe("hồ sơ, thông báo và khảo sát xuyên vai trò", () => {
     if (semesterId) await db.semester.delete({ where: { id: semesterId } });
     await db.auditLog.deleteMany({ where: { actorId: { in: users.map(u => u.id) } } });
     await db.user.deleteMany({ where: { id: { in: users.map(u => u.id) } } });
+    for (const u of users) await unlink(join(process.cwd(), ".data", "avatars", `${u.id}.img`)).catch(()=>{});
     await db.$disconnect();
   });
   async function login(page: Page, index: number, loginPassword = password) {
@@ -74,6 +77,17 @@ test.describe("hồ sơ, thông báo và khảo sát xuyên vai trò", () => {
       if (index) await login(page, index);
       await page.goto("/profile");
       await expect(page.getByText(users[index].email, { exact: true })).toBeVisible();
+      if (index === 0) {
+        const png = await page.evaluate(() => { const canvas = document.createElement("canvas"); canvas.width = canvas.height = 80; const ctx = canvas.getContext("2d")!; ctx.fillStyle = "#0a66c2"; ctx.fillRect(0,0,80,80); return canvas.toDataURL("image/png").split(",")[1]; });
+        await page.getByLabel("Ảnh đại diện", { exact: true }).setInputFiles({ name: "avatar.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") });
+        await page.getByRole("button", { name: "Lưu ảnh đại diện", exact: true }).click();
+        await expect(page.getByText("Đã cập nhật ảnh đại diện.", { exact: true })).toBeVisible();
+        const avatar = await page.request.get(`/api/avatars?id=${users[0].id}`);
+        expect(avatar.status()).toBe(200); expect(avatar.headers()["content-type"]).toBe("image/webp");
+        await page.reload();
+        await expect(page.locator(".profile-avatar img")).toBeVisible();
+        await expect.poll(()=>page.locator(".profile-avatar img").evaluate((el: HTMLImageElement)=>el.naturalWidth)).toBeGreaterThan(0);
+      }
       await page.getByLabel("Khoa / đơn vị").fill(`Đơn vị ${index}`);
       await page.getByLabel("Giới thiệu", { exact: true }).fill("Hồ sơ nghiệm thu riêng, không gắn với phản hồi.");
       await page.getByLabel("Màu ảnh bìa").selectOption("violet");
