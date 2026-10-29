@@ -6,7 +6,7 @@ Quản trị viên mở `/admin/users` từ thanh bên hoặc trang điều hàn
 
 Mỗi dòng hiển thị mã, email, số điện thoại, vai trò, trạng thái, khoa và lớp. Sinh viên có liên kết xem ghi danh, khảo sát và chỉnh hồ sơ học vụ. Giảng viên hiển thị các môn được phân công.
 
-Nhấn **Sửa nhanh** để mở biểu mẫu ngay trên danh sách. Sinh viên có thể cập nhật tên, email, điện thoại, mã sinh viên và lớp hành chính; khoa được xác định theo lớp. Giảng viên có thể cập nhật tên, email, điện thoại, mã, khoa, môn giảng dạy và quyền Trưởng khoa. Chỉ quản trị viên được cấp hoặc thu hồi quyền Trưởng khoa. Các tài khoản quản trị có biểu mẫu thông tin cơ bản, không tự cấp hoặc thay đổi vai trò tại đây.
+Nhấn **Sửa nhanh** để mở biểu mẫu ngay trên danh sách. Thông tin cá nhân (tên, email, điện thoại, giới thiệu) chỉ hiển thị để xem; người dùng tự chỉnh thông tin cá nhân trong hồ sơ của mình theo các trường hệ thống cho phép. Quản trị viên cập nhật mã sinh viên và lớp hành chính; khoa được xác định theo lớp. Với giảng viên, quản trị viên cập nhật mã, khoa, môn giảng dạy và quyền Trưởng khoa. Các hành động cập nhật nghiệp vụ ở máy chủ không ghi đè tên, email hoặc điện thoại kể cả khi biểu mẫu bị sửa giả mạo. Chỉ quản trị viên được cấp hoặc thu hồi quyền Trưởng khoa. Các tài khoản quản trị chỉ xem thông tin cá nhân tại đây, không tự cấp hoặc thay đổi vai trò.
 
 ## Khóa và xóa
 
@@ -25,3 +25,7 @@ Bấm chuông trên header hoặc mục Thông báo ở thanh bên để mở b�
 Khi trang đang hoạt động, danh sách được kiểm tra mỗi 15 giây; khi quay lại cửa sổ cũng kiểm tra lại. Có thông báo mới sẽ hiện ô nhắc nhỏ trong 6 giây và cập nhật số chưa đọc. Thông báo đã có khi mở trang không tạo ô nhắc giả. Xem chi tiết đánh dấu đã đọc trước khi mở đúng nội dung liên quan. Đường dẫn `/notifications` cũ mở bảng nhanh từ hồ sơ, không còn trang danh sách riêng.
 
 API luôn giới hạn theo tài khoản đăng nhập và kiểm tra trạng thái hoạt động; không thể đánh dấu đọc thông báo của tài khoản khác. Không thay đổi schema database cho các thao tác này.
+
+## Pop-up thông tin
+
+Bấm tên để xem thông tin trong hộp căn giữa vùng nhìn, cuộn bên trong và nền tối phía sau. Có nút sao chép email, khóa/mở khóa tài khoản khác, cập nhật dữ liệu hiển thị và lối tắt học vụ/danh sách theo đối tượng. Các thao tác tài khoản dùng cùng kiểm tra quyền và bảo vệ lịch sử như danh sách quản lý.

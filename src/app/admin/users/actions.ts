@@ -9,13 +9,12 @@ export async function updateUser(_: string | undefined, form: FormData) {
   const input = userEditSchema.safeParse(Object.fromEntries(form));
   if (!input.success) return "Kiểm tra họ tên, email, số điện thoại và mã nghiệp vụ.";
   try { await db.$transaction(async tx => {
-    const { id, studentCode, academicClassId, ...data } = input.data;
+    const { id, studentCode, academicClassId } = input.data;
     const user = await tx.user.findUniqueOrThrow({ where: { id }, select: { student: { select: { id: true } } } });
     if (user.student) {
       if (studentCode.length < 3 || !academicClassId) throw new Error("Chọn lớp hành chính và mã sinh viên từ 3 ký tự.");
       await tx.studentProfile.update({ where: { id: user.student.id }, data: { studentCode: studentCode.toUpperCase(), academicClassId } });
     }
-    await tx.user.update({ where: { id }, data });
     await tx.auditLog.create({ data: { actorId: actor.id, action: "UPDATE", entity: "User", entityId: id } });
   }); } catch { return "Chưa lưu được. Kiểm tra email/mã trùng và lớp hành chính còn tồn tại."; }
   refresh(); return "Đã cập nhật người dùng.";
