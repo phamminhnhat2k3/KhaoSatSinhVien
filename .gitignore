@@ -6,3 +6,4 @@ playwright-report/
 test-results/
 .env
 *.tsbuildinfo
+TAI_KHOAN_MAU.md

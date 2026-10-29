@@ -19,6 +19,7 @@
     "db:migrate": "prisma migrate deploy",
     "db:check": "prisma migrate status",
     "db:seed": "node --env-file=.env --import tsx prisma/seed.ts",
+    "db:demo": "node --env-file=.env --import tsx prisma/demo.ts",
     "check": "npm run lint && npm run typecheck && npm test && npm run test:integration && npm run build && npm run test:e2e"
   },
   "dependencies": {
