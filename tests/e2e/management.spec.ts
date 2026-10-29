@@ -33,6 +33,11 @@ test("quản lý người dùng, sửa/xóa khoa và thông báo trượt đúng
     await page.getByRole("combobox", { name: "Vai trò", exact: true }).selectOption("LECTURER");
     await page.getByRole("button", { name: "Lọc người dùng", exact: true }).click();
     await expect(page.getByRole("heading", { name: "1 người dùng phù hợp", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: `${tag} Teacher`, exact: true }).click();
+    const info = page.getByRole("dialog", { name: `Thông tin ${tag} Teacher`, exact: true });
+    await expect(info.getByText(teacher.email, { exact: true })).toBeVisible();
+    await expect(page).toHaveURL(/\/admin\/users/);
+    await info.getByRole("button", { name: "Đóng thông tin", exact: true }).click();
     await page.getByRole("button", { name: "Sửa nhanh", exact: true }).click();
     let dialog = page.getByRole("dialog");
     await dialog.getByLabel("Họ tên", { exact: true }).fill(`${tag} Teacher updated`);

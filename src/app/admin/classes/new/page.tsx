@@ -1,3 +1,4 @@
+import { EntityDetails } from "@/components/EntityDetails";
 import Link from "next/link";
 import { Role } from "@prisma/client";
 import { AppShell } from "@/components/AppShell";
@@ -13,6 +14,6 @@ export default async function NewClassPage({ searchParams }: { searchParams: Pro
     <p className="eyebrow">Đăng ký môn học</p><h1>Tạo học phần và lớp học phần</h1><p className="lead">Lớp học phần là lớp học một môn trong một học kỳ, chứa sinh viên theo hệ đào tạo và sĩ số. Lớp hành chính quản lý sinh viên theo khoa và được tạo riêng trong Danh mục học vụ.</p>
     {(await searchParams).saved && <p className="notice" role="status">Đã tạo lớp học phần.</p>}
     <section className="card"><h2>Thông tin lớp học phần mới</h2><p className="muted">Nếu mã học phần đã tồn tại, nhập đúng tên hiện có. Mã lớp học phần phải duy nhất.</p>{semesters.length && faculties.length ? <CourseClassForm semesters={semesters.map(s => ({ id: s.id, label: s.name }))} faculties={faculties.map(l => ({ id: l.id, label: l.name }))}/> : <p className="notice">Cần bổ sung học kỳ và khoa trước khi tạo lớp học phần.</p>}</section>
-    <h2 className="section-title">Các lớp học phần hiện có</h2><div className="card table-wrap"><table><thead><tr><th>Mã lớp học phần</th><th>Môn học</th><th>Học kỳ</th><th>Khoa / Hệ / Sĩ số</th></tr></thead><tbody>{classes.map(c => <tr key={c.id}><td>{c.code}</td><td>{c.course.code} · {c.course.name}</td><td>{c.semester.name}</td><td>{`${c.course.faculty?.name ?? "Chưa phân khoa"} · ${({ REGULAR: "Chính quy", PART_TIME: "Vừa học vừa làm", DISTANCE: "Đào tạo từ xa" }[c.educationSystem] ?? c.educationSystem)} · ${c._count.enrollments}/${c.capacity}`}</td></tr>)}</tbody></table>{!classes.length && <p>Chưa có lớp học phần.</p>}</div>
+    <h2 className="section-title">Các lớp học phần hiện có</h2><div className="card table-wrap"><table><thead><tr><th>Mã lớp học phần</th><th>Môn học</th><th>Học kỳ</th><th>Khoa / Hệ / Sĩ số</th></tr></thead><tbody>{classes.map(c => <tr key={c.id}><td>{c.code}</td><td>{c.course.code} · <EntityDetails type="course" id={c.course.id} name={c.course.name}/></td><td>{c.semester.name}</td><td>{`${c.course.faculty?.name ?? "Chưa phân khoa"} · ${({ REGULAR: "Chính quy", PART_TIME: "Vừa học vừa làm", DISTANCE: "Đào tạo từ xa" }[c.educationSystem] ?? c.educationSystem)} · ${c._count.enrollments}/${c.capacity}`}</td></tr>)}</tbody></table>{!classes.length && <p>Chưa có lớp học phần.</p>}</div>
   </AppShell>;
 }

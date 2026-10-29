@@ -1,0 +1,8 @@
+"use client";
+import { useRef, useState } from "react";
+export function EntityDetails({ id, type, name }: { id: string; type: "user" | "faculty" | "course"; name: string }) {
+  const dialog=useRef<HTMLDialogElement>(null);
+  const [data,setData]=useState<{name:string;fields:[string,string][]}|null>(null), [error,setError]=useState("");
+  async function open() { dialog.current?.showModal(); setData(null); setError(""); try { const r=await fetch(`/api/admin/details?type=${type}&id=${encodeURIComponent(id)}`,{cache:"no-store"}); if(!r.ok) throw new Error(); setData(await r.json()); } catch { setError("Không tải được thông tin. Vui lòng đóng và thử lại."); } }
+  return <><button type="button" className="entity-name" onClick={()=>void open()}>{name}</button><dialog ref={dialog} className="management-dialog entity-dialog" aria-label={`Thông tin ${name}`} onClick={e=>{const d=dialog.current;if(d && e.target===d){const r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close();}}}><button className="icon-button entity-close" aria-label="Đóng thông tin" onClick={()=>dialog.current?.close()}>✕</button><div className="entity-hero"><span className="avatar entity-avatar" aria-label="Ảnh đại diện mặc định">{name.trim().slice(0,1)}</span><p className="eyebrow">{{user:"Hồ sơ người dùng",faculty:"Thông tin khoa",course:"Thông tin môn học"}[type]}</p><h2>{data?.name ?? name}</h2></div>{error ? <p role="alert">{error}</p> : !data ? <p role="status">Đang tải thông tin…</p> : <dl className="profile-facts entity-facts">{data.fields.map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>}</dialog></>;
+}
