@@ -1,5 +1,6 @@
 "use server";
 
+import {flashActionToast} from "@/lib/action-flash";
 import { Role } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/access";
@@ -40,5 +41,6 @@ export async function deleteTemplate(_:string|undefined,form:FormData){
   try{await removeTemplate(db,user.id,id,version);}
   catch(error){revalidatePath("/admin/templates");return error instanceof Error&&["Không thể xóa mẫu","Mẫu đã được cập nhật"].some(p=>error.message.startsWith(p))?error.message:"Không thể xóa mẫu. Mẫu có thể đã được sử dụng hoặc vừa được thay đổi; vui lòng tải lại.";}
   revalidatePath("/admin/templates");revalidatePath("/admin");revalidatePath("/admin/campaigns/new");
+  await flashActionToast("Đã xóa mẫu khảo sát.");
   redirect("/admin/templates?deleted=1");
 }

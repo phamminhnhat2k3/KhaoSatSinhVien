@@ -1,5 +1,6 @@
 "use server";
 
+import {flashActionToast} from "@/lib/action-flash";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -39,7 +40,7 @@ export async function createCourseClass(_: string | undefined, formData: FormDat
     });
   } catch (e) { return e instanceof Error && e.message.startsWith("Mã học phần") ? e.message : "Không thể tạo lớp. Kiểm tra mã lớp trùng hoặc học kỳ, giảng viên đã thay đổi."; }
   revalidatePath("/admin"); revalidatePath("/admin/classes/new");
-  redirect("/admin/classes/new?saved=1");
+  await flashActionToast("Đã tạo lớp học phần."); redirect("/admin/classes/new?saved=1");
 }
 
 export async function createStudent(_: string | undefined, formData: FormData) {
@@ -55,7 +56,7 @@ export async function createStudent(_: string | undefined, formData: FormData) {
       await tx.auditLog.create({ data: { actorId: actor.id, action: "CREATE", entity: "StudentProfile", entityId: user.student!.id } });
     });
   } catch { return "Không thể tạo sinh viên. Email/mã sinh viên có thể trùng, hoặc lớp không còn khả dụng."; }
-  revalidatePath("/admin"); revalidatePath("/admin/students"); redirect("/admin/users?created=1&role=STUDENT");
+  revalidatePath("/admin"); revalidatePath("/admin/students"); await flashActionToast("Đã tạo sinh viên."); redirect("/admin/users?created=1&role=STUDENT");
 }
 
 export async function createCampaign(_: string | undefined, formData: FormData) {
@@ -65,7 +66,7 @@ export async function createCampaign(_: string | undefined, formData: FormData) 
   try {
     await db.$transaction(tx => saveCampaignDraft(tx,user.id,{...Object.fromEntries(formData),courseIds:formData.getAll("courseIds")}));
   } catch { return "Chưa tạo được đợt. Kiểm tra khoa, học kỳ, mẫu và môn học thuộc học kỳ đã chọn."; }
-  revalidatePath("/admin"); redirect("/admin?created=1");
+  revalidatePath("/admin"); await flashActionToast("Đã tạo đợt khảo sát nháp."); redirect("/admin?created=1");
 }
 
 export async function updateCampaign(_: string | undefined, formData: FormData) {
@@ -75,14 +76,14 @@ export async function updateCampaign(_: string | undefined, formData: FormData) 
   if(!id||!parsed.success)return "Kiểm tra lại thông tin đợt khảo sát.";
   try { await db.$transaction(tx=>saveCampaignDraft(tx,user.id,{...Object.fromEntries(formData),courseIds:formData.getAll("courseIds")},id)); }
   catch { return "Chưa lưu được. Chỉ sửa đợt nháp chưa giao phiếu; kiểm tra lại khoa, môn và học kỳ."; }
-  revalidatePath("/admin");revalidatePath("/dean");redirect(`/admin/campaigns/${id}/review?saved=1`);
+  revalidatePath("/admin");revalidatePath("/dean");await flashActionToast("Đã cập nhật đợt khảo sát nháp."); redirect(`/admin/campaigns/${id}/review?saved=1`);
 }
 export async function cancelCampaign(_: string | undefined, formData: FormData) {
   const user=await requireUser(Role.ADMIN);const id=String(formData.get("id")??"");
   if(formData.get("confirm")!=="yes")return "Vui lòng xác nhận hủy bản nháp.";
   try { await db.$transaction(tx=>cancelCampaignDraft(tx,user.id,id)); }
   catch { return "Chỉ hủy được đợt đang nháp. Tải lại để kiểm tra trạng thái."; }
-  revalidatePath("/admin");revalidatePath("/dean");redirect("/admin?status=CANCELLED");
+  revalidatePath("/admin");revalidatePath("/dean");await flashActionToast("Đã hủy đợt khảo sát nháp."); redirect("/admin?status=CANCELLED");
 }
 
 export async function publishCampaign(_: string | undefined, formData: FormData) {
@@ -97,15 +98,16 @@ export async function publishCampaign(_: string | undefined, formData: FormData)
   } catch (error) { return error instanceof Error && ["Chưa có sinh viên", "Môn học đã thay đổi", "Phạm vi, khoa", "Chưa phân công", "Giảng viên lớp"].some(prefix=>error.message.startsWith(prefix)) ? error.message : "Không thể công bố. Đợt có thể đã đổi trạng thái hoặc dữ liệu không còn hợp lệ."; }
   revalidatePath("/admin");
   revalidatePath("/student");
-  redirect("/admin?published=1");
+  await flashActionToast("Đã công bố đợt khảo sát."); redirect("/admin?published=1");
 }
-export async function closeCampaign(formData: FormData) {
+export async function closeCampaign(_: string | undefined, formData: FormData) {
   const user = await requireUser(Role.ADMIN);
   const id = z.string().min(1).parse(formData.get("id"));
-  await db.$transaction(async tx => {
+  try { await db.$transaction(async tx => {
     await tx.surveyCampaign.update({ where: { id, status: "PUBLISHED" }, data: { status: "CLOSED" } });
     await tx.auditLog.create({ data: { actorId: user.id, action: "CLOSE", entity: "SurveyCampaign", entityId: id } });
     await notifyCampaign(tx, id, user.id, "CLOSED");
-  });
+  }); } catch { return "Không thể đóng khảo sát. Tải lại và kiểm tra trạng thái."; }
   revalidatePath("/admin");
+  return "Đã đóng khảo sát.";
 }

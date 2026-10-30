@@ -89,7 +89,7 @@ test.describe("khảo sát khoa / toàn trường và danh sách sinh viên", ()
     await expect(page.locator("main")).toContainText("Dự kiến 3 sinh viên");
     await db.course.update({where:{id:courses.A.id},data:{facultyId:otherFacultyId}});
     await page.getByRole("button", { name: "Công bố", exact: true }).click();
-    await expect(page.getByText(/Môn học đã thay đổi khoa/)).toBeVisible();
+    await expect(page.locator("main").getByRole("alert").filter({hasText:/Môn học đã thay đổi khoa/})).toBeVisible();
     expect((await db.surveyCampaign.findUniqueOrThrow({where:{id:faculty.id}})).status).toBe("DRAFT");
     expect(await db.surveyParticipation.count({where:{campaignId:faculty.id}})).toBe(0);
     await db.course.update({where:{id:courses.A.id},data:{facultyId}});

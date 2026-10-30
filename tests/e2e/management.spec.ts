@@ -91,11 +91,11 @@ test("quản lý người dùng, sửa/xóa khoa và thông báo trượt đúng
     expect((await db.user.findUniqueOrThrow({ where: { id: students[0].id } })).phone).toBe("");
     page.once("dialog", d => d.accept());
     await dialog.getByRole("button", { name: "Khóa tài khoản", exact: true }).click();
-    await expect(dialog.getByText("Đã khóa tài khoản.", { exact: true })).toBeVisible();
+    await expect(dialog.getByRole("status").filter({hasText:"Đã khóa tài khoản."})).toBeVisible();
     expect((await db.user.findUniqueOrThrow({ where: { id: students[0].id } })).active).toBe(false);
     page.once("dialog", d => d.accept());
     await dialog.getByRole("button", { name: "Mở khóa", exact: true }).click();
-    await expect(dialog.getByText("Đã mở khóa tài khoản.", { exact: true })).toBeVisible();
+    await expect(dialog.getByRole("status").filter({hasText:"Đã mở khóa tài khoản."})).toBeVisible();
     page.once("dialog", d => d.accept());
     await dialog.getByRole("button", { name: "Xóa người dùng", exact: true }).click();
     await expect(page.locator("main tbody tr")).toHaveCount(0);
@@ -104,7 +104,7 @@ test("quản lý người dùng, sửa/xóa khoa và thông báo trượt đúng
     await page.getByRole("button", { name: "Sửa nhanh", exact: true }).click();
     page.once("dialog", d => d.accept());
     await page.getByRole("dialog").getByRole("button", { name: "Xóa người dùng", exact: true }).click();
-    await expect(page.getByRole("dialog").getByText(/Tài khoản có lịch sử/)).toBeVisible();
+    await expect(page.getByRole("dialog").getByRole("status").filter({hasText:/Tài khoản có lịch sử/})).toBeVisible();
     expect(await db.surveyParticipation.count({ where: { studentId: students[1].student!.id } })).toBe(1);
     await page.goto("/admin/academic");
     const create = page.locator("section.card").filter({ has: page.getByRole("heading", { name: "Thêm khoa", exact: true }) });
@@ -120,7 +120,7 @@ test("quản lý người dùng, sửa/xóa khoa và thông báo trượt đúng
     dialog = page.getByRole("dialog");
     await dialog.getByLabel("Tên khoa", { exact: true }).fill(`${tag} Đã sửa`);
     await dialog.getByRole("button", { name: "Lưu khoa", exact: true }).click();
-    await expect(dialog.getByText("Đã cập nhật khoa.", { exact: true })).toBeVisible();
+    await expect(dialog.getByRole("status").filter({hasText:"Đã cập nhật khoa."})).toBeVisible();
     page.once("dialog", d => d.accept());
     await dialog.getByRole("button", { name: "Xóa khoa", exact: true }).click();
     await expect(page.getByRole("heading", { name: `${tag} Đã sửa`, exact: true })).toHaveCount(0);
@@ -128,7 +128,7 @@ test("quản lý người dùng, sửa/xóa khoa và thông báo trượt đúng
     await row.getByRole("button", { name: "Sửa nhanh", exact: true }).click();
     page.once("dialog", d => d.accept());
     await page.getByRole("dialog").getByRole("button", { name: "Xóa khoa", exact: true }).click();
-    await expect(page.getByRole("dialog").getByText(/Khoa còn lớp/)).toBeVisible();
+    await expect(page.getByRole("dialog").getByRole("status").filter({hasText:/Khoa còn lớp/})).toBeVisible();
     await db.notification.create({ data: { userId: admin.id, title: `${tag} Tin ban đầu`, body: "Đã có từ trước", href: "/profile" } });
     await page.goto("/profile");
     await expect.poll(async () => (await page.request.get("/api/notifications")).status()).toBe(200);

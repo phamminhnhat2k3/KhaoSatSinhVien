@@ -1,4 +1,5 @@
 "use client";
+import {showActionToast} from "@/lib/action-feedback";
 import { useEffect, useRef, useState } from "react";
 import { avatarCrop } from "@/modules/profile/crop";
 export function Avatar({ id, name, className="" }: { id?:string; name?:string|null; className?:string }) {
@@ -33,8 +34,8 @@ export function AvatarUpload() {
       const data=new FormData();data.set("avatar",blob,"avatar.webp");
       const response=await fetch("/api/avatars",{method:"POST",body:data});const result=await response.json();
       if(!response.ok)throw new Error(result.message);
-      setMessage(result.message);window.dispatchEvent(new Event("avatar-updated"));form.reset();setImage(null);reset();
-    }catch(error){setMessage(error instanceof Error?error.message:"Không tải được ảnh.");}finally{setPending(false);}
+      setMessage(result.message);showActionToast(result.message);window.dispatchEvent(new Event("avatar-updated"));form.reset();setImage(null);reset();
+    }catch(error){const message=error instanceof Error?error.message:"Không tải được ảnh.";setMessage(message);showActionToast(message,"error");}finally{setPending(false);}
   }}>
     <label className="field">Ảnh đại diện<input className="input" type="file" name="image" accept="image/png,image/jpeg,image/webp" required disabled={pending} onChange={async e=>{
       const version=++selection.current;const file=e.target.files?.[0];setImage(null);setMessage("");reset();if(!file)return;

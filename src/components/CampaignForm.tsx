@@ -1,7 +1,8 @@
 "use client";
-import { startTransition, useActionState, useEffect, useState } from "react";
+import {useActionFeedback} from "./useActionFeedback";
+import { startTransition, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createCampaign, updateCampaign, cancelCampaign, publishCampaign } from "@/app/admin/actions";
+import { closeCampaign, createCampaign, updateCampaign, cancelCampaign, publishCampaign } from "@/app/admin/actions";
 
 type Option = { id: string; label: string };
 type Initial = { evaluationMode?:string;title:string;scope:string;facultyId:string;semesterId:string;templateId:string;courseTemplateId:string;courseIds:string[];startsAt:string;endsAt:string };
@@ -12,7 +13,7 @@ export function CampaignForm({ faculties, semesters, templates, courses, initial
     window.addEventListener("focus", refresh);
     return () => window.removeEventListener("focus", refresh);
   }, [router]);
-  const [error, action, pending] = useActionState(editId?updateCampaign:createCampaign, undefined);
+  const [error, action, pending] = useActionFeedback(editId?updateCampaign:createCampaign, undefined);
   const [faculty, setFaculty] = useState(initial?.facultyId??"");
   const [scope, setScope] = useState(initial?.scope??"FACULTY");
   const [semester, setSemester] = useState(initial?.semesterId??semesters[0]?.id??"");
@@ -36,10 +37,15 @@ export function CampaignForm({ faculties, semesters, templates, courses, initial
   </form>;
 }
 export function CancelCampaignForm({campaignId}:{campaignId:string}) {
-  const [error,action,pending]=useActionState(cancelCampaign,undefined);
+  const [error,action,pending]=useActionFeedback(cancelCampaign,undefined);
   return <form action={action} className="stack"><input type="hidden" name="id" value={campaignId}/><label className="option"><input type="checkbox" name="confirm" value="yes" required/>Tôi xác nhận hủy đợt nháp này; giữ lại lịch sử.</label>{error&&<p role="alert" className="error">{error}</p>}<button className="button danger" disabled={pending}>Hủy bản nháp</button></form>;
 }
 export function PublishForm({ campaignId }: { campaignId: string }) {
-  const [error, action, pending] = useActionState(publishCampaign, undefined);
+  const [error, action, pending] = useActionFeedback(publishCampaign, undefined);
   return <form action={action} className="stack"><input type="hidden" name="id" value={campaignId}/>{error && <p role="alert" className="error">{error}</p>}<button className="button" disabled={pending}>{pending ? "Đang giao phiếu…" : "Công bố"}</button></form>;
+}
+
+export function CloseCampaignForm({id}:{id:string}) {
+ const [error,action,pending]=useActionFeedback(closeCampaign,undefined);
+ return <form action={action}><input type="hidden" name="id" value={id}/><button className="button danger" disabled={pending}>{pending?"Đang đóng…":"Đóng khảo sát"}</button>{error&&!error.startsWith("Đã ")&&<p role="alert" className="error">{error}</p>}</form>;
 }

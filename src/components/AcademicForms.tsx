@@ -1,12 +1,13 @@
 "use client";
+import {useActionFeedback} from "./useActionFeedback";
 
-import { startTransition, useActionState, useState } from "react";
+import { startTransition, useState } from "react";
 import { createCourseClass, createStudent } from "@/app/admin/actions";
 
 type Option = { id: string; label: string };
 
 export function CourseClassForm({ semesters, faculties }: { semesters: Option[]; faculties: Option[] }) {
-  const [error, action, pending] = useActionState(createCourseClass, undefined);
+  const [error, action, pending] = useActionFeedback(createCourseClass, undefined);
   return <form action={action} className="stack">
     <div className="grid" style={{marginTop: 0}}><label className="field">Mã học phần<input className="input" name="courseCode" required placeholder="SE401" /></label><label className="field">Tên học phần<input className="input" name="courseName" required placeholder="Kiến trúc phần mềm" /></label></div>
     <label className="field">Mã lớp học phần<input className="input" name="classCode" required placeholder="SE401.02" /></label>
@@ -19,7 +20,7 @@ export function CourseClassForm({ semesters, faculties }: { semesters: Option[];
 }
 
 export function StudentForm({ classes, faculties, courseClasses }: { classes: (Option & { facultyId: string })[]; faculties: Option[]; courseClasses: Option[] }) {
-  const [error, action, pending] = useActionState(createStudent, undefined);
+  const [error, action, pending] = useActionFeedback(createStudent, undefined);
   const [faculty, setFaculty] = useState("");
   return <form className="stack" method="post" onSubmit={e => { e.preventDefault(); const data = new FormData(e.currentTarget); startTransition(() => action(data)); }}>
     <div className="grid" style={{marginTop: 0}}><label className="field">Họ tên<input className="input" name="name" required /></label><label className="field">Mã sinh viên<input className="input" name="studentCode" required /></label></div>

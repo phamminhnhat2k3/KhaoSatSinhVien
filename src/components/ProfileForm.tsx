@@ -1,9 +1,10 @@
 "use client";
-import { startTransition, useActionState, type FormEvent } from "react";
+import {useActionFeedback} from "./useActionFeedback";
+import { startTransition, type FormEvent } from "react";
 import { updatePassword, updateProfile } from "@/app/profile/actions";
 
 export function ProfileForm({ profile }: { profile: { name: string; phone: string; department: string; bio: string; coverTheme: string } }) {
-  const [state, action, pending] = useActionState(updateProfile, undefined);
+  const [state, action, pending] = useActionFeedback(updateProfile, undefined);
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -20,6 +21,6 @@ export function ProfileForm({ profile }: { profile: { name: string; phone: strin
   </form>;
 }
 export function PasswordForm() {
-  const [state, action, pending] = useActionState(updatePassword, undefined);
+  const [state, action, pending] = useActionFeedback(updatePassword, undefined);
   return <form className="stack" action={action}><label className="field">Mật khẩu hiện tại<input className="input" name="currentPassword" type="password" autoComplete="current-password" required/></label><div className="form-columns profile-fields"><label className="field">Mật khẩu mới<input className="input" name="newPassword" type="password" autoComplete="new-password" minLength={8} maxLength={100} required/></label><label className="field">Xác nhận mật khẩu mới<input className="input" name="confirmPassword" type="password" autoComplete="new-password" minLength={8} maxLength={100} required/></label></div>{state && <p role="status" className={state.ok ? "notice" : "error"}>{state.message}</p>}<div className="actions"><button className="button secondary" disabled={pending}>{pending ? "Đang cập nhật…" : "Đổi mật khẩu"}</button></div></form>;
 }

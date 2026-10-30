@@ -1,4 +1,5 @@
 "use client";
+import {showActionToast} from "@/lib/action-feedback";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -56,8 +57,8 @@ export function NotificationLink() {
     try {
       const response = await fetch("/api/notifications", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(id ? { id } : { all: true }) });
       if (!response.ok) throw new Error();
-      await load(); return true;
-    } catch { setError("Chưa đánh dấu đọc được. Vui lòng thử lại."); return false; }
+      await load(); showActionToast(id?"Đã đánh dấu thông báo đã đọc.":"Đã đánh dấu tất cả thông báo đã đọc."); return true;
+    } catch { setError("Chưa đánh dấu đọc được. Vui lòng thử lại."); showActionToast("Chưa đánh dấu đọc được. Vui lòng thử lại.","error"); return false; }
     finally { setBusy(false); }
   }
   async function visit(n: Notice) { if (!n.readAt && !(await read(n.id))) return; setOpen(false); router.push(n.href.startsWith("/") && !n.href.startsWith("//") ? n.href : "/dashboard"); }

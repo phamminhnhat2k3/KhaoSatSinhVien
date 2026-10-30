@@ -1,6 +1,8 @@
 "use client";
+import {useActionFeedback} from "./useActionFeedback";
 
-import { useActionState, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {showActionToast} from "@/lib/action-feedback";
 import {useRouter} from "next/navigation";
 import { createTemplate,updateTemplate } from "@/app/admin/templates/actions";
 import { moveQuestion, newQuestion, questionTypes, templateSchema, type QuestionInput, type TemplateInput } from "@/modules/templates/rules";
@@ -16,10 +18,11 @@ export function TemplateForm({ initial,draftKey,edit }: { initial?: TemplateInpu
   const [preview, setPreview] = useState(false);
   const [ready,setReady]=useState(false);
   const [draftStatus,setDraftStatus]=useState("Đang kiểm tra bản nháp…");
-  const [error, action, pending] = useActionState(async(previous:string|undefined,form:FormData)=>{
+  const [error, action, pending] = useActionFeedback(async(previous:string|undefined,form:FormData)=>{
     try{
       const result=await (edit?updateTemplate:createTemplate)(previous,form);
       if(typeof result==="string")return result;
+      showActionToast("versioned" in result&&result.versioned?"Đã lưu phiên bản mẫu mới.":edit?"Đã cập nhật mẫu khảo sát.":"Đã tạo mẫu khảo sát.");
       dirty.current=false;
       try{localStorage.removeItem(draftKey);}catch{/* The server has saved the template even if local storage is unavailable. */}
       router.push(`/admin/templates?saved=1${"versioned" in result&&result.versioned?"&versioned=1":edit?"&updated=1":""}`);router.refresh();
@@ -100,7 +103,7 @@ export function TemplateForm({ initial,draftKey,edit }: { initial?: TemplateInpu
   }
   return <form ref={formRef} className="template-builder" action={action} onSubmit={event => {
     const parsed = templateSchema.safeParse({ title, questions });
-    if (!parsed.success) { event.preventDefault(); setValidation(parsed.error.issues.map(i => `${typeof i.path[1] === "number" ? `Câu ${i.path[1] + 1}: ` : ""}${i.message}`)); }
+    if (!parsed.success) { event.preventDefault(); showActionToast("Kiểm tra lại tên mẫu và nội dung câu hỏi.","error"); setValidation(parsed.error.issues.map(i => `${typeof i.path[1] === "number" ? `Câu ${i.path[1] + 1}: ` : ""}${i.message}`)); }
     else persist();
   }}>
     {edit&&<><input type="hidden" name="id" value={edit.id}/><input type="hidden" name="version" value={edit.version}/></>}

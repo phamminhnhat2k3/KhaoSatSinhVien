@@ -102,3 +102,13 @@
 .user-pie-legend strong { margin-left:auto; white-space:nowrap; }
 @media(max-width:1000px) { .user-dashboard { grid-template-columns:1fr 1fr; } .user-dashboard > div:first-child { grid-column:1 / -1; } }
 @media(max-width:500px) { .user-dashboard { grid-template-columns:1fr; } .user-pie { margin:auto; } }
+
+.action-toasts{position:fixed;inset:auto 18px 18px auto;margin:0;padding:0;border:0;background:transparent;width:min(390px,calc(100vw - 36px));max-height:calc(100dvh - 36px);overflow:auto;z-index:10000;pointer-events:none}
+.action-toasts:popover-open{display:flex;flex-direction:column;gap:10px}
+.action-toasts::backdrop{background:transparent;pointer-events:none}
+.action-toast{display:flex;align-items:flex-start;gap:12px;padding:16px;background:#fff;border:1px solid #cbd5e1;border-left:4px solid #15803d;border-radius:12px;box-shadow:0 8px 28px #0f172a29;pointer-events:auto;color:#17212f;flex-shrink:0}
+.action-toast-error{border-left-color:#b91c1c}
+.action-toast>span{color:#15803d;font-weight:700;font-size:22px}.action-toast-error>span{color:#b91c1c}
+.action-toast p{margin:0;flex:1;overflow-wrap:anywhere;font-size:14px;line-height:1.5}.action-toast strong{display:block;margin-bottom:3px}
+.action-toast button{border:0;background:transparent;color:#475569;cursor:pointer;font-size:24px;line-height:1;padding:2px 5px;flex-shrink:0}
+.action-toast-announcement{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}

@@ -97,7 +97,7 @@ test.describe("hồ sơ, thông báo và khảo sát xuyên vai trò", () => {
         await page.screenshot({path:".playwright-cli/avatar-crop-mobile.png",fullPage:true});
         await page.setViewportSize({width:1440,height:1000});
         await page.getByRole("button", { name: "Lưu ảnh đại diện", exact: true }).click();
-        await expect(page.getByText("Đã cập nhật ảnh đại diện.", { exact: true })).toBeVisible();
+        await expect(page.getByRole("status").filter({hasText:"Đã cập nhật ảnh đại diện."})).toBeVisible();
         const avatar = await page.request.get(`/api/avatars?id=${users[0].id}`);
         expect(avatar.status()).toBe(200); expect(avatar.headers()["content-type"]).toBe("image/webp");
         await page.reload();
