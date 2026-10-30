@@ -70,6 +70,19 @@
 .role-tag--lecturer { color: #08695e; background: #e3f5ef; border-color: #adddce; }
 .role-tag--dean { color: #63369a; background: #f2eafa; border-color: #d8c1ee; }
 .role-tag--admin { color: #874300; background: #fff1d6; border-color: #edce91; }
+.workspace.workspace-focused { grid-template-columns: minmax(0, 1fr); max-width: 1440px; }
+.editor-navigation { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.editor-menu { position: relative; }
+.editor-menu summary { cursor: pointer; color: var(--brand); }
+.editor-menu > div { position: absolute; right: 0; top: 100%; width: 220px; z-index: 20; box-shadow: 0 8px 24px #22334420; }
+.template-builder .builder-toolbar { position: sticky; top: 8px; z-index: 10; padding: 14px 18px; box-shadow: 0 4px 16px #22334412; }
+.builder-draft-status { margin: 3px 0; font-size: .8rem; color: var(--muted); }
+.builder-save-info > button { font-size: .8rem; }
+.template-builder .toolbox { top: calc(var(--builder-toolbar-height, 120px) + 24px); max-height: max(160px, calc(100dvh - var(--builder-toolbar-height, 120px) - 40px)); overflow-y: auto; }
+.mobile-question-tools { display: none; }
+.template-builder .question-editor { scroll-margin-top: calc(var(--builder-toolbar-height, 120px) + 24px); }
+@media(min-width:1000px) { .editor-shell .builder-layout { grid-template-columns: 220px minmax(0, 1fr); } .editor-shell .tool-item { display: flex; width: 100%; margin-right: 0; } }
+@media(max-width:999px) { .editor-shell .builder-layout { grid-template-columns: minmax(0, 1fr); } .editor-shell .toolbox { display: none; } .mobile-question-tools { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 6px; width: 100%; } .mobile-question-tools .button { padding: 7px 3px; min-width: 0; font-size: .78rem; } .template-builder .builder-toolbar { gap: 10px; padding: 10px; } .template-builder .builder-toolbar .actions { flex-wrap: wrap; gap: 8px; } .template-builder .builder-toolbar .actions > button { flex: 1; padding: 8px 12px; } }
 .directory-avatar { display:inline-flex; width:36px; height:36px; margin-right:10px; vertical-align:middle; font-size:1rem; }
 .user-dashboard { display:grid; grid-template-columns:minmax(0,1fr) 180px minmax(190px,.8fr); gap:28px; align-items:center; margin-bottom:24px; }
 .user-dashboard h2 { margin:0 0 10px; }

@@ -1,26 +1,88 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useCallback, useEffect, useRef, useState } from "react";
+import {useRouter} from "next/navigation";
 import { createTemplate } from "@/app/admin/templates/actions";
 import { moveQuestion, newQuestion, questionTypes, templateSchema, type QuestionInput, type TemplateInput } from "@/modules/templates/rules";
 import { QuestionFields } from "./QuestionFields";
+import {readTemplateDraft,writeTemplateDraft} from "@/modules/templates/draft";
 
 type EditorQuestion = QuestionInput & { key: string };
-export function TemplateForm({ initial }: { initial?: TemplateInput }) {
-  const [title, setTitle] = useState(initial ? `${initial.title} (bản sao)` : "");
+export function TemplateForm({ initial,draftKey }: { initial?: TemplateInput;draftKey:string }) {
+  const router=useRouter();
+  const initialTitle=initial?`${initial.title} (bản sao)`.slice(0,120):"";
+  const [title, setTitle] = useState(initialTitle);
   const [questions, setQuestions] = useState<EditorQuestion[]>(() => (initial?.questions ?? []).map((q, i) => ({ ...q, key: `initial-${i}` })));
   const [preview, setPreview] = useState(false);
-  const [error, action, pending] = useActionState(createTemplate, undefined);
+  const [ready,setReady]=useState(false);
+  const [draftStatus,setDraftStatus]=useState("Đang kiểm tra bản nháp…");
+  const [error, action, pending] = useActionState(async(previous:string|undefined,form:FormData)=>{
+    try{
+      const result=await createTemplate(previous,form);
+      if(typeof result==="string")return result;
+      dirty.current=false;
+      try{localStorage.removeItem(draftKey);}catch{/* The server has saved the template even if local storage is unavailable. */}
+      router.push("/admin/templates?saved=1");router.refresh();
+    }catch{return "Chưa lưu được mẫu. Nội dung và bản nháp được giữ lại để bạn thử tiếp.";}
+  }, undefined);
   const [validation, setValidation] = useState<string[]>([]);
   const [message, setMessage] = useState("");
   const dirty = useRef(false);
+  const current=useRef({title,questions});current.current={title,questions};
+  const formRef=useRef<HTMLFormElement>(null),toolbarRef=useRef<HTMLDivElement>(null);
   const nextKey = useRef(0);
-  useEffect(() => { if (error && !pending) dirty.current = true; }, [error, pending]);
+  const persist=useCallback((notify=true)=>{
+    if(!dirty.current)return true;
+    try{
+      localStorage.setItem(draftKey,writeTemplateDraft(current.current));dirty.current=false;
+      if(notify)setDraftStatus(`Đã lưu nháp lúc ${new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit",second:"2-digit"})} · Trên trình duyệt này`);
+      return true;
+    }catch{if(notify)setDraftStatus("Không thể tự lưu nháp trên trình duyệt. Hãy lưu mẫu trước khi thoát.");return false;}
+  },[draftKey]);
   useEffect(() => {
-    const warn = (event: BeforeUnloadEvent) => { if (dirty.current) { event.preventDefault(); event.returnValue = ""; } };
+    try{
+      const raw=localStorage.getItem(draftKey),draft=readTemplateDraft(raw);
+      if(draft){setTitle(draft.title);setQuestions(draft.questions.map((q,i)=>({...q,key:`restored-${i}`})));setDraftStatus("Đã khôi phục bản nháp · Trên trình duyệt này");}
+      else setDraftStatus(raw?"Bản nháp cũ không đọc được. Nội dung mới vẫn có thể lưu lại.":"Chưa có thay đổi · Nháp lưu trên trình duyệt này");
+    }catch{setDraftStatus("Trình duyệt không cho lưu nháp. Hãy lưu mẫu trước khi thoát.");}
+    setReady(true);
+  },[draftKey]);
+  useEffect(()=>{
+    if(!ready||!dirty.current)return;
+    setDraftStatus("Đang lưu nháp…");
+    const timer=window.setTimeout(()=>persist(),600);
+    return()=>window.clearTimeout(timer);
+  },[title,questions,ready,persist]);
+  useEffect(() => {
+    const warn = (event: BeforeUnloadEvent) => { if (dirty.current&&!persist(false)) { event.preventDefault(); event.returnValue = ""; } };
+    const allowLeave=()=>{
+      if(!dirty.current||persist())return true;
+      if(!window.confirm("Chưa lưu được bản nháp. Rời trang sẽ mất các thay đổi chưa lưu. Bạn vẫn muốn rời trang?"))return false;
+      dirty.current=false;return true;
+    };
+    const leave=(event:MouseEvent)=>{
+      const link=event.target instanceof Element?event.target.closest("a[href]"):null;
+      if(!link||event.defaultPrevented||event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey||link.getAttribute("target")==="_blank"||link.getAttribute("href")?.startsWith("#"))return;
+      if(!allowLeave()){event.preventDefault();event.stopPropagation();}
+    };
+    const leaveForm=(event:SubmitEvent)=>{if(event.target!==formRef.current&&!allowLeave()){event.preventDefault();event.stopPropagation();}};
+    const background=()=>{if(document.visibilityState==="hidden")persist(false);};
     window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, []);
+    document.addEventListener("click",leave,true);
+    document.addEventListener("submit",leaveForm,true);
+    document.addEventListener("visibilitychange",background);
+    return () => {window.removeEventListener("beforeunload",warn);document.removeEventListener("click",leave,true);document.removeEventListener("submit",leaveForm,true);document.removeEventListener("visibilitychange",background);persist(false);};
+  }, [persist]);
+  useEffect(()=>{
+    const toolbar=toolbarRef.current;if(!toolbar)return;
+    const resize=()=>formRef.current?.style.setProperty("--builder-toolbar-height",`${toolbar.getBoundingClientRect().height}px`);
+    const observer=new ResizeObserver(resize);observer.observe(toolbar);resize();return()=>observer.disconnect();
+  },[]);
+  function discardDraft(){
+    if(!window.confirm("Bỏ các thay đổi trong bản nháp này? Mẫu đã lưu trong thư viện không bị ảnh hưởng."))return;
+    try{localStorage.removeItem(draftKey);}catch{setDraftStatus("Không thể xóa bản nháp trên trình duyệt. Vui lòng thử lại.");return;}
+    dirty.current=false;setTitle(initialTitle);setQuestions((initial?.questions??[]).map((q,i)=>({...q,key:`initial-${i}`})));setValidation([]);setDraftStatus("Đã bỏ bản nháp · Bạn có thể bắt đầu lại");
+  }
   function change(next: EditorQuestion[]) { dirty.current = true; setQuestions(next); setValidation([]); }
   function add(type: QuestionInput["type"], position = questions.length) {
     if (questions.length >= 100) { setMessage("Đã đạt giới hạn 100 câu hỏi."); return; }
@@ -36,16 +98,16 @@ export function TemplateForm({ initial }: { initial?: TemplateInput }) {
     if (Object.hasOwn(questionTypes, type)) add(type, index);
     else { const raw = event.dataTransfer.getData("question-index"); if (/^\d+$/.test(raw)) move(Number(raw), Math.min(index, questions.length - 1)); }
   }
-  return <form action={action} onSubmit={event => {
+  return <form ref={formRef} className="template-builder" action={action} onSubmit={event => {
     const parsed = templateSchema.safeParse({ title, questions });
     if (!parsed.success) { event.preventDefault(); setValidation(parsed.error.issues.map(i => `${typeof i.path[1] === "number" ? `Câu ${i.path[1] + 1}: ` : ""}${i.message}`)); }
-    else dirty.current = false;
+    else persist();
   }}>
     <input type="hidden" name="template" value={JSON.stringify({ title, questions })}/>
-    <fieldset disabled={pending} className="builder-fields">
-    <div className="builder-toolbar card"><div><strong>{questions.length} câu hỏi</strong><span className="muted"> · {questions.filter(q => q.required).length} bắt buộc</span></div><div className="actions"><button type="button" className="button secondary" onClick={() => setPreview(!preview)}>{preview ? "Tiếp tục chỉnh sửa" : "Xem trước"}</button><button className="button" disabled={pending}>{pending ? "Đang lưu…" : "Lưu mẫu khảo sát"}</button></div></div>
+    <fieldset disabled={pending||!ready} className="builder-fields">
+    <div ref={toolbarRef} className="builder-toolbar card"><div className="builder-save-info"><div><strong>{questions.length} câu hỏi</strong><span className="muted"> · {questions.filter(q => q.required).length} bắt buộc</span></div><p className="builder-draft-status" role="status">{draftStatus}</p><button type="button" className="text-button" onClick={discardDraft}>Bỏ bản nháp</button></div><div className="actions"><button type="button" className="button secondary" onClick={() => setPreview(!preview)}>{preview ? "Tiếp tục chỉnh sửa" : "Xem trước"}</button><button className="button" disabled={pending}>{pending ? "Đang lưu…" : "Lưu mẫu khảo sát"}</button></div><div className="mobile-question-tools" aria-label="Thêm câu hỏi nhanh">{Object.entries(questionTypes).map(([type,label],i)=><button type="button" className="button secondary" key={type} aria-label={`Thêm ${label}`} disabled={preview||pending} onClick={()=>add(type as QuestionInput["type"])}>{["Thang điểm","Chọn một","Chọn nhiều","Tự luận"][i]}</button>)}</div></div>
     <div className="builder-layout">
-      <aside className="card toolbox"><p className="eyebrow">Thư viện câu hỏi</p><h2>Thêm nội dung</h2><p className="muted">Kéo vào vị trí muốn thêm, hoặc bấm để thêm cuối mẫu.</p>{Object.entries(questionTypes).map(([type, label], i) => <button key={type} type="button" draggable={!preview && !pending} disabled={preview || pending} className="tool-item" onDragStart={e => e.dataTransfer.setData("question-type", type)} onClick={() => add(type as QuestionInput["type"])}><span className="tool-symbol" aria-hidden="true">{["#", "◉", "☑", "T"][i]}</span><span>{label}</span><span aria-hidden="true">＋</span></button>)}<p className="muted">Có thể đổi thứ tự bằng các nút ↑ ↓. Tối đa 100 câu hỏi.</p></aside>
+      <aside className="card toolbox"><p className="eyebrow">Loại câu hỏi</p><h2>Thêm nội dung</h2><p className="muted">Kéo vào vị trí muốn thêm, hoặc bấm để thêm cuối mẫu.</p>{Object.entries(questionTypes).map(([type, label], i) => <button key={type} type="button" draggable={!preview && !pending} disabled={preview || pending} className="tool-item" onDragStart={e => e.dataTransfer.setData("question-type", type)} onClick={() => add(type as QuestionInput["type"])}><span className="tool-symbol" aria-hidden="true">{["#", "◉", "☑", "T"][i]}</span><span>{label}</span><span aria-hidden="true">＋</span></button>)}<p className="muted">Có thể đổi thứ tự bằng các nút ↑ ↓. Tối đa 100 câu hỏi.</p></aside>
       <div className="stack">
         {(error || validation.length > 0) && <div className="notice error" role="alert">{error}{validation.map((v, i) => <p key={i}>{v}</p>)}</div>}
         <p className="sr-only" aria-live="polite">{message}</p>

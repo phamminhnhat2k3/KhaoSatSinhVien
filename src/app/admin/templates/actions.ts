@@ -2,7 +2,6 @@
 
 import { Role } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/access";
 import { templateSchema } from "@/modules/templates/rules";
 import { saveTemplate } from "@/modules/templates/service";
@@ -16,5 +15,5 @@ export async function createTemplate(_: string | undefined, form: FormData) {
   try { await saveTemplate(user.id, parsed.data); } catch { return "Chưa lưu được mẫu. Nội dung vẫn được giữ trên màn hình, vui lòng thử lại."; }
   revalidatePath("/admin");
   revalidatePath("/admin/templates");
-  redirect("/admin/templates?saved=1");
+  return {saved:true} as const;
 }
