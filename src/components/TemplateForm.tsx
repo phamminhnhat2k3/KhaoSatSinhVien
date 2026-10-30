@@ -2,15 +2,15 @@
 
 import { useActionState, useCallback, useEffect, useRef, useState } from "react";
 import {useRouter} from "next/navigation";
-import { createTemplate } from "@/app/admin/templates/actions";
+import { createTemplate,updateTemplate } from "@/app/admin/templates/actions";
 import { moveQuestion, newQuestion, questionTypes, templateSchema, type QuestionInput, type TemplateInput } from "@/modules/templates/rules";
 import { QuestionFields } from "./QuestionFields";
 import {readTemplateDraft,writeTemplateDraft} from "@/modules/templates/draft";
 
 type EditorQuestion = QuestionInput & { key: string };
-export function TemplateForm({ initial,draftKey }: { initial?: TemplateInput;draftKey:string }) {
+export function TemplateForm({ initial,draftKey,edit }: { initial?: TemplateInput;draftKey:string;edit?:{id:string;version:number;used:boolean} }) {
   const router=useRouter();
-  const initialTitle=initial?`${initial.title} (bản sao)`.slice(0,120):"";
+  const initialTitle=initial?(edit?initial.title:`${initial.title} (bản sao)`.slice(0,120)):"";
   const [title, setTitle] = useState(initialTitle);
   const [questions, setQuestions] = useState<EditorQuestion[]>(() => (initial?.questions ?? []).map((q, i) => ({ ...q, key: `initial-${i}` })));
   const [preview, setPreview] = useState(false);
@@ -18,11 +18,11 @@ export function TemplateForm({ initial,draftKey }: { initial?: TemplateInput;dra
   const [draftStatus,setDraftStatus]=useState("Đang kiểm tra bản nháp…");
   const [error, action, pending] = useActionState(async(previous:string|undefined,form:FormData)=>{
     try{
-      const result=await createTemplate(previous,form);
+      const result=await (edit?updateTemplate:createTemplate)(previous,form);
       if(typeof result==="string")return result;
       dirty.current=false;
       try{localStorage.removeItem(draftKey);}catch{/* The server has saved the template even if local storage is unavailable. */}
-      router.push("/admin/templates?saved=1");router.refresh();
+      router.push(`/admin/templates?saved=1${"versioned" in result&&result.versioned?"&versioned=1":edit?"&updated=1":""}`);router.refresh();
     }catch{return "Chưa lưu được mẫu. Nội dung và bản nháp được giữ lại để bạn thử tiếp.";}
   }, undefined);
   const [validation, setValidation] = useState<string[]>([]);
@@ -103,9 +103,10 @@ export function TemplateForm({ initial,draftKey }: { initial?: TemplateInput;dra
     if (!parsed.success) { event.preventDefault(); setValidation(parsed.error.issues.map(i => `${typeof i.path[1] === "number" ? `Câu ${i.path[1] + 1}: ` : ""}${i.message}`)); }
     else persist();
   }}>
+    {edit&&<><input type="hidden" name="id" value={edit.id}/><input type="hidden" name="version" value={edit.version}/></>}
     <input type="hidden" name="template" value={JSON.stringify({ title, questions })}/>
     <fieldset disabled={pending||!ready} className="builder-fields">
-    <div ref={toolbarRef} className="builder-toolbar card"><div className="builder-save-info"><div><strong>{questions.length} câu hỏi</strong><span className="muted"> · {questions.filter(q => q.required).length} bắt buộc</span></div><p className="builder-draft-status" role="status">{draftStatus}</p><button type="button" className="text-button" onClick={discardDraft}>Bỏ bản nháp</button></div><div className="actions"><button type="button" className="button secondary" onClick={() => setPreview(!preview)}>{preview ? "Tiếp tục chỉnh sửa" : "Xem trước"}</button><button className="button" disabled={pending}>{pending ? "Đang lưu…" : "Lưu mẫu khảo sát"}</button></div><div className="mobile-question-tools" aria-label="Thêm câu hỏi nhanh">{Object.entries(questionTypes).map(([type,label],i)=><button type="button" className="button secondary" key={type} aria-label={`Thêm ${label}`} disabled={preview||pending} onClick={()=>add(type as QuestionInput["type"])}>{["Thang điểm","Chọn một","Chọn nhiều","Tự luận"][i]}</button>)}</div></div>
+    <div ref={toolbarRef} className="builder-toolbar card"><div className="builder-save-info"><div><strong>{questions.length} câu hỏi</strong><span className="muted"> · {questions.filter(q => q.required).length} bắt buộc</span></div><p className="builder-draft-status" role="status">{draftStatus}</p><button type="button" className="text-button" onClick={discardDraft}>Bỏ bản nháp</button></div><div className="actions"><button type="button" className="button secondary" onClick={() => setPreview(!preview)}>{preview ? "Tiếp tục chỉnh sửa" : "Xem trước"}</button><button className="button" disabled={pending}>{pending ? "Đang lưu…" : edit?(edit.used?"Lưu phiên bản mới":"Lưu thay đổi"):"Lưu mẫu khảo sát"}</button></div><div className="mobile-question-tools" aria-label="Thêm câu hỏi nhanh">{Object.entries(questionTypes).map(([type,label],i)=><button type="button" className="button secondary" key={type} aria-label={`Thêm ${label}`} disabled={preview||pending} onClick={()=>add(type as QuestionInput["type"])}>{["Thang điểm","Chọn một","Chọn nhiều","Tự luận"][i]}</button>)}</div></div>
     <div className="builder-layout">
       <aside className="card toolbox"><p className="eyebrow">Loại câu hỏi</p><h2>Thêm nội dung</h2><p className="muted">Kéo vào vị trí muốn thêm, hoặc bấm để thêm cuối mẫu.</p>{Object.entries(questionTypes).map(([type, label], i) => <button key={type} type="button" draggable={!preview && !pending} disabled={preview || pending} className="tool-item" onDragStart={e => e.dataTransfer.setData("question-type", type)} onClick={() => add(type as QuestionInput["type"])}><span className="tool-symbol" aria-hidden="true">{["#", "◉", "☑", "T"][i]}</span><span>{label}</span><span aria-hidden="true">＋</span></button>)}<p className="muted">Có thể đổi thứ tự bằng các nút ↑ ↓. Tối đa 100 câu hỏi.</p></aside>
       <div className="stack">
