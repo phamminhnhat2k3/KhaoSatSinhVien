@@ -42,6 +42,10 @@ test("quản lý người dùng, sửa/xóa khoa và thông báo trượt đúng
     await page.getByLabel("Tìm người dùng", { exact: true }).fill(tag);
     await page.getByRole("button", { name: "Lọc người dùng", exact: true }).click();
     await expect(page.getByRole("heading", { name: "4 người dùng phù hợp", exact: true })).toBeVisible();
+    await expect(page.locator("main tbody .role-tag--student")).toHaveCount(2);
+    await expect(page.locator("main tbody .role-tag--lecturer")).toHaveCount(1);
+    await expect(page.locator("main tbody .role-tag--admin")).toHaveCount(1);
+    await expect(page.locator(".sidebar .role-tag--admin")).toHaveText("Quản trị viên");
     await expect(page.getByRole("img", { name: "Sinh viên: 2, Giảng viên: 1, Trưởng khoa: 0, Quản trị viên: 1, Chưa có vai trò: 0", exact: true })).toBeVisible();
     await page.screenshot({ path: ".playwright-cli/user-dashboard-desktop.png", fullPage: true });
     await page.getByRole("combobox", { name: "Vai trò", exact: true }).selectOption("LECTURER");

@@ -1,3 +1,4 @@
+import {RoleTags} from "./RoleTags";
 import { Avatar } from "./Avatar";
 import Link from "next/link";
 import Image from "next/image";
@@ -15,7 +16,7 @@ export function AppShell({ name, role, children, wide = false }: { name?: string
     </header>
     <div className={`workspace${wide ? " workspace-wide" : ""}`}>
       <aside className="sidebar" aria-label="Thông tin tài khoản">
-        <section className="card account-card"><div className="account-cover" aria-hidden="true"/><div className="account-content"><Avatar name={name}/><h2>{name || "Tài khoản của bạn"}</h2><p className="muted">{role}</p><div className="account-caption">Cộng đồng học tập<br/><strong>Lắng nghe sinh viên</strong></div></div></section>
+        <section className="card account-card"><div className="account-cover" aria-hidden="true"/><div className="account-content"><Avatar name={name}/><h2>{name || "Tài khoản của bạn"}</h2><p><RoleTags roles={role.split(" · ")}/></p><div className="account-caption">Cộng đồng học tập<br/><strong>Lắng nghe sinh viên</strong></div></div></section>
         <section className="card sidebar-note"><p className="eyebrow">Cùng nhau tiến bộ</p><h3>Mỗi ý kiến đều có giá trị.</h3><p className="muted">Góp ý chân thành để nâng cao chất lượng học tập và giảng dạy.</p></section>
         <nav className="card stack" aria-label="Truy cập nhanh"><Link className="text-button" href="/profile">Hồ sơ cá nhân</Link><NotificationShortcut/>{role.includes("Trưởng khoa") && <><Link className="text-button" href="/dean">Điều hành khoa</Link><Link className="text-button" href="/admin/lecturers">Giảng viên trong khoa</Link></>}{role.includes("Quản trị viên") && <><Link className="text-button" href="/admin">Quản trị khảo sát</Link><Link className="text-button" href="/admin/users">Tất cả người dùng</Link><Link className="text-button" href="/admin/academic">Quản lý khoa</Link><Link className="text-button" href="/admin/templates">Thư viện mẫu</Link></>}</nav>
       </aside>
