@@ -10,6 +10,7 @@ import { hash } from "argon2";
 import { normalizeAcademicCode } from "@/modules/academic/rules";
 import { notifyCampaign } from "@/modules/notifications/service";
 import { campaignSchema } from "@/modules/survey-campaign/input";
+import { saveCampaignDraft, cancelCampaignDraft } from "@/modules/survey-campaign/manage";
 import { publishToAudience } from "@/modules/survey-campaign/audience";
 import { studentSchema } from "@/modules/academic/students";
 
@@ -54,20 +55,26 @@ export async function createCampaign(_: string | undefined, formData: FormData) 
   const parsed = campaignSchema.safeParse({ ...Object.fromEntries(formData), courseIds: formData.getAll("courseIds") });
   if (!parsed.success) return parsed.error.issues[0].message;
   try {
-    await db.$transaction(async tx => {
-      const { courseIds, facultyId, courseTemplateId, ...data } = parsed.data;
-      const ids = [...new Set(courseIds)];
-      const matching = await tx.course.count({ where: { id: { in: ids }, ...(data.scope === "FACULTY" ? { facultyId } : {}), classes: { some: { semesterId: data.semesterId } } } });
-      if (matching !== ids.length) throw new Error("Môn học phải có lớp học phần trong học kỳ đã chọn.");
-      const campaign = await tx.surveyCampaign.create({ data: { ...data, facultyId: facultyId || null, courseTemplateId: courseTemplateId || null, courseTargets: { create: ids.map(courseId => ({ courseId })) } } });
-      await tx.auditLog.create({ data: { actorId: user.id, action: "CREATE", entity: "SurveyCampaign", entityId: campaign.id } });
-      if (facultyId) {
-        const deans = await tx.lecturerProfile.findMany({ where: { facultyId, user: { active: true, roles: { some: { role: "DEAN" } } } }, select: { userId: true } });
-        await tx.notification.createMany({ data: deans.map(d => ({ userId: d.userId, title: "Đợt khảo sát chờ xét duyệt", body: campaign.title, href: "/dean" })) });
-      }
-    });
+    await db.$transaction(tx => saveCampaignDraft(tx,user.id,{...Object.fromEntries(formData),courseIds:formData.getAll("courseIds")}));
   } catch { return "Chưa tạo được đợt. Kiểm tra khoa, học kỳ, mẫu và môn học thuộc học kỳ đã chọn."; }
   revalidatePath("/admin"); redirect("/admin?created=1");
+}
+
+export async function updateCampaign(_: string | undefined, formData: FormData) {
+  const user=await requireUser(Role.ADMIN);
+  const id=String(formData.get("id")??"");
+  const parsed=campaignSchema.safeParse({...Object.fromEntries(formData),courseIds:formData.getAll("courseIds")});
+  if(!id||!parsed.success)return "Kiểm tra lại thông tin đợt khảo sát.";
+  try { await db.$transaction(tx=>saveCampaignDraft(tx,user.id,{...Object.fromEntries(formData),courseIds:formData.getAll("courseIds")},id)); }
+  catch { return "Chưa lưu được. Chỉ sửa đợt nháp chưa giao phiếu; kiểm tra lại khoa, môn và học kỳ."; }
+  revalidatePath("/admin");revalidatePath("/dean");redirect(`/admin/campaigns/${id}/review?saved=1`);
+}
+export async function cancelCampaign(_: string | undefined, formData: FormData) {
+  const user=await requireUser(Role.ADMIN);const id=String(formData.get("id")??"");
+  if(formData.get("confirm")!=="yes")return "Vui lòng xác nhận hủy bản nháp.";
+  try { await db.$transaction(tx=>cancelCampaignDraft(tx,user.id,id)); }
+  catch { return "Chỉ hủy được đợt đang nháp. Tải lại để kiểm tra trạng thái."; }
+  revalidatePath("/admin");revalidatePath("/dean");redirect("/admin?status=CANCELLED");
 }
 
 export async function publishCampaign(_: string | undefined, formData: FormData) {

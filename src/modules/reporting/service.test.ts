@@ -17,6 +17,10 @@ test("báo cáo môn dùng đúng người đánh giá môn đó và chặn nhó
     await expect(getCampaignReport(db as never, "c", "teacher-B")).rejects.toThrow("tối thiểu 2");
     const admin = await getCampaignReport(db as never, "c");
     expect(admin.questions.map(r => r.courseId)).toEqual([null, "A"]);
+    campaign.submissions[1].answers[1].value="";
+    const optional=await getCampaignReport(db as never,"c");
+    expect(optional.questions.find(q=>q.courseId==="A")).toMatchObject({respondents:1,suppressed:true,average:undefined});
+    campaign.submissions[1].answers[1].value="100";
     const dean = await getCampaignReport(db as never, "c", undefined, "faculty-a");
     expect(dean.questions.map(r => r.courseId)).toEqual([null, "A"]);
     await expect(getCampaignReport(db as never, "c", undefined, "faculty-b")).rejects.toThrow("khoa");

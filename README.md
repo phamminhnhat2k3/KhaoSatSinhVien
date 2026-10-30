@@ -99,7 +99,7 @@ pnpm build
 pnpm test:e2e
 ```
 
-E2E đầy đủ cần MySQL đã seed và cấu hình `DATABASE_URL`, `AUTH_SECRET` trong `.env`. Đặt `$env:RUN_DB_E2E = '1'` và nhập lại `$env:SEED_PASSWORD` trước khi chạy `pnpm test:e2e`; nếu không, ba kịch bản dữ liệu sẽ bị bỏ qua. Chạy `pnpm exec playwright install chromium` một lần nếu máy chưa có trình duyệt Playwright. Các kịch bản này thay đổi dữ liệu, chỉ chạy trên cơ sở dữ liệu nghiệm thu riêng.
+Nghiệm thu nghiệp vụ dùng `pnpm test:e2e:isolated`: tạo database tạm, tự tạo dữ liệu kiểm thử và dọn sau khi chạy; không cần seed hay mật khẩu demo. Ba hành trình admin/sinh viên/giảng viên đã chuyển sang dữ liệu riêng và được chạy trong bộ này. Cài Chromium bằng `pnpm exec playwright install chromium` nếu máy chưa có.
 
 Các bài nghiệm thu mới không cần seed hoặc mật khẩu demo. Chúng tạo tài khoản, học vụ và khảo sát có mã riêng rồi dọn đúng các bản ghi đã tạo khi kết thúc. Với CMD:
 
@@ -118,4 +118,7 @@ pnpm build
 pnpm test:e2e:isolated
 ```
 
-Tài khoản MySQL trong `.env` cần quyền tạo/xóa database thử. Script chỉ tạo và dọn database ngẫu nhiên mang tiền tố `student_survey_test_`, chạy production server ở cổng 3015 với một worker. Ngưỡng báo cáo trong database thử là 2 để kiểm tra môn đủ/thiếu phản hồi; cấu hình ứng dụng thật không thay đổi. Không chạy seed. Nếu tiến trình bị đóng cưỡng bức, database thử có thể còn lại. Ba bài cũ phụ thuộc seed vẫn được bỏ qua.
+Tài khoản MySQL trong `.env` cần quyền tạo/xóa database thử. Script chỉ tạo và dọn database ngẫu nhiên mang tiền tố `student_survey_test_`, chạy production server ở cổng 3015 với một worker. Ngưỡng báo cáo trong database thử là 2 để kiểm tra môn đủ/thiếu phản hồi; cấu hình ứng dụng thật không thay đổi. Không chạy seed. Nếu tiến trình bị đóng cưỡng bức, database thử có thể còn lại. Toàn bộ bài nghiệp vụ, kể cả ba hành trình cũ, chạy với dữ liệu riêng; không còn bỏ qua vì thiếu seed.
+
+
+Xem [vòng đời và báo cáo khảo sát](docs/VONG_DOI_VA_BAO_CAO_KHAO_SAT.md) để sửa/hủy/sao chép đợt nháp, xem tiến độ và báo cáo, phân biệt thời gian tiếp nhận.

@@ -1,3 +1,4 @@
+import {isAcceptingResponses} from "@/modules/survey-campaign/rules";
 import { notFound } from "next/navigation";
 import { Role } from "@prisma/client";
 import { AppShell } from "@/components/AppShell";
@@ -11,6 +12,6 @@ export default async function SurveyPage({ params }: { params: Promise<{ id: str
   const user = await requireUser(Role.STUDENT);
   const student = await db.studentProfile.findUniqueOrThrow({ where: { userId: user.id } });
   const participation = await db.surveyParticipation.findUnique({ where: { campaignId_studentId: { campaignId: (await params).id, studentId: student.id } }, include: { courses: { include: { course: true }, orderBy: { course: { code: "asc" } } }, campaign: { include: { faculty: true, semester: true, template: { include: { questions: { include: { options: { orderBy: { position: "asc" } } }, orderBy: { position: "asc" } } } }, courseTemplate: { include: { questions: { include: { options: { orderBy: { position: "asc" } } }, orderBy: { position: "asc" } } } } } } } });
-  if (!participation || participation.status === "COMPLETED") notFound();
+  if (!participation || participation.status === "COMPLETED" || !isAcceptingResponses(participation.campaign.status,participation.campaign.startsAt,participation.campaign.endsAt)) notFound();
   return <AppShell name={user.name} role="Sinh viên"><p className="eyebrow">{participation.campaign.faculty?.name ?? (participation.campaign.scope === "UNIVERSITY" ? "Khảo sát toàn trường" : "Phiếu khảo sát")} · {participation.campaign.semester?.name}</p><h1>{participation.campaign.title}</h1><p className="lead">Các câu có dấu * là bắt buộc. Phần môn học chỉ gồm các môn bạn đăng ký trong học kỳ và được chốt khi đợt công bố.</p><SurveyForm campaignId={participation.campaignId} questions={assignedQuestions(participation.campaign, participation.courses)} draft={(participation.draft ?? {}) as SurveyAnswers}/></AppShell>;
 }

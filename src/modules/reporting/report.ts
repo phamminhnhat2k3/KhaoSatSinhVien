@@ -1,7 +1,7 @@
 export function participationRate(completed: number, invited: number) { return invited === 0 ? 0 : Math.round(completed / invited * 1000) / 10; }
 
-export function ensureReportAvailable(status: string, responses: number, minimum: number) {
-  if (status !== "CLOSED") throw new Error("Báo cáo chỉ có sau khi khảo sát đóng.");
+export function ensureReportAvailable(status: string, responses: number, minimum: number, endsAt?:Date, now=new Date()) {
+  if (status !== "CLOSED" && !(status==="PUBLISHED"&&endsAt&&endsAt<now)) throw new Error("Báo cáo chỉ có sau khi khảo sát đóng hoặc hết hạn.");
   if (responses < minimum) throw new Error(`Cần tối thiểu ${minimum} phản hồi để bảo vệ tính ẩn danh.`);
 }
 
