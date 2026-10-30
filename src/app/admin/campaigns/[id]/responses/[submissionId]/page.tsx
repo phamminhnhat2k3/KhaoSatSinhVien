@@ -11,11 +11,12 @@ import { assignedQuestions } from "@/modules/response/questions";
 export default async function SubmissionPage({ params }: { params: Promise<{ id: string; submissionId: string }> }) {
   const user = await requireUser(Role.ADMIN);
   const { id, submissionId } = await params;
-  const submission = await db.submission.findFirst({ where: { id: submissionId, campaignId: id }, select: { submittedAt: true, answers: { select: { questionId: true, value: true, courseId: true, course: { select: { code: true, name: true } } } }, campaign: { select: { title: true, template: { select: { questions: { orderBy: { position: "asc" }, include: { options: { orderBy: { position: "asc" } } } } } }, courseTemplate: { select: { questions: { orderBy: { position: "asc" }, include: { options: { orderBy: { position: "asc" } } } } } } } } } });
+  const submission = await db.submission.findFirst({ where: { id: submissionId, campaignId: id }, select: { submittedAt: true, answers: { select: { questionId: true, value: true, lecturerId:true,lecturer:{select:{user:{select:{name:true}}}},courseId: true, course: { select: { code: true, name: true } } } }, campaign: { select: { evaluationMode:true,title: true, template: { select: { questions: { orderBy: { position: "asc" }, include: { options: { orderBy: { position: "asc" } } } } } }, courseTemplate: { select: { questions: { orderBy: { position: "asc" }, include: { options: { orderBy: { position: "asc" } } } } } } } } } });
   if (!submission) notFound();
-  const answers = new Map(submission.answers.map(a => [a.courseId ? `${a.courseId}:${a.questionId}` : a.questionId, a.value]));
+  const answers = new Map(submission.answers.map(a => [a.lecturerId?`${a.courseId}:${a.lecturerId}:${a.questionId}`:a.courseId ? `${a.courseId}:${a.questionId}` : a.questionId, a.value]));
   const courses = [...new Map(submission.answers.filter(a => a.courseId && a.course).map(a => [a.courseId!, { courseId: a.courseId!, course: a.course! }])).values()].sort((a, b) => a.course.code.localeCompare(b.course.code));
-  const questions = assignedQuestions(submission.campaign, courses);
+  const teachings=[...new Map(submission.answers.filter(a=>a.courseId&&a.course&&a.lecturerId&&a.lecturer).map(a=>[`${a.courseId}:${a.lecturerId}`,{courseId:a.courseId!,course:a.course!,lecturerId:a.lecturerId!,lecturer:a.lecturer!}])).values()];
+  const questions = assignedQuestions(submission.campaign, courses,teachings);
   return <AppShell name={user.name} role="Quản trị viên" wide>
     <Link className="text-button" href={`/admin/campaigns/${id}/responses`}>← Danh sách phiếu đã gửi</Link>
     <p className="eyebrow">Chi tiết bài đánh giá</p><h1>{submission.campaign.title}</h1>

@@ -13,6 +13,14 @@ import { campaignSchema } from "@/modules/survey-campaign/input";
 import { saveCampaignDraft, cancelCampaignDraft } from "@/modules/survey-campaign/manage";
 import { publishToAudience } from "@/modules/survey-campaign/audience";
 import { studentSchema } from "@/modules/academic/students";
+import {assignClassTeachers} from "@/modules/academic/teaching";
+
+export async function saveClassTeachers(_:string|undefined,form:FormData){
+  const user=await requireUser(Role.ADMIN);const id=String(form.get("classId")??"");
+  try{await db.$transaction(tx=>assignClassTeachers(tx,user.id,id,form.getAll("lecturerIds").map(String)));}
+  catch(error){return error instanceof Error&&["Chỉ chọn","Phân khoa","Một lớp"].some(p=>error.message.startsWith(p))?error.message:"Không lưu được phân công. Tải lại và thử lại.";}
+  revalidatePath("/admin/classes/new");return "Đã cập nhật giảng viên thực dạy.";
+}
 
 const courseClassSchema = z.object({ courseCode: z.string().trim().min(2).max(20).transform(normalizeAcademicCode), courseName: z.string().trim().min(3).max(120), classCode: z.string().trim().min(2).max(30).transform(normalizeAcademicCode), semesterId: z.string().min(1), facultyId: z.string().min(1), educationSystem: z.enum(["REGULAR", "PART_TIME", "DISTANCE"]), capacity: z.coerce.number().int().min(1).max(10000) });
 
@@ -86,7 +94,7 @@ export async function publishCampaign(_: string | undefined, formData: FormData)
       await tx.auditLog.create({ data: { actorId: user.id, action: "PUBLISH", entity: "SurveyCampaign", entityId: id } });
       await notifyCampaign(tx, id, user.id, "PUBLISHED");
     }, { timeout: 30000 });
-  } catch (error) { return error instanceof Error && ["Chưa có sinh viên", "Môn học đã thay đổi", "Phạm vi, khoa"].some(prefix=>error.message.startsWith(prefix)) ? error.message : "Không thể công bố. Đợt có thể đã đổi trạng thái hoặc dữ liệu không còn hợp lệ."; }
+  } catch (error) { return error instanceof Error && ["Chưa có sinh viên", "Môn học đã thay đổi", "Phạm vi, khoa", "Chưa phân công", "Giảng viên lớp"].some(prefix=>error.message.startsWith(prefix)) ? error.message : "Không thể công bố. Đợt có thể đã đổi trạng thái hoặc dữ liệu không còn hợp lệ."; }
   revalidatePath("/admin");
   revalidatePath("/student");
   redirect("/admin?published=1");

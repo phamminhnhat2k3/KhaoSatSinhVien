@@ -95,6 +95,9 @@ model StudentProfile {
 }
 
 model LecturerProfile {
+  teachings CourseTeaching[]
+  evaluations ParticipationTeaching[]
+  answers Answer[]
   facultyId String?
   faculty Faculty? @relation(fields: [facultyId], references: [id])
   courses Course[]
@@ -115,6 +118,7 @@ model Semester {
 }
 
 model Course {
+  teachingEvaluations ParticipationTeaching[]
   facultyId String?
   faculty Faculty? @relation(fields: [facultyId], references: [id])
   lecturers LecturerProfile[]
@@ -128,6 +132,8 @@ model Course {
 }
 
 model CourseClass {
+  teachingConfigured Boolean @default(false)
+  teachings CourseTeaching[]
   educationSystem String @default("REGULAR")
   capacity Int @default(50)
   id          String @id @default(cuid())
@@ -186,6 +192,7 @@ model QuestionOption {
 }
 
 model SurveyCampaign {
+  evaluationMode String @default("COURSE")
   approvedAt DateTime?
   approvedBy String?
   reviewNote String? @db.Text
@@ -220,6 +227,7 @@ model SurveyTarget {
 }
 
 model SurveyParticipation {
+  teachings ParticipationTeaching[]
   id          String @id @default(cuid())
   campaignId  String
   studentId   String
@@ -241,6 +249,8 @@ model Submission {
 }
 
 model Answer {
+  lecturerId String?
+  lecturer LecturerProfile? @relation(fields:[lecturerId],references:[id],onDelete:Restrict)
   id           String @id @default(cuid())
   submissionId String
   questionId   String
@@ -265,6 +275,24 @@ model ParticipationCourse {
   participation SurveyParticipation @relation(fields: [participationId], references: [id], onDelete: Cascade)
   course Course @relation(fields: [courseId], references: [id])
   @@id([participationId, courseId])
+}
+
+model CourseTeaching {
+  classId String
+  lecturerId String
+  class CourseClass @relation(fields:[classId],references:[id],onDelete:Cascade)
+  lecturer LecturerProfile @relation(fields:[lecturerId],references:[id],onDelete:Restrict)
+  @@id([classId,lecturerId])
+}
+
+model ParticipationTeaching {
+  participationId String
+  courseId String
+  lecturerId String
+  participation SurveyParticipation @relation(fields:[participationId],references:[id],onDelete:Cascade)
+  course Course @relation(fields:[courseId],references:[id],onDelete:Restrict)
+  lecturer LecturerProfile @relation(fields:[lecturerId],references:[id],onDelete:Restrict)
+  @@id([participationId,courseId,lecturerId])
 }
 
 model AuditLog {

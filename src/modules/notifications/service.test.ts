@@ -28,3 +28,8 @@ test("lớp không có giảng viên vẫn thông báo theo môn và trưởng k
   expect(rows.map((r: { userId: string; href: string }) => [r.userId, r.href])).toEqual([["teacher", "/lecturer"], ["dean", "/dean"], ["admin", "/admin"]]);
   expect(tx.lecturerProfile.findMany.mock.calls[0][0].where.facultyId).toBe("f");
 });
+test("đánh giá giảng viên thông báo theo người dạy đã chốt, không gửi người chỉ được phân công môn",async()=>{
+  const tx={surveyCampaign:{findUniqueOrThrow:vi.fn().mockResolvedValue({title:"Đánh giá GV",evaluationMode:"LECTURER",startsAt:new Date(),endsAt:new Date(),targets:[],courseTargets:[{course:{classes:[],lecturers:[{userId:"not-teaching"}]}}],participations:[{student:{userId:"student"},teachings:[{lecturer:{userId:"actual"}},{lecturer:{userId:"actual"}}]}]})},notification:{createMany:vi.fn()}};
+  await notifyCampaign(tx as never,"campaign","admin","PUBLISHED");
+  expect(tx.notification.createMany.mock.calls[0][0].data.map((r:{userId:string})=>r.userId)).toEqual(["student","actual","admin"]);
+});

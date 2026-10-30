@@ -29,3 +29,7 @@ Các thông tin mới bắt buộc chọn khoa khi tạo qua giao diện. Cột 
 ## Nghiệm thu
 
 `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`, `npm run test:e2e:isolated`. Nghiệm thu trình duyệt dùng database tạm riêng và dọn sau khi chạy; không tạo tài khoản thử trong database đang sử dụng.
+
+## Đánh giá giảng viên thực dạy
+
+Lớp mới vẫn có thể tạo trước khi phân công. Muốn công bố đợt đánh giá giảng viên, admin phải chọn người dạy thực tế ở từng lớp, hỗ trợ đồng giảng. Quyền xem kết quả chế độ này dựa vào danh sách đã chốt vào phiếu, không lấy phân công môn hiện tại. Xem [hướng dẫn](DANH_GIA_GIANG_VIEN_THUC_DAY.md).

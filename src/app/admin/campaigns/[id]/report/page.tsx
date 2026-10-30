@@ -13,8 +13,8 @@ export default async function AdminReportPage({params,searchParams}:{params:Prom
   const completed=await db.surveyParticipation.count({where:{campaignId:id,status:"COMPLETED"}});
   let report:Awaited<ReturnType<typeof getCampaignReport>>|undefined,error:string|undefined;
   try{report=await getCampaignReport(db,id);}catch(e){error=e instanceof Error?e.message:"Chưa thể mở báo cáo.";}
-  const sections=[...new Map(report?.questions.map(q=>[q.courseId??"common",q.sectionTitle])??[]).entries()];
-  const questions=report?.questions.filter(q=>!course||(q.courseId??"common")===course)??[];
+  const sections=[...new Map(report?.questions.map(q=>[q.sectionId,q.sectionTitle])??[]).entries()];
+  const questions=report?.questions.filter(q=>!course||(q.sectionId)===course)??[];
   return <AppShell name={user.name} role="Quản trị viên" wide>
     <Link className="text-button" href="/admin">← Quản lý khảo sát</Link><p className="eyebrow">Tiến độ và kết quả</p><h1>{campaign.title}</h1>
     <p className="lead">{campaign.faculty?.name??"Toàn trường"} · {campaign.semester?.name??"Đợt khảo sát cũ"}</p>

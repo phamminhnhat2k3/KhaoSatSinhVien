@@ -12,3 +12,11 @@ test("mỗi sinh viên chỉ nhận môn đã chốt, khóa trả lời không t
   expect(validateAnswers(second, { "B:subject": "5" })["B:subject"]).toBe("Câu hỏi không thuộc mẫu khảo sát.");
   expect(assignedQuestions({ template: campaign.template }, []).map(x => x.id)).toEqual(["common"]);
 });
+test("mỗi giảng viên có khóa câu trả lời riêng, không nhận giảng viên ngoài phiếu",()=>{
+  const campaign={evaluationMode:"LECTURER",template:{questions:[q]},courseTemplate:{questions:[{...q,id:"subject"}]}};
+  const teachers=["t1","t2"].map(lecturerId=>({courseId:"A",lecturerId,course:{code:"A",name:"Môn A"},lecturer:{user:{name:lecturerId}}}));
+  const questions=assignedQuestions(campaign,[{courseId:"A",course:{code:"A",name:"Môn A"}}],teachers);
+  expect(questions.map(x=>x.id)).toEqual(["common","A:t1:subject","A:t2:subject"]);
+  expect(questions[1]).toMatchObject({lecturerId:"t1",sectionTitle:"A · Môn A — t1"});
+  expect(validateAnswers(questions,{"A:t3:subject":"5"})).toHaveProperty("A:t3:subject","Câu hỏi không thuộc mẫu khảo sát.");
+});

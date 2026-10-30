@@ -122,3 +122,5 @@ Tài khoản MySQL trong `.env` cần quyền tạo/xóa database thử. Script 
 
 
 Xem [vòng đời và báo cáo khảo sát](docs/VONG_DOI_VA_BAO_CAO_KHAO_SAT.md) để sửa/hủy/sao chép đợt nháp, xem tiến độ và báo cáo, phân biệt thời gian tiếp nhận.
+
+Đợt khảo sát có thể [đánh giá từng giảng viên thực dạy](docs/DANH_GIA_GIANG_VIEN_THUC_DAY.md). Phân công một/nhiều người ở lớp học phần trước khi công bố; phiếu và báo cáo chốt theo người dạy tại thời điểm công bố. Đợt cũ giữ chế độ đánh giá môn.

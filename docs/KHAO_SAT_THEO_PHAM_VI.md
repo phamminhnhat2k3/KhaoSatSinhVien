@@ -44,7 +44,7 @@ Ví dụ một đợt khoa chọn các môn A/B/C/D/E:
 - Câu trả lời phần môn lưu mã môn nhưng không lưu mã sinh viên trong `Submission`/`Answer`.
 - Admin xem từng phiếu thấy các phần môn đúng với phiếu đó, giữ cơ chế ẩn danh hiện có.
 - Báo cáo mỗi môn dùng người được giao và các phiếu có phần môn đó; không lấy toàn bộ sinh viên của khoa làm mẫu số.
-- Từng môn phải đủ ngưỡng ẩn danh trước khi hiện kết quả. Giảng viên chỉ xem môn có lớp mình phụ trách trong đúng học kỳ, không xem phần chung của khoa/toàn trường. Việc đánh giá ở cấp môn, chưa tách điểm theo từng giảng viên/lớp học phần.
+- Từng môn phải đủ ngưỡng ẩn danh trước khi hiện kết quả. Giảng viên chỉ xem môn có lớp mình phụ trách trong đúng học kỳ, không xem phần chung của khoa/toàn trường. Có thể chọn đánh giá chung môn hoặc đánh giá từng giảng viên thực dạy, chốt theo lớp đăng ký; xem [hướng dẫn đánh giá giảng viên](DANH_GIA_GIANG_VIEN_THUC_DAY.md).
 - Mẫu câu hỏi chung và mẫu môn có thể dùng lại từ thư viện hiện có; không cần tạo câu hỏi thủ công cho từng sinh viên.
 
 ## Nghiệm thu
