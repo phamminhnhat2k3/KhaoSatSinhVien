@@ -1,0 +1,129 @@
+{
+  "title": "Khảo sát chất lượng học tập và thực hành – Khoa Cơ khí",
+  "questions": [
+    {
+      "content": "Nội dung chương trình đào tạo phù hợp với chuyên ngành Cơ khí.",
+      "type": "SCALE",
+      "required": true,
+      "scaleMin": 1,
+      "scaleMax": 5,
+      "scaleStep": 1,
+      "options": []
+    },
+    {
+      "content": "Kiến thức lý thuyết hỗ trợ tốt cho các buổi thực hành.",
+      "type": "SCALE",
+      "required": true,
+      "scaleMin": 1,
+      "scaleMax": 5,
+      "scaleStep": 1,
+      "options": []
+    },
+    {
+      "content": "Thời lượng thực hành tại xưởng đáp ứng nhu cầu học tập.",
+      "type": "SCALE",
+      "required": true,
+      "scaleMin": 1,
+      "scaleMax": 5,
+      "scaleStep": 1,
+      "options": []
+    },
+    {
+      "content": "Máy móc, dụng cụ và thiết bị thực hành đáp ứng yêu cầu học tập.",
+      "type": "SCALE",
+      "required": true,
+      "scaleMin": 1,
+      "scaleMax": 5,
+      "scaleStep": 1,
+      "options": []
+    },
+    {
+      "content": "Hướng dẫn an toàn lao động trước khi thực hành đầy đủ và rõ ràng.",
+      "type": "SCALE",
+      "required": true,
+      "scaleMin": 1,
+      "scaleMax": 5,
+      "scaleStep": 1,
+      "options": []
+    },
+    {
+      "content": "Học liệu, bản vẽ kỹ thuật và phần mềm chuyên ngành dễ tiếp cận.",
+      "type": "SCALE",
+      "required": true,
+      "scaleMin": 1,
+      "scaleMax": 5,
+      "scaleStep": 1,
+      "options": []
+    },
+    {
+      "content": "Mức độ hài lòng chung của bạn đối với môi trường học tập tại khoa Cơ khí?",
+      "type": "SINGLE",
+      "required": true,
+      "options": [
+        {
+          "label": "Rất không hài lòng",
+          "value": "1"
+        },
+        {
+          "label": "Không hài lòng",
+          "value": "2"
+        },
+        {
+          "label": "Bình thường",
+          "value": "3"
+        },
+        {
+          "label": "Hài lòng",
+          "value": "4"
+        },
+        {
+          "label": "Rất hài lòng",
+          "value": "5"
+        }
+      ]
+    },
+    {
+      "content": "Những nội dung nào cần được khoa ưu tiên cải thiện? (Có thể chọn nhiều phương án)",
+      "type": "MULTIPLE",
+      "required": false,
+      "options": [
+        {
+          "label": "Trang thiết bị thực hành",
+          "value": "1"
+        },
+        {
+          "label": "Thời lượng thực hành",
+          "value": "2"
+        },
+        {
+          "label": "Điều kiện an toàn tại xưởng",
+          "value": "3"
+        },
+        {
+          "label": "Học liệu và phần mềm",
+          "value": "4"
+        },
+        {
+          "label": "Hỗ trợ học tập và hướng nghiệp",
+          "value": "5"
+        },
+        {
+          "label": "Kết nối doanh nghiệp và thực tập",
+          "value": "6"
+        }
+      ]
+    },
+    {
+      "content": "Điều bạn đánh giá tốt nhất khi học tập tại khoa Cơ khí là gì?",
+      "type": "TEXT",
+      "required": false,
+      "options": []
+    },
+    {
+      "content": "Bạn có đề xuất cụ thể nào để cải thiện chất lượng học tập và thực hành? Không ghi họ tên hoặc mã sinh viên trong câu trả lời.",
+      "type": "TEXT",
+      "required": false,
+      "options": []
+    }
+  ]
+}
