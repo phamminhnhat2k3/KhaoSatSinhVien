@@ -7,19 +7,18 @@ import { requireUser } from "@/lib/access";
 import { canManageFaculty } from "@/modules/academic/permissions";
 
 export async function saveLecturer(_: string | undefined, form: FormData) {
-  const actor = await requireUser();
-  const own = await db.lecturerProfile.findUnique({ where: { userId: actor.id } });
+  const actor = await requireUser("ADMIN");
   const parsed = z.object({ id: z.string(), phone: z.string().trim().max(30).default(""), name: z.string().trim().min(2).max(120), email: z.email(), lecturerCode: z.string().trim().min(2).max(30), facultyId: z.string().min(1), password: z.string().max(100) }).safeParse(Object.fromEntries(form));
   if (!parsed.success) return "Kiểm tra thông tin giảng viên và khoa.";
   const { id, password, ...data } = parsed.data;
-  if (!canManageFaculty(actor.roles, own?.facultyId, data.facultyId)) return "Không có quyền quản lý khoa này.";
+  if (!canManageFaculty(actor.roles)) return "Không có quyền quản lý khoa này.";
   if (!id && password.length < 8) return "Mật khẩu khởi tạo phải từ 8 ký tự.";
   const dean = form.get("dean") === "on";
   if (!actor.roles.includes("ADMIN") && dean) return "Chỉ quản trị viên được cấp quyền Trưởng khoa.";
   try {
     await db.$transaction(async tx => {
       const previous = id ? await tx.lecturerProfile.findUniqueOrThrow({ where: { id }, include: { user: { include: { roles: true } } } }) : null;
-      if (previous && (!canManageFaculty(actor.roles, own?.facultyId, previous.facultyId) || (!actor.roles.includes("ADMIN") && previous.user.roles.some(r => r.role === "DEAN")))) throw new Error("FORBIDDEN");
+      if (previous && (!canManageFaculty(actor.roles) || (!actor.roles.includes("ADMIN") && previous.user.roles.some(r => r.role === "DEAN")))) throw new Error("FORBIDDEN");
       const courseIds = [...new Set(form.getAll("courseIds").map(String))];
       if (await tx.course.count({ where: { id: { in: courseIds }, facultyId: data.facultyId } }) !== courseIds.length) throw new Error("COURSE");
       const userData = { name: data.name, phone: data.phone, email: data.email.toLowerCase() };

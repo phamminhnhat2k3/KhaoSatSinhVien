@@ -2,13 +2,13 @@
 
 ## Quản trị viên
 
-Quản lý toàn hệ thống. Mở `/admin/lecturers` từ trang quản trị hoặc trang thêm sinh viên để tạo giảng viên, chỉnh hồ sơ nghiệp vụ, gắn khoa và phân công môn. Tích “Cấp quyền Trưởng khoa” để bổ nhiệm; bỏ tích để thu hồi. Giảng viên vẫn giữ vai trò LECTURER, quyền DEAN bổ sung quyền quản lý khoa. Khi đăng nhập, ADMIN ưu tiên vào trang quản trị; DEAN ưu tiên vào `/dean`; giảng viên thường vào `/lecturer`.
+Quản lý toàn hệ thống. Mở `/admin/lecturers` từ trang quản trị hoặc trang thêm sinh viên để tạo giảng viên, chỉnh hồ sơ nghiệp vụ, gắn khoa và phân công môn. Tích “Cấp quyền Trưởng khoa” để bổ nhiệm; bỏ tích để thu hồi. Giảng viên vẫn giữ vai trò LECTURER, quyền DEAN bổ sung quyền xem kết quả khoa. Khi đăng nhập, ADMIN ưu tiên vào trang quản trị; DEAN ưu tiên vào `/dean`; giảng viên thường vào `/lecturer`.
 
 ## Trưởng khoa
 
-Chỉ quản lý khoa được gắn trong LecturerProfile. Trang `/dean` hiển thị các đợt khảo sát FACULTY thuộc khoa đó, thời gian, môn, mẫu chung và ý kiến xét duyệt. Có thể duyệt hoặc yêu cầu chỉnh sửa đợt nháp. Quyết định có người duyệt, thời điểm và nhật ký; quản trị viên nhận thông báo. Quản trị viên vẫn có quyền công bố trực tiếp, được ghi nhật ký công bố.
+Chỉ xem kết quả khảo sát FACULTY thuộc khoa được gắn trong LecturerProfile. Trang `/dean` hiển thị các đợt đã công bố hoặc đã đóng; không hiển thị bản nháp, không xét duyệt, không thêm/sửa/xóa giảng viên. Báo cáo tổng hợp và CSV mở sau khi đóng hoặc hết hạn và đủ ngưỡng ẩn danh. Không truy cập được kết quả khoa khác hay báo cáo toàn trường.
 
-Trưởng khoa xem thống kê môn của đợt thuộc khoa, xuất CSV theo cùng phạm vi, sau khi đóng và đủ ngưỡng ẩn danh. Không được truy cập đợt khoa khác hay báo cáo toàn trường. Có thể thêm, cập nhật giảng viên thường trong khoa; không được bổ nhiệm Trưởng khoa hay thay đổi hồ sơ Trưởng khoa.
+Phòng công tác sinh viên, quản lý đào tạo và sau đại học sử dụng quyền quản trị để tổ chức khảo sát theo kế hoạch đã được phê duyệt trước khi tạo khảo sát. Không có bước duyệt lại của Trưởng khoa trong ứng dụng. Các trường xét duyệt cũ trong database được giữ để bảo toàn lịch sử nhưng không tham gia quy trình hiện tại.
 
 ## Giảng viên và sinh viên
 

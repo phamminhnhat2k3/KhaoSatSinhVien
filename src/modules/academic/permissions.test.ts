@@ -1,11 +1,8 @@
-import { describe, expect, it } from "vitest";
-import { canManageFaculty } from "./permissions";
-describe("faculty permissions", () => {
-  it("allows administrators across faculties", () => expect(canManageFaculty(["ADMIN"], null, "other")).toBe(true));
-  it("restricts deans to their assigned faculty", () => {
-    expect(canManageFaculty(["DEAN"], "a", "a")).toBe(true);
-    expect(canManageFaculty(["DEAN"], "a", "b")).toBe(false);
-    expect(canManageFaculty(["DEAN"], null, null)).toBe(false);
-    expect(canManageFaculty(["LECTURER"], "a", "a")).toBe(false);
-  });
+import {expect,test} from "vitest";
+import {canManageFaculty} from "./permissions";
+test("chỉ admin được thay đổi dữ liệu nghiệp vụ khoa",()=>{
+ expect(canManageFaculty(["ADMIN"])).toBe(true);
+ expect(canManageFaculty(["DEAN","LECTURER"])).toBe(false);
+ expect(canManageFaculty(["LECTURER"])).toBe(false);
+ expect(canManageFaculty(["STUDENT"])).toBe(false);
 });

@@ -11,10 +11,6 @@ export async function saveCampaignDraft(tx: Prisma.TransactionClient, actorId: s
     ? await tx.surveyCampaign.update({ where: { id, status: "DRAFT", scope: { in: ["FACULTY","UNIVERSITY"] }, participations: { none: {} }, submissions: { none: {} } }, data: { ...fields, approvedAt: null, approvedBy: null, reviewNote: null, courseTargets: { deleteMany: {}, create: ids.map(courseId=>({courseId})) } } })
     : await tx.surveyCampaign.create({ data: { ...fields, courseTargets: { create: ids.map(courseId=>({courseId})) } } });
   await tx.auditLog.create({ data: { actorId, action: id ? "UPDATE_DRAFT" : "CREATE", entity: "SurveyCampaign", entityId: campaign.id } });
-  if (facultyId) {
-    const deans = await tx.lecturerProfile.findMany({ where: { facultyId, user: { active: true, roles: { some: { role: "DEAN" } } } }, select: { userId: true } });
-    await tx.notification.createMany({ data: deans.map(d=>({userId:d.userId,title:id?"Đợt khảo sát đã sửa, cần xét duyệt lại":"Đợt khảo sát chờ xét duyệt",body:campaign.title,href:"/dean"})) });
-  }
   return campaign;
 }
 
