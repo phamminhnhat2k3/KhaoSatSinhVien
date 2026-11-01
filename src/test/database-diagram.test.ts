@@ -5,6 +5,16 @@ import {resolve} from "node:path";
 import {pathToFileURL} from "node:url";
 import {expect,test} from "vitest";
 const dbml=readFileSync("docs/database/database.dbml","utf8");
+test("draw.io có đủ bảng, cột và đầu nối chỉnh sửa được, không nhúng ảnh",()=>{
+ const xml=readFileSync("docs/database/database-web.drawio","utf8");
+ expect(xml).toBe(readFileSync("docs/database/database-web.xml","utf8"));
+ expect(xml.match(/<mxCell id="\w+\.\w+"/g)).toHaveLength(116);
+ expect(xml.match(/edge="1"/g)).toHaveLength(40);
+ expect(xml).not.toMatch(/image=|data:image|approvedAt|approvedBy|reviewNote/);
+ for(const m of Prisma.dmmf.datamodel.models)expect(xml).toContain(`<mxCell id="${m.name}"`);
+ const refs=readFileSync("docs/database/database-web.dbml","utf8");
+ for(const r of refs.matchAll(/^Ref: (\w+)\.(\w+) > (\w+)\.(\w+)/gm))expect(xml).toContain(`source="${r[1]}.${r[2]}" target="${r[3]}.${r[4]}"`);
+});
 test("ảnh SVG của web là vector, giữ các bảng và quan hệ đang dùng",()=>{
  const svg=readFileSync("docs/database/database-diagram.svg","utf8");
  expect(svg).toContain('viewBox="0 0 1840 2690"');

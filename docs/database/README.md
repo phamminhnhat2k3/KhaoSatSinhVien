@@ -2,6 +2,8 @@
 
 Nguồn: đối chiếu MySQL, 24 model Prisma và các chức năng hiện có. Bản sơ đồ chính giữ 25 bảng (gồm liên kết môn–giảng viên tự động), 116 cột và 40 khóa ngoại. Chỉ lược 3 cột xét duyệt đã ngừng dùng; không thay đổi cấu trúc database. Không bao gồm _prisma_migrations.
 
+- database-web.drawio: sơ đồ draw.io, có thể di chuyển/chỉnh sửa riêng từng bảng, cột và đường nối. Mở bằng File → Open From → Device.
+- database-web.xml: cùng nội dung XML không nén để sao chép/chỉnh mã.
 - database-web.dbml và database-web.mmd: nguồn sơ đồ theo chức năng đang dùng.
 - database.dbml và database.mmd: bản cấu trúc MySQL đầy đủ, giữ cả các cột lịch sử để đối chiếu.
 
