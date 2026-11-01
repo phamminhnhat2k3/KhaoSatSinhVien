@@ -1,7 +1,24 @@
 import {readFileSync} from "node:fs";
 import {Prisma} from "@prisma/client";
+import {chromium} from "@playwright/test";
+import {resolve} from "node:path";
+import {pathToFileURL} from "node:url";
 import {expect,test} from "vitest";
 const dbml=readFileSync("docs/database/database.dbml","utf8");
+test("sơ đồ đơn giản vẫn chọn được bảng và phóng to mà không mất quan hệ",async()=>{
+ const browser=await chromium.launch();
+ try{
+  const page=await browser.newPage();await page.goto(pathToFileURL(resolve("docs/database/database-diagram.html")).href);
+  expect(await page.locator(".table").count()).toBe(25);
+  expect(await page.locator("path[data-from]").count()).toBe(40);
+  expect(await page.locator("#User").evaluate(el=>getComputedStyle(el).boxShadow)).toBe("none");
+  await page.locator("#Submission").focus();await page.keyboard.press("Enter");
+  expect(await page.locator(".selected").getAttribute("id")).toBe("Submission");
+  expect(await page.locator("path.active").count()).toBe(2);
+  await page.getByRole("button",{name:"Bỏ chọn",exact:true}).click();expect(await page.locator(".faded").count()).toBe(0);
+  await page.getByRole("button",{name:"+",exact:true}).click();expect(await page.locator("#zoom").textContent()).toBe("110%");
+ }finally{await browser.close();}
+});
 function table(name:string){const body=dbml.split(`Table ${name} {\n`)[1]?.split("\n}\n")[0];expect(body,`Thiếu bảng ${name}`).toBeTruthy();return body!;}
 test("sơ đồ đủ bảng và mọi cột của schema hiện tại",()=>{
  expect(dbml.match(/^Table /gm)).toHaveLength(Prisma.dmmf.datamodel.models.length+1);
