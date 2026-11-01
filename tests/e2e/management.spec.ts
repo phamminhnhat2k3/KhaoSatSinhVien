@@ -30,9 +30,8 @@ test("quản lý người dùng, sửa/xóa khoa và thông báo trượt đúng
     const collect=(error:Error)=>hydrationErrors.push(error.message);
     page.on("pageerror",collect);
     page.on("console",message=>{if(message.type()==="error"&&/hydration|cannot be a descendant|validateDOMNesting/i.test(message.text()))hydrationErrors.push(message.text());});
-    await page.goto("/admin/lecturers");
-    const lecturerCard=page.locator("details.card").filter({has:page.getByRole("button",{name:`${tag} Teacher`,exact:true})});
-    await lecturerCard.locator("summary").press("Enter");
+    await page.goto(`/admin/lecturers?q=${encodeURIComponent(tag)}`);
+    const lecturerCard=page.locator("tbody tr").filter({has:page.getByRole("button",{name:`${tag} Teacher`,exact:true})});
     await lecturerCard.getByRole("button",{name:course.name,exact:true}).click();
     const courseInfo=page.getByRole("dialog",{name:`Thông tin ${course.name}`,exact:true});
     await expect(courseInfo).toBeVisible();

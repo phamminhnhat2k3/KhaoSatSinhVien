@@ -25,7 +25,7 @@ test("admin bổ nhiệm trưởng khoa; trưởng khoa chỉ đọc kết quả
     const template = await db.surveyTemplate.create({ data: { title: tag, questions: { create: { content: "Chất lượng", type: "SCALE", position: 1 } } } });
     const campaign = await db.surveyCampaign.create({ data: { title: tag, scope: "FACULTY", facultyId: faculty.id, templateId: template.id, startsAt: new Date("2026-01-01"), endsAt: new Date("2027-01-01") } });
     const foreign = await db.surveyCampaign.create({ data: { title: `${tag}-PRIVATE`, scope: "FACULTY", facultyId: other.id, templateId: template.id, startsAt: new Date(), endsAt: new Date() } });
-    await login(page, admin); await page.goto("/admin/lecturers");
+    await login(page, admin); await page.goto("/admin/lecturers?create=1");
     const form = page.locator("section.card").filter({ has: page.getByRole("heading", { name: "Thêm giảng viên", exact: true }) });
     await form.getByLabel("Họ tên", { exact: true }).fill("Trưởng khoa kiểm thử");
     await form.getByLabel("Email", { exact: true }).fill(dean);
