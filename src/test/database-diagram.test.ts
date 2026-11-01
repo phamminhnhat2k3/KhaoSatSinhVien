@@ -5,6 +5,15 @@ import {resolve} from "node:path";
 import {pathToFileURL} from "node:url";
 import {expect,test} from "vitest";
 const dbml=readFileSync("docs/database/database.dbml","utf8");
+test("ảnh SVG đầy đủ là vector, giữ mọi bảng và quan hệ",()=>{
+ const svg=readFileSync("docs/database/database-diagram.svg","utf8");
+ expect(svg).toContain('viewBox="0 0 1840 2690"');
+ expect(svg).not.toMatch(/<image\b|data:image/);
+ expect(svg.match(/<g id=/g)).toHaveLength(25);
+ expect(svg.match(/class="relation"/g)).toHaveLength(40);
+ expect(svg.match(/class="field"/g)).toHaveLength(119);
+ for(const model of Prisma.dmmf.datamodel.models)expect(svg).toContain(`<g id="${model.name}">`);
+});
 test("sơ đồ đơn giản vẫn chọn được bảng và phóng to mà không mất quan hệ",async()=>{
  const browser=await chromium.launch();
  try{

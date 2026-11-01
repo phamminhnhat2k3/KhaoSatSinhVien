@@ -7,7 +7,8 @@ Nguồn: cấu trúc MySQL hiện tại, đối chiếu đầy đủ 24 model tr
 - Mở database-diagram.html bằng trình duyệt: phóng to/thu nhỏ, chọn bảng để làm nổi bật quan hệ. File hoạt động ngoại tuyến.
 - database.dbml: có thể dán vào dbdiagram.io để chỉnh sửa sơ đồ.
 - database.mmd: sơ đồ ERD Mermaid gồm toàn bộ cột, khóa chính và khóa ngoại.
-- database-diagram.png: ảnh sơ đồ dùng trong báo cáo.
+- database-diagram.svg: bản đầy đủ dạng vector, phóng to không vỡ chữ hoặc đường nối. Mở bằng trình duyệt; dùng Ctrl + cuộn chuột để phóng to/thu nhỏ.
+- database-diagram.png: ảnh raster của sơ đồ; dùng SVG khi cần phóng lớn.
 
 Sinh viên thuộc khoa thông qua AcademicClass. Giảng viên và môn học có facultyId. Trưởng khoa là UserRole.DEAN trên tài khoản giảng viên, không có bảng riêng.
 
