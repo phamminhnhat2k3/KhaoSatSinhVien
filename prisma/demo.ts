@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { hash, verify } from "argon2";
 import { demoAccounts, demoFaculties, demoSubjectIndexes } from "./demo-data";
+import {readDemoPasswords} from "./demo-passwords";
 
 const db = new PrismaClient();
 const file = resolve("TAI_KHOAN_MAU.md");
@@ -21,11 +22,7 @@ async function main() {
   assert(existing.length === 0 || existsSync(file), "Đã có tài khoản mẫu nhưng thiếu file mật khẩu. Không đặt lại mật khẩu.");
   const passwords = new Map<string, string>();
   if (existsSync(file)) {
-    for (const line of readFileSync(file, "utf8").split("\n")) {
-      const cells = line.split("|").map(s => s.trim());
-      if (cells.length === 8 && cells[4].startsWith("demo.")) passwords.set(cells[4], cells[5]);
-    }
-    assert(demoAccounts.every(a => (passwords.get(a.email)?.length ?? 0) >= 16), "File tài khoản không đầy đủ; giữ nguyên dữ liệu và file hiện có.");
+    for(const [email,password] of readDemoPasswords(readFileSync(file,"utf8"),demoAccounts))passwords.set(email,password);
   } else {
     for (const a of demoAccounts) passwords.set(a.email, `Demo!${randomBytes(12).toString("base64url")}`);
     let content = "# Tài khoản dữ liệu mẫu\n\nĐăng nhập: http://localhost:3000/login\n\n70 tài khoản mẫu: 5 Trưởng khoa kiêm giảng viên, 15 giảng viên thường và 50 sinh viên. Tất cả tên và tài khoản trong bộ này là dữ liệu giả lập. Email dùng để đăng nhập, không gửi thư.\n\nTài khoản quản trị viên và tài khoản cũ được giữ nguyên; file này chỉ ghi tài khoản mới của bộ mẫu, không đặt lại mật khẩu cũ.\n\nMật khẩu dưới đây được lưu rõ theo yêu cầu để thử đăng nhập; trong database chỉ lưu bản băm. Không chia sẻ file này lên Git hoặc dùng các tài khoản mẫu cho môi trường thật.\n\n";
