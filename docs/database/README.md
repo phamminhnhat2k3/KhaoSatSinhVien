@@ -1,0 +1,14 @@
+# Database diagram — 01/11/2026
+
+Nguồn: cấu trúc MySQL hiện tại, đối chiếu đầy đủ 24 model trong prisma/schema.prisma; thêm bảng liên kết tự động _CourseToLecturerProfile. Không bao gồm _prisma_migrations.
+
+- Mở database-diagram.html bằng trình duyệt: phóng to/thu nhỏ, chọn bảng để làm nổi bật quan hệ. File hoạt động ngoại tuyến.
+- database.dbml: có thể dán vào dbdiagram.io để chỉnh sửa sơ đồ.
+- database.mmd: sơ đồ ERD Mermaid gồm toàn bộ cột, khóa chính và khóa ngoại.
+- database-diagram.png: ảnh sơ đồ dùng trong báo cáo.
+
+Sinh viên thuộc khoa thông qua AcademicClass. Giảng viên và môn học có facultyId. Trưởng khoa là UserRole.DEAN trên tài khoản giảng viên, không có bảng riêng.
+
+SurveyParticipation giữ trạng thái được giao/hoàn thành. Submission không có studentId/participationId; Answer chứa nội dung phản hồi. Không vẽ liên kết giữa sinh viên và bài trả lời vì database không có khóa ngoại đó.
+
+Các trường xét duyệt cũ trong SurveyCampaign và SurveyTarget/lecturerId cũ được giữ để phản ánh đúng database, không có nghĩa ứng dụng hiện còn dùng quy trình Trưởng khoa duyệt khảo sát. approvedBy là cột String lịch sử, không phải khóa ngoại User.
