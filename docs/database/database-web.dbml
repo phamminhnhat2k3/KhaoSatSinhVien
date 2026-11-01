@@ -1,0 +1,354 @@
+// Bản mô tả chức năng đang dùng; lược 3 cột xét duyệt, không phải script thay đổi database.
+// Database hiện tại · 01/11/2026 · Tên bảng theo Prisma; MySQL Windows lưu chữ thường.
+// Không gồm bảng nội bộ _prisma_migrations.
+
+Enum Role {
+  STUDENT
+  LECTURER
+  ADMIN
+  DEAN
+}
+
+Enum QuestionType {
+  SINGLE
+  MULTIPLE
+  SCALE
+  TEXT
+}
+
+Enum CampaignStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  CANCELLED
+}
+
+Enum ParticipationStatus {
+  INVITED
+  DRAFT
+  COMPLETED
+}
+
+Enum SurveyScope {
+  LEGACY_CLASS
+  FACULTY
+  UNIVERSITY
+}
+
+Table Faculty {
+  id "varchar(191)" [not null]
+  code "varchar(191)" [not null]
+  name "varchar(191)" [not null]
+  indexes {
+    (code) [unique]
+    (id) [pk]
+  }
+}
+
+Table AcademicClass {
+  id "varchar(191)" [not null]
+  code "varchar(191)" [not null]
+  name "varchar(191)" [not null]
+  facultyId "varchar(191)" [not null]
+  indexes {
+    (code) [unique]
+    (id) [pk]
+  }
+}
+
+Table User {
+  id "varchar(191)" [not null]
+  email "varchar(191)" [not null]
+  passwordHash "varchar(191)" [not null]
+  name "varchar(191)" [not null]
+  active "tinyint(1)" [not null]
+  phone "varchar(191)" [not null]
+  department "varchar(191)" [not null]
+  bio "text" [not null]
+  coverTheme "varchar(191)" [not null]
+  indexes {
+    (id) [pk]
+    (email) [unique]
+  }
+}
+
+Table UserRole {
+  userId "varchar(191)" [not null]
+  role "Role" [not null]
+  indexes {
+    (userId, role) [pk]
+  }
+}
+
+Table StudentProfile {
+  id "varchar(191)" [not null]
+  studentCode "varchar(191)" [not null]
+  userId "varchar(191)" [not null]
+  academicClassId "varchar(191)" [null]
+  indexes {
+    (id) [pk]
+    (studentCode) [unique]
+    (userId) [unique]
+  }
+}
+
+Table LecturerProfile {
+  id "varchar(191)" [not null]
+  lecturerCode "varchar(191)" [not null]
+  userId "varchar(191)" [not null]
+  facultyId "varchar(191)" [null]
+  indexes {
+    (lecturerCode) [unique]
+    (userId) [unique]
+    (id) [pk]
+  }
+}
+
+Table Semester {
+  id "varchar(191)" [not null]
+  name "varchar(191)" [not null]
+  startsAt "datetime(3)" [not null]
+  endsAt "datetime(3)" [not null]
+  indexes {
+    (id) [pk]
+  }
+}
+
+Table Course {
+  id "varchar(191)" [not null]
+  code "varchar(191)" [not null]
+  name "varchar(191)" [not null]
+  facultyId "varchar(191)" [null]
+  indexes {
+    (code) [unique]
+    (id) [pk]
+  }
+}
+
+Table CourseClass {
+  id "varchar(191)" [not null]
+  code "varchar(191)" [not null]
+  courseId "varchar(191)" [not null]
+  semesterId "varchar(191)" [not null]
+  lecturerId "varchar(191)" [null]
+  educationSystem "varchar(191)" [not null]
+  capacity "int" [not null]
+  teachingConfigured "tinyint(1)" [not null]
+  indexes {
+    (code) [unique]
+    (id) [pk]
+  }
+}
+
+Table Enrollment {
+  classId "varchar(191)" [not null]
+  studentId "varchar(191)" [not null]
+  indexes {
+    (classId, studentId) [pk]
+  }
+}
+
+Table SurveyTemplate {
+  id "varchar(191)" [not null]
+  title "varchar(191)" [not null]
+  version "int" [not null]
+  createdAt "datetime(3)" [not null]
+  indexes {
+    (id) [pk]
+  }
+}
+
+Table Question {
+  id "varchar(191)" [not null]
+  templateId "varchar(191)" [not null]
+  content "text" [not null]
+  type "QuestionType" [not null]
+  required "tinyint(1)" [not null]
+  position "int" [not null]
+  scaleMin "int" [not null]
+  scaleMax "int" [not null]
+  scaleStep "int" [not null]
+  indexes {
+    (id) [pk]
+    (templateId, position) [unique]
+  }
+}
+
+Table QuestionOption {
+  id "varchar(191)" [not null]
+  questionId "varchar(191)" [not null]
+  label "varchar(200)" [not null]
+  value "varchar(191)" [not null]
+  position "int" [not null]
+  indexes {
+    (id) [pk]
+  }
+}
+
+Table SurveyCampaign {
+  id "varchar(191)" [not null]
+  title "varchar(191)" [not null]
+  templateId "varchar(191)" [not null]
+  status "CampaignStatus" [not null]
+  startsAt "datetime(3)" [not null]
+  endsAt "datetime(3)" [not null]
+  createdAt "datetime(3)" [not null]
+  publishedAt "datetime(3)" [null]
+  courseTemplateId "varchar(191)" [null]
+  facultyId "varchar(191)" [null]
+  scope "SurveyScope" [not null]
+  semesterId "varchar(191)" [null]
+  evaluationMode "varchar(191)" [not null]
+  indexes {
+    (id) [pk]
+  }
+}
+
+Table SurveyTarget {
+  campaignId "varchar(191)" [not null]
+  classId "varchar(191)" [not null]
+  indexes {
+    (campaignId, classId) [pk]
+  }
+}
+
+Table SurveyParticipation {
+  id "varchar(191)" [not null]
+  campaignId "varchar(191)" [not null]
+  studentId "varchar(191)" [not null]
+  status "ParticipationStatus" [not null]
+  draft "json" [null]
+  completedAt "datetime(3)" [null]
+  indexes {
+    (id) [pk]
+    (campaignId, studentId) [unique]
+  }
+}
+
+Table Submission {
+  id "varchar(191)" [not null]
+  campaignId "varchar(191)" [not null]
+  submittedAt "datetime(3)" [not null]
+  indexes {
+    (id) [pk]
+  }
+}
+
+Table Answer {
+  id "varchar(191)" [not null]
+  submissionId "varchar(191)" [not null]
+  questionId "varchar(191)" [not null]
+  value "json" [not null]
+  courseId "varchar(191)" [null]
+  lecturerId "varchar(191)" [null]
+  indexes {
+    (id) [pk]
+  }
+}
+
+Table CampaignCourse {
+  campaignId "varchar(191)" [not null]
+  courseId "varchar(191)" [not null]
+  indexes {
+    (campaignId, courseId) [pk]
+  }
+}
+
+Table ParticipationCourse {
+  participationId "varchar(191)" [not null]
+  courseId "varchar(191)" [not null]
+  indexes {
+    (participationId, courseId) [pk]
+  }
+}
+
+Table CourseTeaching {
+  classId "varchar(191)" [not null]
+  lecturerId "varchar(191)" [not null]
+  indexes {
+    (classId, lecturerId) [pk]
+  }
+}
+
+Table ParticipationTeaching {
+  participationId "varchar(191)" [not null]
+  courseId "varchar(191)" [not null]
+  lecturerId "varchar(191)" [not null]
+  indexes {
+    (participationId, courseId, lecturerId) [pk]
+  }
+}
+
+Table AuditLog {
+  id "varchar(191)" [not null]
+  actorId "varchar(191)" [not null]
+  action "varchar(191)" [not null]
+  entity "varchar(191)" [not null]
+  entityId "varchar(191)" [not null]
+  createdAt "datetime(3)" [not null]
+  indexes {
+    (id) [pk]
+  }
+}
+
+Table Notification {
+  id "varchar(191)" [not null]
+  userId "varchar(191)" [not null]
+  title "varchar(191)" [not null]
+  body "text" [not null]
+  href "varchar(191)" [not null]
+  createdAt "datetime(3)" [not null]
+  readAt "datetime(3)" [null]
+  indexes {
+    (id) [pk]
+  }
+}
+
+Table _CourseToLecturerProfile {
+  A "varchar(191)" [not null]
+  B "varchar(191)" [not null]
+  indexes {
+    (A, B) [unique]
+  }
+}
+
+Ref: _CourseToLecturerProfile.A > Course.id
+Ref: _CourseToLecturerProfile.B > LecturerProfile.id
+Ref: AcademicClass.facultyId > Faculty.id
+Ref: Answer.courseId > Course.id
+Ref: Answer.lecturerId > LecturerProfile.id
+Ref: Answer.questionId > Question.id
+Ref: Answer.submissionId > Submission.id
+Ref: AuditLog.actorId > User.id
+Ref: CampaignCourse.campaignId > SurveyCampaign.id
+Ref: CampaignCourse.courseId > Course.id
+Ref: Course.facultyId > Faculty.id
+Ref: CourseClass.courseId > Course.id
+Ref: CourseClass.lecturerId > LecturerProfile.id
+Ref: CourseClass.semesterId > Semester.id
+Ref: CourseTeaching.classId > CourseClass.id
+Ref: CourseTeaching.lecturerId > LecturerProfile.id
+Ref: Enrollment.classId > CourseClass.id
+Ref: Enrollment.studentId > StudentProfile.id
+Ref: LecturerProfile.facultyId > Faculty.id
+Ref: LecturerProfile.userId > User.id
+Ref: Notification.userId > User.id
+Ref: ParticipationCourse.courseId > Course.id
+Ref: ParticipationCourse.participationId > SurveyParticipation.id
+Ref: ParticipationTeaching.courseId > Course.id
+Ref: ParticipationTeaching.lecturerId > LecturerProfile.id
+Ref: ParticipationTeaching.participationId > SurveyParticipation.id
+Ref: Question.templateId > SurveyTemplate.id
+Ref: QuestionOption.questionId > Question.id
+Ref: StudentProfile.academicClassId > AcademicClass.id
+Ref: StudentProfile.userId > User.id
+Ref: Submission.campaignId > SurveyCampaign.id
+Ref: SurveyCampaign.courseTemplateId > SurveyTemplate.id
+Ref: SurveyCampaign.facultyId > Faculty.id
+Ref: SurveyCampaign.semesterId > Semester.id
+Ref: SurveyCampaign.templateId > SurveyTemplate.id
+Ref: SurveyParticipation.campaignId > SurveyCampaign.id
+Ref: SurveyParticipation.studentId > StudentProfile.id
+Ref: SurveyTarget.campaignId > SurveyCampaign.id
+Ref: SurveyTarget.classId > CourseClass.id
+Ref: UserRole.userId > User.id

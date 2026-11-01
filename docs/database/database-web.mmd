@@ -1,0 +1,207 @@
+erDiagram
+  Faculty {
+    varchar_191_ id PK
+    varchar_191_ code
+    varchar_191_ name
+  }
+  AcademicClass {
+    varchar_191_ id PK
+    varchar_191_ code
+    varchar_191_ name
+    varchar_191_ facultyId FK
+  }
+  User {
+    varchar_191_ id PK
+    varchar_191_ email
+    varchar_191_ passwordHash
+    varchar_191_ name
+    tinyint_1_ active
+    varchar_191_ phone
+    varchar_191_ department
+    text bio
+    varchar_191_ coverTheme
+  }
+  UserRole {
+    varchar_191_ userId PK,FK
+    enum role PK
+  }
+  StudentProfile {
+    varchar_191_ id PK
+    varchar_191_ studentCode
+    varchar_191_ userId FK
+    varchar_191_ academicClassId FK
+  }
+  LecturerProfile {
+    varchar_191_ id PK
+    varchar_191_ lecturerCode
+    varchar_191_ userId FK
+    varchar_191_ facultyId FK
+  }
+  Semester {
+    varchar_191_ id PK
+    varchar_191_ name
+    datetime_3_ startsAt
+    datetime_3_ endsAt
+  }
+  Course {
+    varchar_191_ id PK
+    varchar_191_ code
+    varchar_191_ name
+    varchar_191_ facultyId FK
+  }
+  CourseClass {
+    varchar_191_ id PK
+    varchar_191_ code
+    varchar_191_ courseId FK
+    varchar_191_ semesterId FK
+    varchar_191_ lecturerId FK
+    varchar_191_ educationSystem
+    int capacity
+    tinyint_1_ teachingConfigured
+  }
+  Enrollment {
+    varchar_191_ classId PK,FK
+    varchar_191_ studentId PK,FK
+  }
+  SurveyTemplate {
+    varchar_191_ id PK
+    varchar_191_ title
+    int version
+    datetime_3_ createdAt
+  }
+  Question {
+    varchar_191_ id PK
+    varchar_191_ templateId FK
+    text content
+    enum type
+    tinyint_1_ required
+    int position
+    int scaleMin
+    int scaleMax
+    int scaleStep
+  }
+  QuestionOption {
+    varchar_191_ id PK
+    varchar_191_ questionId FK
+    varchar_200_ label
+    varchar_191_ value
+    int position
+  }
+  SurveyCampaign {
+    varchar_191_ id PK
+    varchar_191_ title
+    varchar_191_ templateId FK
+    enum status
+    datetime_3_ startsAt
+    datetime_3_ endsAt
+    datetime_3_ createdAt
+    datetime_3_ publishedAt
+    varchar_191_ courseTemplateId FK
+    varchar_191_ facultyId FK
+    enum scope
+    varchar_191_ semesterId FK
+    varchar_191_ evaluationMode
+  }
+  SurveyTarget {
+    varchar_191_ campaignId PK,FK
+    varchar_191_ classId PK,FK
+  }
+  SurveyParticipation {
+    varchar_191_ id PK
+    varchar_191_ campaignId FK
+    varchar_191_ studentId FK
+    enum status
+    json draft
+    datetime_3_ completedAt
+  }
+  Submission {
+    varchar_191_ id PK
+    varchar_191_ campaignId FK
+    datetime_3_ submittedAt
+  }
+  Answer {
+    varchar_191_ id PK
+    varchar_191_ submissionId FK
+    varchar_191_ questionId FK
+    json value
+    varchar_191_ courseId FK
+    varchar_191_ lecturerId FK
+  }
+  CampaignCourse {
+    varchar_191_ campaignId PK,FK
+    varchar_191_ courseId PK,FK
+  }
+  ParticipationCourse {
+    varchar_191_ participationId PK,FK
+    varchar_191_ courseId PK,FK
+  }
+  CourseTeaching {
+    varchar_191_ classId PK,FK
+    varchar_191_ lecturerId PK,FK
+  }
+  ParticipationTeaching {
+    varchar_191_ participationId PK,FK
+    varchar_191_ courseId PK,FK
+    varchar_191_ lecturerId PK,FK
+  }
+  AuditLog {
+    varchar_191_ id PK
+    varchar_191_ actorId FK
+    varchar_191_ action
+    varchar_191_ entity
+    varchar_191_ entityId
+    datetime_3_ createdAt
+  }
+  Notification {
+    varchar_191_ id PK
+    varchar_191_ userId FK
+    varchar_191_ title
+    text body
+    varchar_191_ href
+    datetime_3_ createdAt
+    datetime_3_ readAt
+  }
+  _CourseToLecturerProfile {
+    varchar_191_ A FK
+    varchar_191_ B FK
+  }
+  Course ||--o{ _CourseToLecturerProfile : "A"
+  LecturerProfile ||--o{ _CourseToLecturerProfile : "B"
+  Faculty ||--o{ AcademicClass : "facultyId"
+  Course |o--o{ Answer : "courseId"
+  LecturerProfile |o--o{ Answer : "lecturerId"
+  Question ||--o{ Answer : "questionId"
+  Submission ||--o{ Answer : "submissionId"
+  User ||--o{ AuditLog : "actorId"
+  SurveyCampaign ||--o{ CampaignCourse : "campaignId"
+  Course ||--o{ CampaignCourse : "courseId"
+  Faculty |o--o{ Course : "facultyId"
+  Course ||--o{ CourseClass : "courseId"
+  LecturerProfile |o--o{ CourseClass : "lecturerId"
+  Semester ||--o{ CourseClass : "semesterId"
+  CourseClass ||--o{ CourseTeaching : "classId"
+  LecturerProfile ||--o{ CourseTeaching : "lecturerId"
+  CourseClass ||--o{ Enrollment : "classId"
+  StudentProfile ||--o{ Enrollment : "studentId"
+  Faculty |o--o{ LecturerProfile : "facultyId"
+  User ||--o| LecturerProfile : "userId"
+  User ||--o{ Notification : "userId"
+  Course ||--o{ ParticipationCourse : "courseId"
+  SurveyParticipation ||--o{ ParticipationCourse : "participationId"
+  Course ||--o{ ParticipationTeaching : "courseId"
+  LecturerProfile ||--o{ ParticipationTeaching : "lecturerId"
+  SurveyParticipation ||--o{ ParticipationTeaching : "participationId"
+  SurveyTemplate ||--o{ Question : "templateId"
+  Question ||--o{ QuestionOption : "questionId"
+  AcademicClass |o--o{ StudentProfile : "academicClassId"
+  User ||--o| StudentProfile : "userId"
+  SurveyCampaign ||--o{ Submission : "campaignId"
+  SurveyTemplate |o--o{ SurveyCampaign : "courseTemplateId"
+  Faculty |o--o{ SurveyCampaign : "facultyId"
+  Semester |o--o{ SurveyCampaign : "semesterId"
+  SurveyTemplate ||--o{ SurveyCampaign : "templateId"
+  SurveyCampaign ||--o{ SurveyParticipation : "campaignId"
+  StudentProfile ||--o{ SurveyParticipation : "studentId"
+  SurveyCampaign ||--o{ SurveyTarget : "campaignId"
+  CourseClass ||--o{ SurveyTarget : "classId"
+  User ||--o{ UserRole : "userId"

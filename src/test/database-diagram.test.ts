@@ -5,13 +5,14 @@ import {resolve} from "node:path";
 import {pathToFileURL} from "node:url";
 import {expect,test} from "vitest";
 const dbml=readFileSync("docs/database/database.dbml","utf8");
-test("ảnh SVG đầy đủ là vector, giữ mọi bảng và quan hệ",()=>{
+test("ảnh SVG của web là vector, giữ các bảng và quan hệ đang dùng",()=>{
  const svg=readFileSync("docs/database/database-diagram.svg","utf8");
  expect(svg).toContain('viewBox="0 0 1840 2690"');
  expect(svg).not.toMatch(/<image\b|data:image/);
  expect(svg.match(/<g id=/g)).toHaveLength(25);
  expect(svg.match(/class="relation"/g)).toHaveLength(40);
- expect(svg.match(/class="field"/g)).toHaveLength(119);
+ expect(svg.match(/class="field"/g)).toHaveLength(116);
+ expect(svg).not.toMatch(/approvedAt|approvedBy|reviewNote/);
  for(const model of Prisma.dmmf.datamodel.models)expect(svg).toContain(`<g id="${model.name}">`);
 });
 test("sơ đồ đơn giản vẫn chọn được bảng và phóng to mà không mất quan hệ",async()=>{
@@ -28,7 +29,17 @@ test("sơ đồ đơn giản vẫn chọn được bảng và phóng to mà khô
   await page.getByRole("button",{name:"+",exact:true}).click();expect(await page.locator("#zoom").textContent()).toBe("110%");
  }finally{await browser.close();}
 });
-function table(name:string){const body=dbml.split(`Table ${name} {\n`)[1]?.split("\n}\n")[0];expect(body,`Thiếu bảng ${name}`).toBeTruthy();return body!;}
+function table(name:string,source=dbml){const body=source.replaceAll("\r\n","\n").split(`Table ${name} {\n`)[1]?.split("\n}\n")[0];expect(body,`Thiếu bảng ${name}`).toBeTruthy();return body!;}
+
+test("bản web chỉ lược xét duyệt đã bỏ, không bỏ bảng liên kết vẫn hoạt động",()=>{
+ const web=readFileSync("docs/database/database-web.dbml","utf8");
+ const omitted=["approvedAt","approvedBy","reviewNote"];
+ expect(web.match(/^Table /gm)).toHaveLength(25);expect(web.match(/^Ref:/gm)).toHaveLength(40);
+ for(const model of Prisma.dmmf.datamodel.models)for(const f of model.fields.filter(f=>f.kind!=="object")){
+  const body=table(model.name,web);if(model.name==="SurveyCampaign"&&omitted.includes(f.name))expect(body).not.toContain(`  ${f.name} `);else expect(body).toContain(`  ${f.name} `);
+ }
+ for(const name of ["CourseTeaching","ParticipationTeaching","ParticipationCourse","CampaignCourse","Notification","AuditLog","SurveyTarget"])expect(web).toContain(`Table ${name} {`);
+});
 test("sơ đồ đủ bảng và mọi cột của schema hiện tại",()=>{
  expect(dbml.match(/^Table /gm)).toHaveLength(Prisma.dmmf.datamodel.models.length+1);
  for(const model of Prisma.dmmf.datamodel.models){const body=table(model.name);for(const f of model.fields.filter(f=>f.kind!=="object"))expect(body).toContain(`  ${f.name} `);}
