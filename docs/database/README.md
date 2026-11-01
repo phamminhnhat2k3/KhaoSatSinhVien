@@ -2,6 +2,8 @@
 
 Nguồn: cấu trúc MySQL hiện tại, đối chiếu đầy đủ 24 model trong prisma/schema.prisma; thêm bảng liên kết tự động _CourseToLecturerProfile. Không bao gồm _prisma_migrations.
 
+- **Bản dễ đọc:** mở database-simple.html; ảnh database-simple.png hoặc vector database-simple.svg. Chia thành 4 nhóm nghiệp vụ, chỉ giữ bảng/cột và quan hệ chính; một bảng có thể lặp ở các nhóm.
+- database-simple.mmd: nguồn Mermaid của bản tinh gọn.
 - Mở database-diagram.html bằng trình duyệt: phóng to/thu nhỏ, chọn bảng để làm nổi bật quan hệ. File hoạt động ngoại tuyến.
 - database.dbml: có thể dán vào dbdiagram.io để chỉnh sửa sơ đồ.
 - database.mmd: sơ đồ ERD Mermaid gồm toàn bộ cột, khóa chính và khóa ngoại.

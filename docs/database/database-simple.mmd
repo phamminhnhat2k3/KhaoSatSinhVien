@@ -1,0 +1,49 @@
+flowchart TB
+  subgraph P0["01  Sinh viên và đăng ký học"]
+    direction LR
+    P0N0["Khoa<br/>Faculty"]
+    P0N1["Lớp hành chính<br/>AcademicClass"]
+    P0N2["Sinh viên<br/>StudentProfile"]
+    P0N3["Đăng ký học<br/>Enrollment"]
+    P0N4["Lớp học phần<br/>CourseClass"]
+    P0N0 -->|"1 : N"| P0N1
+    P0N1 -->|"1 : N"| P0N2
+    P0N2 -->|"1 : N"| P0N3
+    P0N4 -->|"1 : N"| P0N3
+  end
+  subgraph P1["02  Môn học và giảng viên"]
+    direction LR
+    P1N0["Môn học<br/>Course"]
+    P1N1["Lớp học phần<br/>CourseClass"]
+    P1N2["Phân công thực dạy<br/>CourseTeaching"]
+    P1N3["Giảng viên<br/>LecturerProfile"]
+    P1N4["Khoa<br/>Faculty"]
+    P1N0 -->|"1 : N"| P1N1
+    P1N1 -->|"1 : N"| P1N2
+    P1N3 -->|"1 : N"| P1N2
+    P1N4 -->|"1 : N"| P1N3
+  end
+  subgraph P2["03  Mẫu và đợt khảo sát"]
+    direction LR
+    P2N0["Đợt khảo sát<br/>SurveyCampaign"]
+    P2N1["Mẫu khảo sát<br/>SurveyTemplate"]
+    P2N2["Câu hỏi<br/>Question"]
+    P2N3["Lựa chọn<br/>QuestionOption"]
+    P2N1 -->|"1 : N"| P2N0
+    P2N1 -->|"1 : N"| P2N2
+    P2N2 -->|"1 : N"| P2N3
+  end
+  subgraph P3["04  Giao phiếu và thu phản hồi"]
+    direction LR
+    P3N0["Sinh viên<br/>StudentProfile"]
+    P3N1["Phiếu được giao<br/>SurveyParticipation"]
+    P3N2["Đợt khảo sát<br/>SurveyCampaign"]
+    P3N3["Bài trả lời<br/>Submission"]
+    P3N4["Câu trả lời<br/>Answer"]
+    P3N5["Câu hỏi<br/>Question"]
+    P3N0 -->|"1 : N"| P3N1
+    P3N2 -->|"1 : N"| P3N1
+    P3N2 -->|"1 : N"| P3N3
+    P3N3 -->|"1 : N"| P3N4
+    P3N5 -->|"1 : N"| P3N4
+  end
