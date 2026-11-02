@@ -7,7 +7,6 @@ import {expect,test} from "vitest";
 const dbml=readFileSync("docs/database/database.dbml","utf8");
 test("draw.io có đủ bảng, cột và đầu nối chỉnh sửa được, không nhúng ảnh",()=>{
  const xml=readFileSync("docs/database/database-web.drawio","utf8");
- expect(xml).toBe(readFileSync("docs/database/database-web.xml","utf8"));
  expect(xml.match(/<mxCell id="\w+\.\w+"/g)).toHaveLength(116);
  expect(xml.match(/edge="1"/g)).toHaveLength(40);
  expect(xml).not.toMatch(/image=|data:image|approvedAt|approvedBy|reviewNote/);

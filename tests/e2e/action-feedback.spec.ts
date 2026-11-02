@@ -15,7 +15,7 @@ test.describe("thông báo thao tác admin", () => {
   test("xếp chồng, tự tắt riêng sau 5 giây, sửa trong popup, lỗi và chuyển trang", async ({ page }) => {
     await page.goto("/login"); await page.getByLabel("Email", { exact: true }).fill(`${tag}@example.invalid`); await page.getByLabel("Mật khẩu", { exact: true }).fill(password); await page.getByRole("button", { name: "Đăng nhập", exact: true }).click(); await expect(page).toHaveURL(/\/admin$/);
     await page.goto("/admin/academic");
-    await page.clock.install(); await page.clock.pauseAt(new Date());
+    const clockTime=new Date();await page.clock.install({time:clockTime});await page.clock.pauseAt(new Date(clockTime.getTime()+60000));
     const create = page.locator("form").filter({ has: page.getByRole("button", { name: "Tạo khoa", exact: true }) });
     await create.getByLabel("Mã khoa").fill(tag); await create.getByLabel("Tên khoa").fill(tag); await create.getByRole("button", { name: "Tạo khoa", exact: true }).click();
     const toasts = page.getByTestId("action-toast"); await expect(toasts).toHaveCount(1); await expect(toasts.first()).toContainText("Đã tạo khoa.");

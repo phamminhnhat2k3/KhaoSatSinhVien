@@ -19,4 +19,5 @@ test("mỗi giảng viên có khóa câu trả lời riêng, không nhận giả
   expect(questions.map(x=>x.id)).toEqual(["common","A:t1:subject","A:t2:subject"]);
   expect(questions[1]).toMatchObject({lecturerId:"t1",sectionTitle:"A · Môn A — t1"});
   expect(validateAnswers(questions,{"A:t3:subject":"5"})).toHaveProperty("A:t3:subject","Câu hỏi không thuộc mẫu khảo sát.");
+  expect(assignedQuestions(campaign,[],[...teachers].reverse()).map(q=>q.id)).toEqual(questions.map(q=>q.id));
 });

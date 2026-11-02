@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { average, ensureReportAvailable, participationRate } from "./report";
+import {canViewCourseResult} from "./teaching-scope";
 
 export async function getCampaignReport(db: PrismaClient, campaignId: string, lecturerId?: string, facultyId?: string) {
   const campaign = await db.surveyCampaign.findUnique({
@@ -10,7 +11,7 @@ export async function getCampaignReport(db: PrismaClient, campaignId: string, le
       submissions: { include: { answers: true } },
       template: { include: { questions: { include: { options: true }, orderBy: { position: "asc" } } } },
       courseTemplate: { include: { questions: { include: { options: true }, orderBy: { position: "asc" } } } },
-      courseTargets: { include: { course: { include: { lecturers: { select: { id: true } }, classes: { select: { lecturerId: true, semesterId: true } } } } } },
+      courseTargets: { include: { course: { include: { lecturers: { select: { id: true } }, classes: { select: { lecturerId: true, semesterId: true,teachingConfigured:true,teachings:{select:{lecturerId:true}} } } } } } },
       targets: { include: { class: { include: { course: true } } } }
     }
   });
@@ -18,7 +19,7 @@ export async function getCampaignReport(db: PrismaClient, campaignId: string, le
   if (facultyId && (campaign.scope !== "FACULTY" || campaign.facultyId !== facultyId)) throw new Error("Không tìm thấy báo cáo trong khoa được phân công.");
   const legacy = campaign.scope === "LEGACY_CLASS";
   const byTeacher=campaign.evaluationMode==="LECTURER";
-  const targets = campaign.courseTargets.filter(t => !lecturerId || t.course.lecturers?.some(l => l.id === lecturerId) || t.course.classes.some(c => c.lecturerId === lecturerId && c.semesterId === campaign.semesterId));
+  const targets = campaign.courseTargets.filter(t => !lecturerId || canViewCourseResult(t.course,lecturerId,campaign.semesterId));
   const teachings=[...new Map(campaign.participations.flatMap(p=>p.teachings??[]).map(t=>[`${t.courseId}:${t.lecturerId}`,t])).values()].filter(t=>!lecturerId||t.lecturerId===lecturerId);
   if (lecturerId && (legacy ? !campaign.targets.some(t => t.class.lecturerId === lecturerId) : byTeacher?!teachings.length:!targets.length)) throw new Error("Không tìm thấy báo cáo trong phạm vi được phân công.");
   const allowedCourses = new Set(targets.map(t => t.courseId));
@@ -52,5 +53,5 @@ export async function getCampaignReport(db: PrismaClient, campaignId: string, le
   });
   if (!rows.length) throw new Error(`Các môn thuộc phạm vi chưa đủ tối thiểu ${minimum} phản hồi để mở báo cáo.`);
   const completed = participants.filter(p => p.status === "COMPLETED").length;
-  return { id: campaign.id, title: campaign.title, course: legacy ? campaign.targets[0]?.class.course.name : campaign.faculty?.name ?? "Toàn trường", invited: participants.length, completed, participationRate: participationRate(completed, participants.length), responses: submissions.length, questions: rows };
+  return { id: campaign.id, title: campaign.title, evaluationMode:byTeacher?"LECTURER":"COURSE",minimum,sections:sections.filter(s=>s.questions.length).map(s=>({id:s.courseId?`${s.courseId}${s.lecturerId?`:${s.lecturerId}`:""}`:"common",title:s.name||"Nội dung chung",invited:s.invited,responses:campaign.submissions.filter(sub=>sub.answers.some(a=>a.courseId===s.courseId&&(a.lecturerId??null)===s.lecturerId)).length})),course: legacy ? campaign.targets[0]?.class.course.name : campaign.faculty?.name ?? "Toàn trường", invited: participants.length, completed, participationRate: participationRate(completed, participants.length), responses: submissions.length, questions: rows };
 }
