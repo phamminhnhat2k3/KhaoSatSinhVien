@@ -9,10 +9,10 @@ ROOT=Path(__file__).resolve().parents[2]
 NS={'w':'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
 W=NS['w'];tag=lambda n:f'{{{W}}}{n}'
 text=lambda p:''.join(p.xpath('.//w:t/text()',namespaces=NS))
-with ZipFile(ROOT/'docs/reports/BaoCaoTuan4_TLCN.docx') as z:
+with ZipFile(ROOT/'docs/reports/BaoCaoTuan4_TLCN_ban_nop.docx') as z:
  assert z.testzip() is None
  root=etree.fromstring(z.read('word/document.xml'));body=root.find(tag('body'));content=text(body)
- for expected in ['BÁO CÁO CÔNG VIỆC TUẦN 4','28/10/2026','không theo ngày code thực tế','Cách chia này không có nghĩa những phần đó chưa được code','Ngày trong bảng là mốc báo cáo dự kiến','Nguyễn Văn Sang','Phạm Minh Nhật','Ths. Đoàn Thanh Phong']:
+ for expected in ['BÁO CÁO CÔNG VIỆC TUẦN 4','28/10/2026','Tuần 4 tập trung xây dựng nền website','6. Giao diện minh họa','Nguyễn Văn Sang','Phạm Minh Nhật','Ths. Đoàn Thanh Phong']:
   assert expected in content,expected
  assert ';' not in content
  assert '94' not in content
@@ -23,8 +23,8 @@ with ZipFile(ROOT/'docs/reports/BaoCaoTuan4_TLCN.docx') as z:
  for t in blanks:
   h=t.find('.//'+tag('trHeight'));assert h.get(tag('hRule'))=='atLeast' and int(h.get(tag('val')))>=3000
  for n in range(1,5):assert f'Hình {n}.' in content
- assert content.count('Cần chụp:')==4
- assert 'không cần gửi thêm bài' in content
+ for instruction in ['Cần chụp:', 'ngày code thực tế', 'Cách chia này', 'không cần gửi thêm bài', 'Nếu có yêu cầu mới']:
+  assert instruction not in content,instruction
  for p in body.findall(tag('p')):
   if p.find('./'+tag('pPr')+'/'+tag('pStyle')) is not None:
    if p.find('./'+tag('pPr')+'/'+tag('pStyle')).get(tag('val'))=='Heading1':

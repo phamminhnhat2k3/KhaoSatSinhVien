@@ -6,7 +6,7 @@
     {
       "week": 4,
       "work": "Giao diện ban đầu, trình dựng mẫu, học vụ và phạm vi khoa/toàn trường.",
-      "accept": "Trình bày nền website và luồng khảo sát cơ bản trên dữ liệu demo.",
+      "accept": "Hoàn thành luồng khảo sát cơ bản trên dữ liệu thử nghiệm.",
       "kind": "allocated",
       "start": "2026-10-22",
       "end": "2026-10-28"
@@ -14,7 +14,7 @@
     {
       "week": 5,
       "work": "Rà lại Admin, bốn vai trò, phân công thực dạy và đánh giá từng giảng viên đã bổ sung.",
-      "accept": "Chốt quy tắc, ghi lại lỗi còn tồn tại, không coi demo đã xong.",
+      "accept": "Thống nhất quy tắc phân quyền và lập danh sách lỗi cần xử lý.",
       "kind": "allocated",
       "start": "2026-10-29",
       "end": "2026-11-04"
@@ -54,7 +54,7 @@
     {
       "week": 10,
       "work": "Đóng gói bản demo, hướng dẫn cài, tài khoản thử và hoàn thiện báo cáo.",
-      "accept": "Chạy lại từ database thử trống, có kịch bản demo để thầy xem.",
+      "accept": "Kiểm tra cài đặt từ cơ sở dữ liệu trống và chuẩn bị kịch bản trình bày.",
       "kind": "allocated",
       "start": "2026-12-03",
       "end": "2026-12-09"
