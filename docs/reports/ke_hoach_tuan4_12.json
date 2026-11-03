@@ -1,12 +1,13 @@
 {
   "updated": "2026-11-03",
-  "report_cutoff": "2026-10-28",
+  "report_date": "2026-10-28",
+  "basis": "report_allocation_not_actual_implementation_dates",
   "weeks": [
     {
       "week": 4,
       "work": "Giao diện ban đầu, trình dựng mẫu, học vụ và phạm vi khoa/toàn trường.",
-      "accept": "Mốc đã triển khai; tiếp tục kiểm tra trên dữ liệu demo.",
-      "kind": "past",
+      "accept": "Trình bày nền website và luồng khảo sát cơ bản trên dữ liệu demo.",
+      "kind": "allocated",
       "start": "2026-10-22",
       "end": "2026-10-28"
     },
@@ -14,7 +15,7 @@
       "week": 5,
       "work": "Rà lại Admin, bốn vai trò, phân công thực dạy và đánh giá từng giảng viên đã bổ sung.",
       "accept": "Chốt quy tắc; ghi lại lỗi còn tồn tại, không coi demo đã xong.",
-      "kind": "current",
+      "kind": "allocated",
       "start": "2026-10-29",
       "end": "2026-11-04"
     },
@@ -22,7 +23,7 @@
       "week": 6,
       "work": "Kiểm tra dữ liệu khoa, lớp, ghi danh, người dạy và danh sách được giao.",
       "accept": "Đúng người, đúng môn, đúng giảng viên; đổi phân công không làm đổi phiếu cũ.",
-      "kind": "planned",
+      "kind": "allocated",
       "start": "2026-11-05",
       "end": "2026-11-11"
     },
@@ -30,7 +31,7 @@
       "week": 7,
       "work": "Rà phiếu sinh viên, bản nháp, gửi một lần và các trạng thái thời gian.",
       "accept": "Làm trọn một đợt; thử thiếu câu, quá hạn, gửi trùng và tải lại bản nháp.",
-      "kind": "planned",
+      "kind": "allocated",
       "start": "2026-11-12",
       "end": "2026-11-18"
     },
@@ -38,7 +39,7 @@
       "week": 8,
       "work": "Rà báo cáo, CSV, quyền giảng viên/Trưởng khoa, hồ sơ và thông báo.",
       "accept": "Không xem ngoài phạm vi; điểm và lượt chọn khớp dữ liệu kiểm tra.",
-      "kind": "planned",
+      "kind": "allocated",
       "start": "2026-11-19",
       "end": "2026-11-25"
     },
@@ -46,7 +47,7 @@
       "week": 9,
       "work": "Chạy thử toàn bộ với nhiều khoa, nhiều môn và lớp có người cùng dạy.",
       "accept": "Có danh sách lỗi, mức độ ưu tiên và kết quả sau khi sửa.",
-      "kind": "planned",
+      "kind": "allocated",
       "start": "2026-11-26",
       "end": "2026-12-02"
     },
@@ -54,7 +55,7 @@
       "week": 10,
       "work": "Đóng gói bản demo, hướng dẫn cài, tài khoản thử và hoàn thiện báo cáo.",
       "accept": "Chạy lại từ database thử trống; có kịch bản demo để thầy xem.",
-      "kind": "planned",
+      "kind": "allocated",
       "start": "2026-12-03",
       "end": "2026-12-09"
     },

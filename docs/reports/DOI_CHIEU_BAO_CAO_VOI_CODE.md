@@ -6,7 +6,7 @@ Cập nhật ngày 03/11/2026. Dùng code và Prisma schema hiện tại làm c�
 
 - Tuần 2: `BaoCaoTuan2_TLCN_sat_du_an.docx` — phân tích yêu cầu, 4 vai trò, 11 nhóm chức năng và quy tắc nghiệp vụ.
 - Tuần 3: người dùng đã đổi tên thành `BaoCaoTuan3_TLCN.docx`; không ghi đè bản đang được người dùng chỉnh sửa. Nội dung đã giao gồm Use Case, thiết kế dữ liệu, sơ đồ tổng quan và SVG chi tiết.
-- Tuần 4: `BaoCaoTuan4_TLCN.docx` — kết quả triển khai đến 28/10, bốn ô ảnh trống và lộ trình tuần 4–12 cập nhật 03/11.
+- Tuần 4: `BaoCaoTuan4_TLCN.docx` — nội dung nền website và luồng khảo sát, bốn ô ảnh trống và phân bổ nội dung tuần 4–12. Ngày 28/10 là ngày báo cáo, không phải hạn chốt code.
 - Hai file gốc trong `C:/ChatGPT` được giữ nguyên. Bản tuần 3 cũ ở `docs/bao-cao` không phải bản vừa hiệu chỉnh.
 
 ## Căn cứ nội dung
@@ -38,7 +38,9 @@ Từ ngữ cần giữ chính xác: báo cáo CSV, không phải PDF/Excel; lưu
 
 Đính chính sau khi đọc toàn bộ lịch sử Git: repository được khởi tạo ngày 16/10/2026 (`d20c079`), có MVP ngày 19/10 (`ae7e9f3`). Nhận định trước đây rằng Git chỉ bắt đầu từ 23/10 là sai do đọc log giới hạn số lượng commit. Không dùng nhận định đó để phân chia các tuần.
 
-Lịch tuần dùng ngày báo cáo do người dùng cung cấp: tuần 2 ngày 14/10, tuần 3 ngày 21/10, tuần 4 ngày 28/10. MVP đã xuất hiện trong tuần 3; không thể mô tả toàn bộ dự án như thể chưa bắt đầu code cho đến tuần 4. Tuần 4 là tiếp tục triển khai từ nền đã có. File tuần 3 đang mở được giữ nguyên; khi hiệu chỉnh tiếp cần sửa các câu gợi ý rằng code chỉ bắt đầu từ tuần 4.
+Theo xác nhận của người dùng, lịch báo cáo và thời gian thực hiện dự án là hai mốc riêng. Báo cáo được chia hợp lý trong 12 tuần; phần đã code sớm có thể được trình bày ở tuần sau. Code dùng để xác nhận chức năng có thật, không dùng ngày commit để ép chức năng phải nằm trong một tuần báo cáo cụ thể. Không viết rằng một chức năng chỉ bắt đầu được làm ở tuần đó nếu không có căn cứ.
+
+Tuần 2 tập trung yêu cầu, tuần 3 thiết kế dữ liệu, tuần 4 bắt đầu trình bày phần code. Đây là trình tự trình bày báo cáo, không khẳng định dự án thực tế chưa có code trước tuần 4. Giữ nguyên bản tuần 3 đang được người dùng chỉnh sửa.
 
 Một số mốc có thể đối chiếu:
 
@@ -52,9 +54,9 @@ Một số mốc có thể đối chiếu:
 - `9cbe84f` — 31/10: Trưởng khoa chỉ đọc kết quả, bỏ luồng duyệt trên web.
 - `c6baab6` — 02/11: tinh gọn phiếu theo phần và trang giảng viên.
 
-Tuần 2 là yêu cầu; tuần 3 tập trung đặc tả/thiết kế nhưng đã có nền code ngày 19/10. Không gán các tính năng sau 28/10 vào phần đã hoàn thành của báo cáo tuần 4. Tại mốc 28/10 chỉ có ba role đăng nhập; DEAN xuất hiện từ 29/10, đánh giá người thực dạy và sửa/xóa mẫu từ 30/10. Kế hoạch tuần 5–12 là dự kiến rà soát/hoàn thiện từ demo hiện tại, không phải kết quả đã hoàn thành.
+Các mốc Git trên chỉ để tham khảo lịch sử thực tế, không quy định phân bổ tuần báo cáo. Không mô tả chức năng chưa có là đã hoàn thành. Việc trình bày phần có thật ở một tuần dự kiến không đồng nghĩa cam kết ngày hoàn thành; các mục kiểm tra và dự phòng vẫn là kế hoạch.
 
-Ảnh chụp bổ sung trong báo cáo tuần 4 chỉ minh họa chức năng. Nếu chụp bằng demo hiện tại, bố cục có thể đã thay đổi sau 28/10; ảnh không phải bằng chứng xác nhận ngày hoàn thành. Thay ô trống bằng ảnh thật và bỏ dòng hướng dẫn chụp sau khi chèn.
+Ảnh chụp dùng demo hiện tại để minh họa chức năng, không xác nhận ngày code. Thay ô trống bằng ảnh thật và bỏ dòng hướng dẫn chụp sau khi chèn.
 
 ## Kiểm tra tài liệu
 
@@ -64,4 +66,4 @@ Chạy `kiem_tra_bao_cao_tuan3.py` bằng Python của workspace dependencies. B
 
 Dữ liệu lịch nằm trong `ke_hoach_tuan4_12.json`. Tuần 10 đặt mục tiêu có bản demo ổn định và tài liệu; tuần 11–12 dự phòng sửa lỗi, kiểm tra lại và bàn giao. Hạn dự kiến tuần 12 là 23/12/2026 theo nhịp ngày báo cáo đã cung cấp. Đây là kế hoạch trong phạm vi đề tài, không phải cam kết hệ thống đạt quy mô vận hành toàn trường.
 
-Chạy `kiem_tra_bao_cao_tuan4.py` để kiểm tra ngày, các ô ảnh, lịch liên tiếp và đối chiếu snapshot Git. Kết quả QA tài liệu ngày 03/11 không được đưa ngược thành số liệu kiểm thử của ngày 28/10.
+Chạy `kiem_tra_bao_cao_tuan4.py` để kiểm tra các ô ảnh, lịch báo cáo liên tiếp, phần dự phòng và cách tách lịch báo cáo khỏi ngày code. Không dùng số bài test hiện tại làm số liệu kiểm thử của một ngày trong quá khứ.
