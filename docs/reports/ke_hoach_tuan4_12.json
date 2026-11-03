@@ -14,7 +14,7 @@
     {
       "week": 5,
       "work": "Rà lại Admin, bốn vai trò, phân công thực dạy và đánh giá từng giảng viên đã bổ sung.",
-      "accept": "Chốt quy tắc; ghi lại lỗi còn tồn tại, không coi demo đã xong.",
+      "accept": "Chốt quy tắc, ghi lại lỗi còn tồn tại, không coi demo đã xong.",
       "kind": "allocated",
       "start": "2026-10-29",
       "end": "2026-11-04"
@@ -22,7 +22,7 @@
     {
       "week": 6,
       "work": "Kiểm tra dữ liệu khoa, lớp, ghi danh, người dạy và danh sách được giao.",
-      "accept": "Đúng người, đúng môn, đúng giảng viên; đổi phân công không làm đổi phiếu cũ.",
+      "accept": "Đúng người, đúng môn, đúng giảng viên, đổi phân công không làm đổi phiếu cũ.",
       "kind": "allocated",
       "start": "2026-11-05",
       "end": "2026-11-11"
@@ -30,7 +30,7 @@
     {
       "week": 7,
       "work": "Rà phiếu sinh viên, bản nháp, gửi một lần và các trạng thái thời gian.",
-      "accept": "Làm trọn một đợt; thử thiếu câu, quá hạn, gửi trùng và tải lại bản nháp.",
+      "accept": "Làm trọn một đợt, thử thiếu câu, quá hạn, gửi trùng và tải lại bản nháp.",
       "kind": "allocated",
       "start": "2026-11-12",
       "end": "2026-11-18"
@@ -38,7 +38,7 @@
     {
       "week": 8,
       "work": "Rà báo cáo, CSV, quyền giảng viên/Trưởng khoa, hồ sơ và thông báo.",
-      "accept": "Không xem ngoài phạm vi; điểm và lượt chọn khớp dữ liệu kiểm tra.",
+      "accept": "Không xem ngoài phạm vi, điểm và lượt chọn khớp dữ liệu kiểm tra.",
       "kind": "allocated",
       "start": "2026-11-19",
       "end": "2026-11-25"
@@ -54,15 +54,15 @@
     {
       "week": 10,
       "work": "Đóng gói bản demo, hướng dẫn cài, tài khoản thử và hoàn thiện báo cáo.",
-      "accept": "Chạy lại từ database thử trống; có kịch bản demo để thầy xem.",
+      "accept": "Chạy lại từ database thử trống, có kịch bản demo để thầy xem.",
       "kind": "allocated",
       "start": "2026-12-03",
       "end": "2026-12-09"
     },
     {
       "week": 11,
-      "work": "Dự phòng sửa lỗi, kiểm tra lại bản tích hợp; ngừng thêm chức năng mới.",
-      "accept": "Các lỗi cản trở demo được xử lý; chạy các kiểm tra bắt buộc.",
+      "work": "Dự phòng sửa lỗi, kiểm tra lại bản tích hợp, ngừng thêm chức năng mới.",
+      "accept": "Các lỗi cản trở demo được xử lý, chạy các kiểm tra bắt buộc.",
       "kind": "buffer",
       "start": "2026-12-10",
       "end": "2026-12-16"

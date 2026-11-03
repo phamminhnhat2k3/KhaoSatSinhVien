@@ -14,6 +14,7 @@ with ZipFile(ROOT/'docs/reports/BaoCaoTuan4_TLCN.docx') as z:
  root=etree.fromstring(z.read('word/document.xml'));body=root.find(tag('body'));content=text(body)
  for expected in ['BÁO CÁO CÔNG VIỆC TUẦN 4','28/10/2026','không theo ngày code thực tế','Cách chia này không có nghĩa những phần đó chưa được code','Ngày trong bảng là mốc báo cáo dự kiến','Nguyễn Văn Sang','Phạm Minh Nhật','Ths. Đoàn Thanh Phong']:
   assert expected in content,expected
+ assert ';' not in content
  assert '94' not in content
  assert len(root.xpath('//w:drawing',namespaces=NS))==0
  tables=body.findall(tag('tbl'));assert len(tables)==8
