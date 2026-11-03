@@ -13,11 +13,16 @@ with ZipFile(REPORT) as z:
  root=etree.fromstring(z.read('word/document.xml'))
  texts=root.xpath('//w:t/text()',namespaces=NS)
  content=' '.join(texts)
- for expected in ['7. Thiết kế cơ sở dữ liệu sơ bộ','7.1. Các nhóm dữ liệu và nguyên tắc thiết kế','8. Kết quả tuần 3 và định hướng tuần 4','Nguyễn Văn Sang','Phạm Minh Nhật','Ths. Đoàn Thanh Phong','21/10/2026','ngoài hệ thống','Tuần 4 bắt đầu thiết lập Next.js','không chứa khóa sinh viên']:
+ for expected in ['7. Thiết kế cơ sở dữ liệu sơ bộ','7.1. Các nhóm dữ liệu và nguyên tắc thiết kế','8. Kết quả tuần 3 và định hướng tuần 4','Nguyễn Văn Sang','Phạm Minh Nhật','Ths. Đoàn Thanh Phong','21/10/2026','ngoài hệ thống','Sang tuần 4, nhóm sẽ thiết lập Next.js','không chứa khóa sinh viên','Phụ lục Sơ đồ database chi tiết']:
   assert expected in content,expected
  assert len(root.xpath('//w:body/w:tbl',namespaces=NS))==6
- assert len(root.xpath('//w:drawing',namespaces=NS))==1
- assert root.xpath('//a:blip/@r:embed',namespaces=NS)==['rIdWeek3Database']
+ assert len(root.xpath('//w:drawing',namespaces=NS))==2
+ assert root.xpath('//a:blip/@r:embed',namespaces=NS)==['rIdWeek3Database','rIdFullDatabasePng']
+ assert z.read('word/media/database-diagram.svg')==(ROOT/'docs/database/database-diagram.svg').read_bytes()
+ assert root.xpath('//*[local-name()="svgBlip"]/@r:embed',namespaces=NS)==['rIdFullDatabaseSvg']
+ sections=root.xpath('//w:sectPr',namespaces=NS)
+ assert len(sections)==2
+ assert sections[-1].find('{'+NS['w']+'}pgSz').get('{'+NS['w']+'}w')=='16838'
  assert 'word/media/week3-database.png' in z.namelist()
  assert z.read('word/media/week3-database.png')==(ROOT/'docs/reports/database-tuan3.png').read_bytes()
  original=Path('C:/ChatGPT/BaoCaoTuan3_TLCN.docx')
@@ -34,4 +39,4 @@ for e in edges:assert (e.get('data-child'),e.get('data-parent')) in refs
 assert not any(e.get('data-parent')=='StudentProfile' and e.get('data-child')=='Submission' for e in edges)
 with Image.open(ROOT/'docs/reports/database-tuan3.png') as image:
  assert image.width>=3000 and image.height>=2900
-print('PASS: nội dung, ảnh nhúng, 16 quan hệ dữ liệu và định dạng gốc được giữ đúng.')
+print('PASS: nội dung, hai hình, SVG gốc và định dạng báo cáo được giữ đúng.')
