@@ -15,7 +15,9 @@ assert set(re.search(r'enum Role\s*\{([^}]+)',schema).group(1).split())==roles
 expected_ids=['01','02','03','04','05','06','09','10','13','16','18']
 models=set(re.findall(r'^model (\w+)',schema,re.M))
 for week,filename in [(2,'BaoCaoTuan2_TLCN_sat_du_an.docx'),(3,'BaoCaoTuan3_TLCN_bo_sung_database.docx')]:
- with ZipFile(ROOT/'docs/reports'/filename) as z:
+ report=ROOT/'docs/reports'/filename
+ if week==3 and not report.exists():report=ROOT/'docs/reports/BaoCaoTuan3_TLCN.docx'
+ with ZipFile(report) as z:
   assert z.testzip() is None
   root=etree.fromstring(z.read('word/document.xml'));body=root.find(tag('body'));tables=body.findall(tag('tbl'))
   assert len(tables)==(7 if week==2 else 6)
