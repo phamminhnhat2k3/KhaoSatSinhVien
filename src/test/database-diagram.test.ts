@@ -7,7 +7,7 @@ import {expect,test} from "vitest";
 const dbml=readFileSync("docs/database/database.dbml","utf8");
 test("draw.io có đủ bảng, cột và đầu nối chỉnh sửa được, không nhúng ảnh",()=>{
  const xml=readFileSync("docs/database/database-web.drawio","utf8");
- expect(xml.match(/<mxCell id="\w+\.\w+"/g)).toHaveLength(122);
+ expect(xml.match(/<mxCell id="\w+\.\w+"/g)).toHaveLength(123);
  expect(xml.match(/edge="1"/g)).toHaveLength(46);
  expect(xml).not.toMatch(/image=|data:image|approvedAt|approvedBy|reviewNote/);
  for(const m of Prisma.dmmf.datamodel.models)expect(xml).toContain(`<mxCell id="${m.name}"`);
@@ -20,7 +20,7 @@ test("ảnh SVG của web là vector, giữ các bảng và quan hệ đang dùn
  expect(svg).not.toMatch(/<image\b|data:image/);
  expect(svg.match(/<g id=/g)).toHaveLength(28);
  expect(svg.match(/class="relation"/g)).toHaveLength(46);
- expect(svg.match(/class="field"/g)).toHaveLength(122);
+ expect(svg.match(/class="field"/g)).toHaveLength(123);
  expect(svg).not.toMatch(/approvedAt|approvedBy|reviewNote/);
  for(const model of Prisma.dmmf.datamodel.models)expect(svg).toContain(`<g id="${model.name}">`);
 });

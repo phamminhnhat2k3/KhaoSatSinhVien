@@ -1,0 +1,1 @@
+ALTER TABLE `AcademicClass` ADD COLUMN `educationSystem` VARCHAR(191) NOT NULL DEFAULT 'REGULAR';

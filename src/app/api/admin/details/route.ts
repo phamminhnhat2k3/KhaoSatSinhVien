@@ -1,3 +1,4 @@
+import { educationSystem } from "@/modules/academic/education";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 export async function GET(request: Request) {
@@ -13,7 +14,7 @@ export async function GET(request: Request) {
     if (!u) return Response.json({}, { status: 404 });
     account = { id, active: u.active, email: u.email, manageable: id !== session!.user.id };
     if (u.student) links.push({ label: "Quản lý học vụ", href: `/admin/students/${u.student.id}` });
-    name=u.name; fields=[["Email",u.email],["Điện thoại",u.phone || "Chưa cập nhật"],["Trạng thái",u.active ? "Đang hoạt động" : "Đã khóa"],["Khoa",u.lecturer?.faculty?.name ?? u.student?.academicClass?.faculty.name ?? "Chưa phân khoa"],["Mã nghiệp vụ",u.student?.studentCode ?? u.lecturer?.lecturerCode ?? "Quản trị viên"],["Lớp hành chính",u.student?.academicClass?.name ?? "Không áp dụng"],["Môn giảng dạy",u.lecturer?.courses.map(c=>c.name).join(", ") || "Không áp dụng"],["Giới thiệu",u.bio || "Chưa có giới thiệu"]];
+    name=u.name; fields=[["Email",u.email],["Điện thoại",u.phone || "Chưa cập nhật"],["Trạng thái",u.active ? "Đang hoạt động" : "Đã khóa"],["Khoa",u.lecturer?.faculty?.name ?? u.student?.academicClass?.faculty.name ?? "Chưa phân khoa"],["Mã nghiệp vụ",u.student?.studentCode ?? u.lecturer?.lecturerCode ?? "Quản trị viên"],["Lớp hành chính",u.student?.academicClass?.name ?? "Không áp dụng"],["Hệ học",u.student?.academicClass ? educationSystem(u.student.academicClass.educationSystem).name : "Không áp dụng"],["Môn giảng dạy",u.lecturer?.courses.map(c=>c.name).join(", ") || "Không áp dụng"],["Giới thiệu",u.bio || "Chưa có giới thiệu"]];
   } else if (type === "faculty") {
     const f=await db.faculty.findUnique({ where:{id}, include:{ _count:{select:{classes:true,lecturers:true,courses:true,campaigns:true}} } });
     if(!f) return Response.json({}, {status:404}); name=f.name; links.push({ label: "Sinh viên trong khoa", href: `/admin/users?facultyId=${id}&role=STUDENT` }, { label: "Giảng viên trong khoa", href: `/admin/users?facultyId=${id}&role=LECTURER` }); fields=[["Mã khoa",f.code],["Lớp hành chính",String(f._count.classes)],["Giảng viên",String(f._count.lecturers)],["Môn học",String(f._count.courses)],["Đợt khảo sát",String(f._count.campaigns)]];

@@ -5,10 +5,11 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/access";
 import { normalizeAcademicCode } from "@/modules/academic/rules";
+import { educationSystemSchema } from "@/modules/academic/education";
 
 const code = z.string().trim().min(2).max(30).transform(normalizeAcademicCode);
 const facultySchema = z.object({ code, name: z.string().trim().min(3).max(120) });
-const classSchema = facultySchema.extend({ facultyId: z.string().min(1) });
+const classSchema = facultySchema.extend({ facultyId: z.string().min(1), educationSystem: educationSystemSchema });
 const semesterSchema = z.object({ name: z.string().trim().min(3).max(120), startsAt: z.iso.date().transform(d => new Date(`${d}T00:00:00+07:00`)), endsAt: z.iso.date().transform(d => new Date(`${d}T23:59:59.999+07:00`)) }).refine(v => v.endsAt > v.startsAt, "Ngày kết thúc không được trước ngày bắt đầu.");
 
 export async function manageFaculty(_: string | undefined, form: FormData) {
@@ -49,6 +50,20 @@ export async function createAcademicClass(_: string | undefined, form: FormData)
   }); } catch { return "Chưa tạo được lớp hành chính. Mã lớp có thể trùng hoặc khoa không tồn tại."; }
   revalidatePath("/admin/academic"); revalidatePath("/admin/students"); revalidatePath("/admin/users"); return "Đã tạo lớp hành chính.";
 }
+export async function updateClassEducation(_: string | undefined, form: FormData) {
+  const actor = await requireUser(Role.ADMIN);
+  const parsed = z.object({ id: z.string().min(1), educationSystem: educationSystemSchema }).safeParse(Object.fromEntries(form));
+  if (!parsed.success) return "Chọn hệ học hợp lệ cho lớp hành chính.";
+  try {
+    await db.$transaction(async tx => {
+      await tx.academicClass.update({ where: { id: parsed.data.id }, data: { educationSystem: parsed.data.educationSystem } });
+      await tx.auditLog.create({ data: { actorId: actor.id, action: "UPDATE_EDUCATION_SYSTEM", entity: "AcademicClass", entityId: parsed.data.id } });
+    });
+  } catch { return "Không cập nhật được hệ học. Kiểm tra lại lớp hành chính."; }
+  revalidatePath("/admin", "layout"); revalidatePath("/profile");
+  return "Đã cập nhật hệ học của lớp hành chính.";
+}
+
 export async function createSemester(_: string | undefined, form: FormData) {
   const user = await requireUser(Role.ADMIN);
   const parsed = semesterSchema.safeParse(Object.fromEntries(form));

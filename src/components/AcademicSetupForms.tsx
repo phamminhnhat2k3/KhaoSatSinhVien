@@ -1,7 +1,8 @@
 "use client";
+import { educationSystems } from "@/modules/academic/education";
 import {useActionFeedback} from "./useActionFeedback";
 import { useState } from "react";
-import { createAcademicClass, createFaculty, createSemester, enrollStudent, updatePlacement } from "@/app/admin/academic/actions";
+import { updateClassEducation, createAcademicClass, createFaculty, createSemester, enrollStudent, updatePlacement } from "@/app/admin/academic/actions";
 
 type Option = { id: string; label: string };
 function Message({ text }: { text?: string }) { return text ? <p className={text.startsWith("Đã ") ? "notice" : "error"} role="status">{text}</p> : null; }
@@ -11,7 +12,11 @@ export function FacultyForm() {
 }
 export function AcademicClassForm({ faculties }: { faculties: Option[] }) {
   const [message, action, pending] = useActionFeedback(createAcademicClass, undefined);
-  return <form action={action} className="stack"><label className="field">Khoa của lớp<select className="input" name="facultyId" required><option value="">Chọn khoa</option>{faculties.map(f => <option value={f.id} key={f.id}>{f.label}</option>)}</select></label><label className="field">Mã lớp hành chính<input className="input" name="code" required minLength={2} maxLength={30} placeholder="24110ST1"/></label><label className="field">Tên lớp hành chính<input className="input" name="name" required minLength={3} maxLength={120}/></label><Message text={message}/><button className="button" disabled={pending || !faculties.length}>Tạo lớp hành chính</button></form>;
+  return <form action={action} className="stack"><label className="field">Khoa của lớp<select className="input" name="facultyId" required><option value="">Chọn khoa</option>{faculties.map(f => <option value={f.id} key={f.id}>{f.label}</option>)}</select></label><label className="field">Hệ học của lớp<select className="input" name="educationSystem" defaultValue="REGULAR" required>{Object.entries(educationSystems).map(([value,system])=><option key={value} value={value}>{system.name} ({system.tag})</option>)}</select></label><label className="field">Mã lớp hành chính<input className="input" name="code" required minLength={2} maxLength={30} placeholder="24110ST1"/></label><label className="field">Tên lớp hành chính<input className="input" name="name" required minLength={3} maxLength={120}/></label><Message text={message}/><button className="button" disabled={pending || !faculties.length}>Tạo lớp hành chính</button></form>;
+}
+export function ClassEducationForm({ group }: { group: { id: string; code: string; educationSystem: string } }) {
+  const [message, action, pending] = useActionFeedback(updateClassEducation, undefined);
+  return <form action={action} className="stack"><input type="hidden" name="id" value={group.id}/><label className="field">Hệ học lớp {group.code}<select className="input" name="educationSystem" defaultValue={group.educationSystem} required>{Object.entries(educationSystems).map(([value,system])=><option key={value} value={value}>{system.name} ({system.tag})</option>)}</select></label><Message text={message}/><button className="button secondary" disabled={pending}>{pending?"Đang lưu…":"Lưu hệ học"}</button></form>;
 }
 export function SemesterForm() {
   const [message, action, pending] = useActionFeedback(createSemester, undefined);

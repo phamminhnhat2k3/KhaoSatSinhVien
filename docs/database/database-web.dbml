@@ -46,6 +46,7 @@ Table Faculty {
 }
 
 Table AcademicClass {
+  educationSystem "varchar(191)" [not null]
   id "varchar(191)" [not null]
   code "varchar(191)" [not null]
   name "varchar(191)" [not null]

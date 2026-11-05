@@ -25,9 +25,15 @@ Cập nhật ngày 06/11/2026.
 
 ## Kiểm tra đã thực hiện
 
-- 102 bài test đạt, bao gồm phân công chung, danh sách riêng, miễn toàn bộ môn, khôi phục mặc định, sai khoa/học kỳ và chọn trùng nhóm của một môn.
-- 21 kịch bản nghiệm thu Playwright đạt trên database tạm riêng, bao gồm các luồng cũ và phân công theo lớp mới.
+- 105 bài test đạt, bao gồm phân công chung, danh sách riêng, miễn toàn bộ môn, khôi phục mặc định, sai khoa/học kỳ và chọn trùng nhóm của một môn.
+- 22 kịch bản nghiệm thu Playwright đạt trên database tạm riêng, bao gồm các luồng cũ và phân công theo lớp mới.
 - TypeScript, ESLint, Prisma validate và build Next.js đạt. Đối chiếu MySQL với Prisma không có sai lệch cấu trúc.
 - Migration `20261106090000_class_study_plans` chỉ thêm ba bảng và khóa ngoại. Đã áp dụng trên database local, không xóa tài khoản hoặc kết quả khảo sát hiện có.
 
 Chưa thực hiện việc xóa dữ liệu mẫu và tạo lại bộ dữ liệu mới. Sơ đồ đầy đủ SVG/HTML/draw.io/DBML/Mermaid đã bổ sung ba bảng, ảnh PNG và bản sơ đồ tinh gọn cũ chưa cập nhật.
+
+## Hệ học lớp hành chính
+
+Khi tạo lớp, chọn Chính quy (CQ), Vừa học vừa làm (VLVH) hoặc Đào tạo từ xa (ĐTTX). Các danh sách thêm sinh viên, chuyển lớp, lọc người dùng, phân công học kỳ và tạo đợt hiển thị nhãn hệ cạnh mã/tên lớp, ví dụ `CNTT01 · Công nghệ thông tin 01 [VLVH]`. Mã và tên gốc không tự đổi. Sinh viên có hệ học thông qua lớp hành chính, không nhập lại riêng cho từng người.
+
+Đổi hệ của lớp hiện có tại **Khoa, lớp hành chính và học kỳ → Lớp hành chính → Hệ học → Lưu hệ học**. Migration `20261106100000_academic_class_education` thêm một cột có mặc định Chính quy. Admin cần rà và chọn lại hệ cho các lớp cũ thuộc hệ khác. Việc đổi nhãn hệ không sửa nội dung hoặc người nhận phiếu đã giao. Hệ của lớp học phần hiện có vẫn được giữ, thay đổi này không tự phân công lại môn hoặc giảng viên.

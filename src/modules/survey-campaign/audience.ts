@@ -19,7 +19,7 @@ export async function getAudience(tx: Pick<Prisma.TransactionClient, "studentPro
     select: {
       id: true, studentCode: true, user: { select: { name: true } },
       studyPlans: { where: { semesterId: campaign.semesterId }, select: { semesterId: true } },
-      academicClass: { select: { code: true, faculty: { select: { name: true } }, studyAssignments: { where: { class: classFilter }, select: { class: { select: classSelect } } } } },
+      academicClass: { select: { code: true, educationSystem: true, faculty: { select: { name: true } }, studyAssignments: { where: { class: classFilter }, select: { class: { select: classSelect } } } } },
       enrollments: { where: { class: classFilter }, select: { class: { select: classSelect } } }
     },
     orderBy: { studentCode: "asc" }

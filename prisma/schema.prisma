@@ -51,6 +51,7 @@ model Faculty {
 }
 
 model AcademicClass {
+  educationSystem String @default("REGULAR")
   studyAssignments ClassStudyAssignment[]
   campaignTargets CampaignAcademicClass[]
   id String @id @default(cuid())
