@@ -51,6 +51,8 @@ model Faculty {
 }
 
 model AcademicClass {
+  studyAssignments ClassStudyAssignment[]
+  campaignTargets CampaignAcademicClass[]
   id String @id @default(cuid())
   code String @unique
   name String
@@ -84,6 +86,7 @@ model UserRole {
 }
 
 model StudentProfile {
+  studyPlans StudentStudyPlan[]
   id            String @id @default(cuid())
   studentCode   String @unique
   userId        String @unique
@@ -109,6 +112,7 @@ model LecturerProfile {
 }
 
 model Semester {
+  studentStudyPlans StudentStudyPlan[]
   id        String @id @default(cuid())
   name      String
   startsAt  DateTime
@@ -132,6 +136,7 @@ model Course {
 }
 
 model CourseClass {
+  academicAssignments ClassStudyAssignment[]
   teachingConfigured Boolean @default(false)
   teachings CourseTeaching[]
   educationSystem String @default("REGULAR")
@@ -192,6 +197,7 @@ model QuestionOption {
 }
 
 model SurveyCampaign {
+  academicTargets CampaignAcademicClass[]
   evaluationMode String @default("COURSE")
   approvedAt DateTime?
   approvedBy String?
@@ -293,6 +299,30 @@ model ParticipationTeaching {
   course Course @relation(fields:[courseId],references:[id],onDelete:Restrict)
   lecturer LecturerProfile @relation(fields:[lecturerId],references:[id],onDelete:Restrict)
   @@id([participationId,courseId,lecturerId])
+}
+
+model ClassStudyAssignment {
+  academicClassId String
+  classId String
+  academicClass AcademicClass @relation(fields: [academicClassId], references: [id], onDelete: Cascade)
+  class CourseClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+  @@id([academicClassId, classId])
+}
+
+model StudentStudyPlan {
+  studentId String
+  semesterId String
+  student StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  semester Semester @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+  @@id([studentId, semesterId])
+}
+
+model CampaignAcademicClass {
+  campaignId String
+  academicClassId String
+  campaign SurveyCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  academicClass AcademicClass @relation(fields: [academicClassId], references: [id], onDelete: Restrict)
+  @@id([campaignId, academicClassId])
 }
 
 model AuditLog {

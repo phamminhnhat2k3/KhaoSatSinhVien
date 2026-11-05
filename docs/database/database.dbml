@@ -354,3 +354,36 @@ Ref: SurveyParticipation.studentId > StudentProfile.id
 Ref: SurveyTarget.campaignId > SurveyCampaign.id
 Ref: SurveyTarget.classId > CourseClass.id
 Ref: UserRole.userId > User.id
+
+Table ClassStudyAssignment {
+  academicClassId "varchar(191)" [not null]
+  classId "varchar(191)" [not null]
+  indexes {
+    (academicClassId, classId) [pk]
+  }
+}
+
+Ref: ClassStudyAssignment.academicClassId > AcademicClass.id
+Ref: ClassStudyAssignment.classId > CourseClass.id
+
+Table StudentStudyPlan {
+  studentId "varchar(191)" [not null]
+  semesterId "varchar(191)" [not null]
+  indexes {
+    (studentId, semesterId) [pk]
+  }
+}
+
+Ref: StudentStudyPlan.studentId > StudentProfile.id
+Ref: StudentStudyPlan.semesterId > Semester.id
+
+Table CampaignAcademicClass {
+  campaignId "varchar(191)" [not null]
+  academicClassId "varchar(191)" [not null]
+  indexes {
+    (campaignId, academicClassId) [pk]
+  }
+}
+
+Ref: CampaignAcademicClass.campaignId > SurveyCampaign.id
+Ref: CampaignAcademicClass.academicClassId > AcademicClass.id

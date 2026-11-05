@@ -1,9 +1,8 @@
 # Database diagram — Chức năng đang dùng · 01/11/2026
 
-Nguồn: đối chiếu MySQL, 24 model Prisma và các chức năng hiện có. Bản sơ đồ chính giữ 25 bảng (gồm liên kết môn–giảng viên tự động), 116 cột và 40 khóa ngoại. Chỉ lược 3 cột xét duyệt đã ngừng dùng; không thay đổi cấu trúc database. Không bao gồm _prisma_migrations.
+Nguồn: đối chiếu MySQL, 27 model Prisma và các chức năng hiện có. Bản sơ đồ chính giữ 28 bảng (gồm liên kết môn–giảng viên tự động), 122 cột và 46 khóa ngoại. Chỉ lược 3 cột xét duyệt đã ngừng dùng; không thay đổi cấu trúc database. Không bao gồm _prisma_migrations.
 
 - database-web.drawio: sơ đồ draw.io, có thể di chuyển/chỉnh sửa riêng từng bảng, cột và đường nối. Mở bằng File → Open From → Device.
-- database-web.xml: cùng nội dung XML không nén để sao chép/chỉnh mã.
 - database-web.dbml và database-web.mmd: nguồn sơ đồ theo chức năng đang dùng.
 - database.dbml và database.mmd: bản cấu trúc MySQL đầy đủ, giữ cả các cột lịch sử để đối chiếu.
 
@@ -22,3 +21,7 @@ SurveyParticipation giữ trạng thái được giao/hoàn thành. Submission k
 Đã lược approvedAt, approvedBy, reviewNote khỏi sơ đồ chính vì web không còn bước xét duyệt của Trưởng khoa. Ba cột này vẫn tồn tại trong MySQL và bản DBML đầy đủ.
 
 SurveyTarget và CourseClass.lecturerId vẫn được web đọc để xem báo cáo/phiếu khảo sát cũ, nên giữ trên sơ đồ và ghi chú là phần lịch sử. CourseTeaching, ParticipationTeaching, CampaignCourse, ParticipationCourse vẫn dùng cho phân công và giao đánh giá; Notification/AuditLog vẫn dùng cho thông báo và nhật ký, dù không phải mỗi bảng đều có một màn hình riêng.
+
+## Phân công theo lớp hành chính
+
+Cập nhật 06/11/2026: thêm ClassStudyAssignment (phân công môn cho lớp), StudentStudyPlan (đánh dấu danh sách riêng theo sinh viên/học kỳ) và CampaignAcademicClass (lớp nhận khảo sát). Bản đầy đủ hiện có 28 bảng, gồm 27 model Prisma và một bảng liên kết tự động. SVG, HTML, draw.io và DBML đã bổ sung ba bảng này. Bản tinh gọn và PNG cũ vẫn là tài liệu tổng quan trước cập nhật.

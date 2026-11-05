@@ -1,7 +1,8 @@
 import type { Prisma } from "@prisma/client";
+import {effectiveEnrollments} from "../academic/study-plan";
 import {teachingPairs} from "./teaching";
 
-type Campaign = { id: string; scope: string; facultyId: string | null; semesterId: string | null; evaluationMode?:string; courseTargets: { courseId: string }[] };
+type Campaign = { id: string; scope: string; facultyId: string | null; semesterId: string | null; evaluationMode?:string; courseTargets: { courseId: string }[]; academicTargets?: { academicClassId: string }[] };
 const teacherSelect={id:true,facultyId:true,user:{select:{name:true,active:true,roles:{select:{role:true}}}}} as const;
 
 export async function getAudience(tx: Pick<Prisma.TransactionClient, "studentProfile">, campaign: Campaign) {
@@ -9,17 +10,31 @@ export async function getAudience(tx: Pick<Prisma.TransactionClient, "studentPro
   if (!campaign.semesterId || !["FACULTY", "UNIVERSITY"].includes(campaign.scope) || campaign.scope === "FACULTY" && !campaign.facultyId || campaign.scope === "UNIVERSITY" && (campaign.facultyId || campaign.courseTargets.length)) {
     throw new Error("Phạm vi, khoa hoặc học kỳ khảo sát không hợp lệ.");
   }
-  return tx.studentProfile.findMany({
-    where: { user: { active: true, roles: { some: { role: "STUDENT" } } }, ...(campaign.scope === "FACULTY" ? { academicClass: { facultyId: campaign.facultyId! } } : {}) },
-    select: { id: true, studentCode: true, user: { select: { name: true } }, academicClass: { select: { code: true, faculty: { select: { name: true } } } }, enrollments: { where: { class: { semesterId: campaign.semesterId!, courseId: { in: campaign.courseTargets.map(c => c.courseId) } } }, select: { class: { select: { code:true,teachingConfigured:true, lecturer:{select:teacherSelect},teachings:{select:{lecturer:{select:teacherSelect}}},courseId: true, course: { select: { code: true, name: true } } } } } } },
+  const classIds = campaign.academicTargets?.map(t => t.academicClassId) ?? [];
+  if (campaign.scope === "FACULTY" && !classIds.length) return [];
+  const classFilter = { semesterId: campaign.semesterId, courseId: { in: campaign.courseTargets.map(c => c.courseId) } };
+  const classSelect = { id: true, code: true, teachingConfigured: true, lecturer: { select: teacherSelect }, teachings: { select: { lecturer: { select: teacherSelect } } }, courseId: true, course: { select: { code: true, name: true } } } as const;
+  const students = await tx.studentProfile.findMany({
+    where: { user: { active: true, roles: { some: { role: "STUDENT" } } }, ...(campaign.scope === "FACULTY" ? { academicClass: { facultyId: campaign.facultyId!, ...(classIds.length ? { id: { in: classIds } } : {}) } } : {}) },
+    select: {
+      id: true, studentCode: true, user: { select: { name: true } },
+      studyPlans: { where: { semesterId: campaign.semesterId }, select: { semesterId: true } },
+      academicClass: { select: { code: true, faculty: { select: { name: true } }, studyAssignments: { where: { class: classFilter }, select: { class: { select: classSelect } } } } },
+      enrollments: { where: { class: classFilter }, select: { class: { select: classSelect } } }
+    },
     orderBy: { studentCode: "asc" }
   });
+  return students.map(s => ({ ...s, enrollments: effectiveEnrollments(s.academicClass?.studyAssignments ?? [], s.enrollments, !!s.studyPlans?.length) }));
 }
 
 export async function publishToAudience(tx: Prisma.TransactionClient, id: string) {
   // Updating the draft first serializes concurrent publication attempts in this transaction.
-  const campaign = await tx.surveyCampaign.update({ where: { id, status: "DRAFT" }, data: { status: "PUBLISHED", publishedAt: new Date() }, include: { courseTargets: true } });
+  const campaign = await tx.surveyCampaign.update({ where: { id, status: "DRAFT" }, data: { status: "PUBLISHED", publishedAt: new Date() }, include: { courseTargets: true, academicTargets: true } });
   if (campaign.scope === "LEGACY_CLASS") return;
+  const selectedClasses = campaign.academicTargets.map(t => t.academicClassId);
+  if (campaign.scope === "FACULTY" && (!selectedClasses.length || await tx.academicClass.count({ where: { id: { in: selectedClasses }, facultyId: campaign.facultyId! } }) !== selectedClasses.length)) {
+    throw new Error("Lớp hành chính nhận khảo sát chưa được chọn hoặc không còn thuộc khoa. Chỉnh sửa bản nháp trước khi công bố.");
+  }
   const courseIds = [...new Set(campaign.courseTargets.map(c => c.courseId))];
   if (courseIds.length) {
     const matching = await tx.course.count({ where: { id: { in: courseIds }, facultyId: campaign.facultyId, classes: { some: { semesterId: campaign.semesterId ?? "" } } } });

@@ -7,6 +7,7 @@ export const campaignSchema = z.object({
   scope: z.enum(["FACULTY", "UNIVERSITY"]),
   semesterId: z.string().min(1),
   facultyId: z.string().default(""),
+  academicClassIds: z.array(z.string().min(1)).max(500).default([]),
   courseTemplateId: z.string().default(""),
   courseIds: z.array(z.string().min(1)).max(200).default([]),
   startsAt: z.iso.date().transform(date => new Date(`${date}T00:00:00+07:00`)),
@@ -14,5 +15,6 @@ export const campaignSchema = z.object({
 }).refine(v=>v.evaluationMode!=="LECTURER"||v.scope==="FACULTY"&&!!v.courseTemplateId&&v.courseIds.length>0,"Đánh giá giảng viên cần khoa, mẫu đánh giá và môn học.")
   .refine(value => value.endsAt > value.startsAt, "Ngày kết thúc không được trước ngày bắt đầu.")
   .refine(v => v.scope !== "FACULTY" || !!v.facultyId, "Chọn khoa tổ chức khảo sát.")
-  .refine(v => v.scope !== "UNIVERSITY" || !v.courseTemplateId && !v.courseIds.length && !v.facultyId, "Khảo sát toàn trường chỉ dùng nội dung chung.")
+  .refine(v => v.scope !== "FACULTY" || v.academicClassIds.length > 0, "Chọn ít nhất một lớp hành chính nhận khảo sát.")
+  .refine(v => v.scope !== "UNIVERSITY" || !v.courseTemplateId && !v.courseIds.length && !v.facultyId && !v.academicClassIds.length, "Khảo sát toàn trường chỉ dùng nội dung chung.")
   .refine(v => !!v.courseTemplateId === (v.courseIds.length > 0), "Phần môn học cần cả mẫu đánh giá và danh sách môn.");

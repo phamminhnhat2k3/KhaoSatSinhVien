@@ -55,7 +55,9 @@ test.describe("khảo sát khoa / toàn trường và danh sách sinh viên", ()
     await page.getByRole("combobox", { name: "Học kỳ khảo sát", exact: true }).selectOption(semesterId);
     if (scope === "FACULTY") {
       await page.getByRole("combobox", { name: "Khoa tổ chức", exact: true }).selectOption(facultyId);
+      for (const id of classes.slice(0,2)) await page.locator(`input[name="academicClassIds"][value="${id}"]`).check();
       await page.getByRole("combobox", { name: "Mẫu đánh giá môn học", exact: true }).selectOption(courseTemplateId);
+      await page.getByRole("combobox", { name: "Đối tượng đánh giá", exact: true }).selectOption("COURSE");
       for (const c of Object.values(courses)) await page.locator(`input[name="courseIds"][value="${c.id}"]`).check();
     }
     await page.getByRole("combobox", { name: "Mẫu câu hỏi chung", exact: true }).selectOption(commonId);

@@ -205,3 +205,21 @@ erDiagram
   SurveyCampaign ||--o{ SurveyTarget : "campaignId"
   CourseClass ||--o{ SurveyTarget : "classId"
   User ||--o{ UserRole : "userId"
+  ClassStudyAssignment {
+    varchar_191 academicClassId PK,FK
+    varchar_191 classId PK,FK
+  }
+  AcademicClass ||--o{ ClassStudyAssignment : "academicClassId"
+  CourseClass ||--o{ ClassStudyAssignment : "classId"
+  StudentStudyPlan {
+    varchar_191 studentId PK,FK
+    varchar_191 semesterId PK,FK
+  }
+  StudentProfile ||--o{ StudentStudyPlan : "studentId"
+  Semester ||--o{ StudentStudyPlan : "semesterId"
+  CampaignAcademicClass {
+    varchar_191 campaignId PK,FK
+    varchar_191 academicClassId PK,FK
+  }
+  SurveyCampaign ||--o{ CampaignAcademicClass : "campaignId"
+  AcademicClass ||--o{ CampaignAcademicClass : "academicClassId"

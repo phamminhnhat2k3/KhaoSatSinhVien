@@ -8,7 +8,7 @@ test.describe("đánh giá giảng viên thực dạy",()=>{
   test.setTimeout(120000);
   test.use({actionTimeout:15000});
   const db=new PrismaClient(),tag=`TEACH-${randomUUID().slice(0,6)}`,password=randomUUID();
-  let facultyId:string,semesterId:string,courseId:string,commonId:string,subjectId:string,campaignId:string;
+  let homeId:string,facultyId:string,semesterId:string,courseId:string,commonId:string,subjectId:string,campaignId:string;
   const teachers:{id:string;email:string;name:string}[]=[],students:{id:string;email:string}[]=[],classes:string[]=[];
   test.beforeAll(async()=>{
     expect(new URL(process.env.DATABASE_URL!).pathname).toBe(`/${process.env.ISOLATED_FEATURE_DB}`);
@@ -16,6 +16,7 @@ test.describe("đánh giá giảng viên thực dạy",()=>{
     await db.user.create({data:{name:tag,email:`${tag}-admin@example.invalid`,passwordHash,roles:{create:{role:"ADMIN"}}}});
     facultyId=(await db.faculty.create({data:{code:tag,name:tag}})).id;
     const home=await db.academicClass.create({data:{code:tag,name:tag,facultyId}});
+    homeId=home.id;
     semesterId=(await db.semester.create({data:{name:tag,startsAt:new Date("2026-01-01"),endsAt:new Date("2027-12-31")}})).id;
     for(let i=0;i<3;i++){
       const user=await db.user.create({data:{name:`${tag} GV${i}`,email:`${tag}-gv${i}@example.invalid`,passwordHash,roles:{create:{role:"LECTURER"}},lecturer:{create:{lecturerCode:`${tag}-GV${i}`,facultyId}}},include:{lecturer:true}});
@@ -38,7 +39,7 @@ test.describe("đánh giá giảng viên thực dạy",()=>{
   }
   test("phân công đồng giảng, chốt người dạy, trả lời đúng người và báo cáo tách riêng",async({page})=>{
     await login(page,`${tag}-admin@example.invalid`);await page.goto("/admin/campaigns/new");
-    await page.getByLabel("Tên đợt khảo sát").fill(`${tag} khảo sát`);await page.getByRole("combobox",{name:"Khoa tổ chức",exact:true}).selectOption(facultyId);await page.getByRole("combobox",{name:"Học kỳ khảo sát",exact:true}).selectOption(semesterId);await page.getByRole("combobox",{name:"Mẫu câu hỏi chung",exact:true}).selectOption(commonId);await page.getByRole("combobox",{name:"Mẫu đánh giá môn học",exact:true}).selectOption(subjectId);await page.getByRole("combobox",{name:"Đối tượng đánh giá",exact:true}).selectOption("LECTURER");await page.locator(`input[name="courseIds"][value="${courseId}"]`).check();await page.getByLabel("Bắt đầu",{exact:true}).fill("2026-01-01");await page.getByLabel("Kết thúc",{exact:true}).fill("2027-12-31");await page.getByRole("button",{name:"Tạo đợt khảo sát",exact:true}).click();await expect(page).toHaveURL(/created=1/);
+    await page.getByLabel("Tên đợt khảo sát").fill(`${tag} khảo sát`);await page.getByRole("combobox",{name:"Học kỳ khảo sát",exact:true}).selectOption(semesterId);await page.getByRole("combobox",{name:"Khoa tổ chức",exact:true}).selectOption(facultyId);await page.locator(`input[name="academicClassIds"][value="${homeId}"]`).check();await page.getByRole("combobox",{name:"Mẫu câu hỏi chung",exact:true}).selectOption(commonId);await page.getByRole("combobox",{name:"Mẫu đánh giá môn học",exact:true}).selectOption(subjectId);await page.getByRole("combobox",{name:"Đối tượng đánh giá",exact:true}).selectOption("LECTURER");await page.locator(`input[name="courseIds"][value="${courseId}"]`).check();await page.getByLabel("Bắt đầu",{exact:true}).fill("2026-01-01");await page.getByLabel("Kết thúc",{exact:true}).fill("2027-12-31");await page.getByRole("button",{name:"Tạo đợt khảo sát",exact:true}).click();await expect(page).toHaveURL(/created=1/);
     campaignId=(await db.surveyCampaign.findFirstOrThrow({where:{title:`${tag} khảo sát`}})).id;
     await page.goto(`/admin/campaigns/${campaignId}/review`);await page.getByRole("button",{name:"Công bố",exact:true}).click();await expect(page.locator("main").getByRole("alert")).toContainText("Chưa phân công");expect(await db.surveyParticipation.count({where:{campaignId}})).toBe(0);
     await page.goto("/admin/classes/new");const row=page.locator("main tbody tr").filter({has:page.getByText(`${tag}.0`,{exact:true})});await row.getByText("Phân công / Cập nhật",{exact:true}).click();for(const t of teachers.slice(0,2))await row.getByRole("checkbox",{name:t.name,exact:true}).check();await row.getByRole("button",{name:"Lưu phân công",exact:true}).click();await expect(row.getByRole("status")).toContainText("Đã cập nhật");

@@ -61,10 +61,10 @@ export async function createStudent(_: string | undefined, formData: FormData) {
 
 export async function createCampaign(_: string | undefined, formData: FormData) {
   const user = await requireUser(Role.ADMIN);
-  const parsed = campaignSchema.safeParse({ ...Object.fromEntries(formData), courseIds: formData.getAll("courseIds") });
+  const parsed = campaignSchema.safeParse({ ...Object.fromEntries(formData), courseIds: formData.getAll("courseIds"), academicClassIds: formData.getAll("academicClassIds") });
   if (!parsed.success) return parsed.error.issues[0].message;
   try {
-    await db.$transaction(tx => saveCampaignDraft(tx,user.id,{...Object.fromEntries(formData),courseIds:formData.getAll("courseIds")}));
+    await db.$transaction(tx => saveCampaignDraft(tx,user.id,{...Object.fromEntries(formData),courseIds:formData.getAll("courseIds"),academicClassIds:formData.getAll("academicClassIds")}));
   } catch { return "Chưa tạo được đợt. Kiểm tra khoa, học kỳ, mẫu và môn học thuộc học kỳ đã chọn."; }
   revalidatePath("/admin"); await flashActionToast("Đã tạo đợt khảo sát nháp."); redirect("/admin?created=1");
 }
@@ -72,9 +72,9 @@ export async function createCampaign(_: string | undefined, formData: FormData) 
 export async function updateCampaign(_: string | undefined, formData: FormData) {
   const user=await requireUser(Role.ADMIN);
   const id=String(formData.get("id")??"");
-  const parsed=campaignSchema.safeParse({...Object.fromEntries(formData),courseIds:formData.getAll("courseIds")});
+  const parsed=campaignSchema.safeParse({...Object.fromEntries(formData),courseIds:formData.getAll("courseIds"),academicClassIds:formData.getAll("academicClassIds")});
   if(!id||!parsed.success)return "Kiểm tra lại thông tin đợt khảo sát.";
-  try { await db.$transaction(tx=>saveCampaignDraft(tx,user.id,{...Object.fromEntries(formData),courseIds:formData.getAll("courseIds")},id)); }
+  try { await db.$transaction(tx=>saveCampaignDraft(tx,user.id,{...Object.fromEntries(formData),courseIds:formData.getAll("courseIds"),academicClassIds:formData.getAll("academicClassIds")},id)); }
   catch { return "Chưa lưu được. Chỉ sửa đợt nháp chưa giao phiếu; kiểm tra lại khoa, môn và học kỳ."; }
   revalidatePath("/admin");revalidatePath("/dean");await flashActionToast("Đã cập nhật đợt khảo sát nháp."); redirect(`/admin/campaigns/${id}/review?saved=1`);
 }
@@ -95,7 +95,7 @@ export async function publishCampaign(_: string | undefined, formData: FormData)
       await tx.auditLog.create({ data: { actorId: user.id, action: "PUBLISH", entity: "SurveyCampaign", entityId: id } });
       await notifyCampaign(tx, id, user.id, "PUBLISHED");
     }, { timeout: 30000 });
-  } catch (error) { return error instanceof Error && ["Chưa có sinh viên", "Môn học đã thay đổi", "Phạm vi, khoa", "Chưa phân công", "Giảng viên lớp"].some(prefix=>error.message.startsWith(prefix)) ? error.message : "Không thể công bố. Đợt có thể đã đổi trạng thái hoặc dữ liệu không còn hợp lệ."; }
+  } catch (error) { return error instanceof Error && ["Lớp hành chính", "Chưa có sinh viên", "Môn học đã thay đổi", "Phạm vi, khoa", "Chưa phân công", "Giảng viên lớp"].some(prefix=>error.message.startsWith(prefix)) ? error.message : "Không thể công bố. Đợt có thể đã đổi trạng thái hoặc dữ liệu không còn hợp lệ."; }
   revalidatePath("/admin");
   revalidatePath("/student");
   await flashActionToast("Đã công bố đợt khảo sát."); redirect("/admin?published=1");

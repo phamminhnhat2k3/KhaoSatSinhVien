@@ -14,5 +14,12 @@ test("toàn trường không được mang bộ lọc khoa/môn, khoa phải đ�
   expect(campaignSchema.safeParse({ ...input, facultyId: "f" }).success).toBe(false);
   expect(campaignSchema.safeParse({ ...input, courseTemplateId: "q", courseIds: ["A"] }).success).toBe(false);
   expect(campaignSchema.safeParse({ ...input, scope: "FACULTY" }).success).toBe(false);
-  expect(campaignSchema.safeParse({ ...input, scope: "FACULTY", facultyId: "f", courseTemplateId: "q", courseIds: ["A", "B"] }).success).toBe(true);
+  expect(campaignSchema.safeParse({ ...input, scope: "FACULTY", facultyId: "f", academicClassIds:["home"], courseTemplateId: "q", courseIds: ["A", "B"] }).success).toBe(true);
+});
+
+test("khoa bắt buộc chọn lớp và toàn trường không nhận bộ lọc lớp",()=>{
+ const input={title:"Khảo sát",templateId:"t",scope:"FACULTY",facultyId:"f",semesterId:"s",startsAt:"2026-01-01",endsAt:"2026-02-01"};
+ expect(campaignSchema.safeParse(input).success).toBe(false);
+ expect(campaignSchema.safeParse({...input,academicClassIds:["home"]}).success).toBe(true);
+ expect(campaignSchema.safeParse({...input,scope:"UNIVERSITY",facultyId:"",academicClassIds:["home"]}).success).toBe(false);
 });

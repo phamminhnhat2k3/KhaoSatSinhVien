@@ -7,8 +7,8 @@ import {expect,test} from "vitest";
 const dbml=readFileSync("docs/database/database.dbml","utf8");
 test("draw.io có đủ bảng, cột và đầu nối chỉnh sửa được, không nhúng ảnh",()=>{
  const xml=readFileSync("docs/database/database-web.drawio","utf8");
- expect(xml.match(/<mxCell id="\w+\.\w+"/g)).toHaveLength(116);
- expect(xml.match(/edge="1"/g)).toHaveLength(40);
+ expect(xml.match(/<mxCell id="\w+\.\w+"/g)).toHaveLength(122);
+ expect(xml.match(/edge="1"/g)).toHaveLength(46);
  expect(xml).not.toMatch(/image=|data:image|approvedAt|approvedBy|reviewNote/);
  for(const m of Prisma.dmmf.datamodel.models)expect(xml).toContain(`<mxCell id="${m.name}"`);
  const refs=readFileSync("docs/database/database-web.dbml","utf8");
@@ -16,11 +16,11 @@ test("draw.io có đủ bảng, cột và đầu nối chỉnh sửa được, k
 });
 test("ảnh SVG của web là vector, giữ các bảng và quan hệ đang dùng",()=>{
  const svg=readFileSync("docs/database/database-diagram.svg","utf8");
- expect(svg).toContain('viewBox="0 0 1840 2690"');
+ expect(svg).toContain('viewBox="0 0 2200 2690"');
  expect(svg).not.toMatch(/<image\b|data:image/);
- expect(svg.match(/<g id=/g)).toHaveLength(25);
- expect(svg.match(/class="relation"/g)).toHaveLength(40);
- expect(svg.match(/class="field"/g)).toHaveLength(116);
+ expect(svg.match(/<g id=/g)).toHaveLength(28);
+ expect(svg.match(/class="relation"/g)).toHaveLength(46);
+ expect(svg.match(/class="field"/g)).toHaveLength(122);
  expect(svg).not.toMatch(/approvedAt|approvedBy|reviewNote/);
  for(const model of Prisma.dmmf.datamodel.models)expect(svg).toContain(`<g id="${model.name}">`);
 });
@@ -28,8 +28,8 @@ test("sơ đồ đơn giản vẫn chọn được bảng và phóng to mà khô
  const browser=await chromium.launch();
  try{
   const page=await browser.newPage();await page.goto(pathToFileURL(resolve("docs/database/database-diagram.html")).href);
-  expect(await page.locator(".table").count()).toBe(25);
-  expect(await page.locator("path[data-from]").count()).toBe(40);
+  expect(await page.locator(".table").count()).toBe(28);
+  expect(await page.locator("path[data-from]").count()).toBe(46);
   expect(await page.locator("#User").evaluate(el=>getComputedStyle(el).boxShadow)).toBe("none");
   await page.locator("#Submission").focus();await page.keyboard.press("Enter");
   expect(await page.locator(".selected").getAttribute("id")).toBe("Submission");
@@ -43,7 +43,7 @@ function table(name:string,source=dbml){const body=source.replaceAll("\r\n","\n"
 test("bản web chỉ lược xét duyệt đã bỏ, không bỏ bảng liên kết vẫn hoạt động",()=>{
  const web=readFileSync("docs/database/database-web.dbml","utf8");
  const omitted=["approvedAt","approvedBy","reviewNote"];
- expect(web.match(/^Table /gm)).toHaveLength(25);expect(web.match(/^Ref:/gm)).toHaveLength(40);
+ expect(web.match(/^Table /gm)).toHaveLength(28);expect(web.match(/^Ref:/gm)).toHaveLength(46);
  for(const model of Prisma.dmmf.datamodel.models)for(const f of model.fields.filter(f=>f.kind!=="object")){
   const body=table(model.name,web);if(model.name==="SurveyCampaign"&&omitted.includes(f.name))expect(body).not.toContain(`  ${f.name} `);else expect(body).toContain(`  ${f.name} `);
  }
