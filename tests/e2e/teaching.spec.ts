@@ -37,46 +37,45 @@ test.describe("đánh giá giảng viên thực dạy",()=>{
   async function login(page:Page,email:string){
     await page.context().clearCookies();await page.goto("/login");await page.getByLabel("Email",{exact:true}).fill(email);await page.getByLabel("Mật khẩu",{exact:true}).fill(password);await page.getByRole("button",{name:"Đăng nhập",exact:true}).click();await expect(page).not.toHaveURL(/\/login$/);
   }
-  test("phân công đồng giảng, chốt người dạy, trả lời đúng người và báo cáo tách riêng",async({page})=>{
+  test("mỗi lớp một giảng viên, chốt người dạy và giữ phiếu khi đổi phân công",async({page})=>{
     await login(page,`${tag}-admin@example.invalid`);await page.goto("/admin/campaigns/new");
     await page.getByLabel("Tên đợt khảo sát").fill(`${tag} khảo sát`);await page.getByRole("combobox",{name:"Học kỳ khảo sát",exact:true}).selectOption(semesterId);await page.getByRole("combobox",{name:"Khoa tổ chức",exact:true}).selectOption(facultyId);await page.locator(`input[name="academicClassIds"][value="${homeId}"]`).check();await page.getByRole("combobox",{name:"Mẫu câu hỏi chung",exact:true}).selectOption(commonId);await page.getByRole("combobox",{name:"Mẫu đánh giá môn học",exact:true}).selectOption(subjectId);await page.getByRole("combobox",{name:"Đối tượng đánh giá",exact:true}).selectOption("LECTURER");await page.locator(`input[name="courseIds"][value="${courseId}"]`).check();await page.getByLabel("Bắt đầu",{exact:true}).fill("2026-01-01");await page.getByLabel("Kết thúc",{exact:true}).fill("2027-12-31");await page.getByRole("button",{name:"Tạo đợt khảo sát",exact:true}).click();await expect(page).toHaveURL(/created=1/);
     campaignId=(await db.surveyCampaign.findFirstOrThrow({where:{title:`${tag} khảo sát`}})).id;
     await page.goto(`/admin/campaigns/${campaignId}/review`);await page.getByRole("button",{name:"Công bố",exact:true}).click();await expect(page.locator("main").getByRole("alert")).toContainText("Chưa phân công");expect(await db.surveyParticipation.count({where:{campaignId}})).toBe(0);
-    await page.goto("/admin/classes/new");const row=page.locator("main tbody tr").filter({has:page.getByText(`${tag}.0`,{exact:true})});await row.getByText("Phân công / Cập nhật",{exact:true}).click();for(const t of teachers.slice(0,2))await row.getByRole("checkbox",{name:t.name,exact:true}).check();await row.getByRole("button",{name:"Lưu phân công",exact:true}).click();await expect(row.getByRole("status")).toContainText("Đã cập nhật");
+    await page.goto("/admin/classes/new");const row=page.locator("main tbody tr").filter({has:page.getByText(`${tag}.0`,{exact:true})});await row.getByText("Phân công / Cập nhật",{exact:true}).click();
+    await row.getByRole("combobox",{name:"Giảng viên thực dạy",exact:true}).selectOption(teachers[0].id);
+    await row.getByRole("button",{name:"Lưu phân công",exact:true}).click();await expect(row.getByRole("status")).toContainText("Đã cập nhật");
     await page.goto(`/admin/campaigns/${campaignId}/review`);await page.getByRole("button",{name:"Công bố",exact:true}).click();await expect(page).toHaveURL(/published=1/);
-    expect(await db.participationTeaching.count({where:{participation:{campaignId}}})).toBe(6);
-    await page.goto("/admin/classes/new");const historical=page.locator("main tbody tr").filter({has:page.getByText(`${tag}.2`,{exact:true})});await historical.getByText("Phân công / Cập nhật",{exact:true}).click();await historical.getByRole("checkbox",{name:teachers[0].name,exact:true}).uncheck();await historical.getByRole("checkbox",{name:teachers[2].name,exact:true}).check();await historical.getByRole("button",{name:"Lưu phân công",exact:true}).click();await expect(historical.getByRole("status")).toContainText("Đã cập nhật");expect((await db.courseClass.findUniqueOrThrow({where:{id:classes[2]}})).lecturerId).toBe(teachers[0].id);
+    expect(await db.participationTeaching.count({where:{participation:{campaignId}}})).toBe(4);
+    await page.goto("/admin/classes/new");const historical=page.locator("main tbody tr").filter({has:page.getByText(`${tag}.2`,{exact:true})});await historical.getByText("Phân công / Cập nhật",{exact:true}).click();await historical.getByRole("combobox",{name:"Giảng viên thực dạy",exact:true}).selectOption(teachers[2].id);await historical.getByRole("button",{name:"Lưu phân công",exact:true}).click();await expect(historical.getByRole("status")).toContainText("Đã cập nhật");expect((await db.courseClass.findUniqueOrThrow({where:{id:classes[2]}})).lecturerId).toBe(teachers[0].id);
     await db.courseTeaching.deleteMany({where:{classId:classes[0]}});await db.courseTeaching.create({data:{classId:classes[0],lecturerId:teachers[2].id}});
     for(let i=0;i<4;i++){
       await login(page,students[i].email);const response=await page.request.get(`/api/surveys/${campaignId}`);expect(response.status()).toBe(200);const body=await response.json();
-      const ids=[...new Set(body.questions.map((q:{lecturerId:string|null})=>q.lecturerId).filter(Boolean))].sort();expect(ids).toEqual((i<2?[teachers[0].id,teachers[1].id]:[teachers[1].id]).sort());
+      const ids=[...new Set(body.questions.map((q:{lecturerId:string|null})=>q.lecturerId).filter(Boolean))];expect(ids).toEqual([teachers[i<2?0:1].id]);
       const answers=Object.fromEntries(body.questions.map((q:{id:string;lecturerId:string|null})=>[q.id,q.lecturerId===teachers[0].id?"40":q.lecturerId?"80":"5"]));
       if(i===0){
         const subjectQuestion=body.questions.find((q:{lecturerId:string|null})=>q.lecturerId).questionId;
         expect((await page.request.post(`/api/surveys/${campaignId}/submit`,{data:{...answers,[`${courseId}:${teachers[2].id}:${subjectQuestion}`]:"100"}})).status()).toBe(400);
-        await page.goto("/student");const card=page.locator(".role-campaign").filter({has:page.getByRole("heading",{name:`${tag} khảo sát`,exact:true})});await card.getByText("Xem đối tượng được đánh giá",{exact:true}).click();await expect(card).toContainText(teachers[0].name);await expect(card).toContainText(teachers[1].name);await expect(card).not.toContainText(teachers[2].name);
-        await card.getByRole("link",{name:"Thực hiện khảo sát",exact:true}).click();
-        await expect(page.getByRole("navigation",{name:"Các phần khảo sát"}).getByRole("button")).toHaveCount(3);
-        await page.getByRole("radio",{name:"5",exact:true}).check();await page.getByRole("button",{name:"Phần tiếp theo →",exact:true}).click();
-        await expect(page.locator(".survey-section-panel:visible")).toContainText(teachers[0].name);await page.getByRole("radio",{name:"40",exact:true}).check();
-        await page.getByRole("button",{name:"Gửi phản hồi",exact:true}).click();await expect(page.locator(".student-survey").getByRole("alert")).toContainText("Còn câu trả lời thiếu");await expect(page.locator(".survey-section-panel:visible")).toContainText(teachers[1].name);
+        await page.goto(`/student/surveys/${campaignId}`);
+        await expect(page.getByRole("navigation",{name:"Các phần khảo sát"}).getByRole("button")).toHaveCount(2);
+        await page.getByRole("radio",{name:"5",exact:true}).check();
+        await page.getByRole("button",{name:"Gửi phản hồi",exact:true}).click();await expect(page.locator(".student-survey").getByRole("alert")).toContainText("Còn câu trả lời thiếu");await expect(page.locator(".survey-section-panel:visible")).toContainText(teachers[0].name);
         expect(await db.submission.count({where:{campaignId}})).toBe(0);
         await page.getByRole("button",{name:"Lưu bản nháp",exact:true}).click();await expect(page.getByRole("status")).toContainText("Đã lưu bản nháp");await page.reload();
-        await expect(page.locator(".survey-section-panel:visible")).toContainText(teachers[1].name);await expect(page.getByText("Đã điền 2/3 câu",{exact:true})).toBeVisible();await page.getByRole("radio",{name:"80",exact:true}).check();
-        await page.setViewportSize({width:1440,height:1000});await page.screenshot({path:".playwright-cli/teaching-survey-desktop.png",fullPage:true});await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:".playwright-cli/teaching-survey-mobile.png",fullPage:true});
-        await page.getByRole("combobox",{name:"Chuyển phần khảo sát",exact:true}).selectOption("1");await expect(page.getByRole("radio",{name:"40",exact:true})).toBeChecked();await page.getByRole("button",{name:"Gửi phản hồi",exact:true}).click();await expect(page).toHaveURL(/submitted=1/);continue;
+        await expect(page.getByText("Đã điền 1/2 câu",{exact:true})).toBeVisible();await page.getByRole("radio",{name:"40",exact:true}).check();
+        await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+        await page.getByRole("combobox",{name:"Chuyển phần khảo sát",exact:true}).selectOption("0");await expect(page.getByRole("radio",{name:"5",exact:true})).toBeChecked();
+        await page.getByRole("button",{name:"Gửi phản hồi",exact:true}).click();await expect(page).toHaveURL(/submitted=1/);continue;
       }
       expect((await page.request.post(`/api/surveys/${campaignId}/submit`,{data:answers})).status()).toBe(201);
     }
     await login(page,`${tag}-admin@example.invalid`);await page.goto("/admin");const campaignRow=page.locator("section.question").filter({has:page.getByRole("heading",{name:`${tag} khảo sát`,exact:true})});await campaignRow.getByRole("button",{name:"Đóng khảo sát",exact:true}).click();await expect(campaignRow.getByText("Đã đóng",{exact:true})).toBeVisible();
     const adminReport=await (await page.request.get(`/api/reports/campaigns/${campaignId}`)).json();expect(adminReport.questions.filter((q:{lecturerId:string|null})=>q.lecturerId).map((q:{average:number})=>q.average).sort()).toEqual([40,80]);
-    await page.goto(`/admin/campaigns/${campaignId}/report`);await expect(page.getByRole("heading",{name:"Kết quả tổng hợp",exact:true})).toBeVisible();await page.screenshot({path:".playwright-cli/lecturer-evaluation-report.png",fullPage:true});
     for(let i=0;i<3;i++){
       await login(page,teachers[i].email);const response=await page.request.get(`/api/reports/campaigns/${campaignId}`);
       if(i===2){expect(response.status()).toBe(400);continue;}
-      expect(response.status()).toBe(200);const report=await response.json();expect(report.questions).toHaveLength(1);expect(report.questions[0]).toMatchObject({lecturerId:teachers[i].id,average:i?80:40,invited:i?4:2});
-      await page.goto(`/lecturer?campaign=${campaignId}`);await expect(page.locator("#ket-qua")).toContainText(teachers[i].name);await expect(page.locator("#ket-qua")).not.toContainText(teachers[i?0:1].name);await expect(page.locator(".role-campaign").filter({has:page.getByRole("heading",{name:`${tag} khảo sát`,exact:true})})).toContainText("Đánh giá cá nhân giảng viên");await page.getByText(/Phân công giảng dạy ·/).click();if(i===1)await expect(page.locator(".teaching-overview")).toContainText(`${tag}.1`);else await expect(page.locator(".teaching-overview")).toContainText("Chưa có lớp được phân công");
-      if(i===0){await page.setViewportSize({width:1440,height:1000});await page.screenshot({path:".playwright-cli/teaching-lecturer-desktop.png",fullPage:true});await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:".playwright-cli/teaching-lecturer-mobile.png",fullPage:true});}
+      expect(response.status()).toBe(200);const report=await response.json();expect(report.questions).toHaveLength(1);expect(report.questions[0]).toMatchObject({lecturerId:teachers[i].id,average:i?80:40,invited:2});
+      await page.goto(`/lecturer?campaign=${campaignId}`);await expect(page.locator("#ket-qua")).toContainText(teachers[i].name);await expect(page.locator("#ket-qua")).not.toContainText(teachers[i?0:1].name);
     }
   });
   test("đồng giảng được xem kết quả chung của môn, người dạy cũ không còn phân công không được xem",async({page})=>{

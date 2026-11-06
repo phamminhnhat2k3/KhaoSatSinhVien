@@ -7,7 +7,7 @@ test.describe("phân công chung theo lớp và ngoại lệ sinh viên", () => 
   test.skip(!process.env.ISOLATED_FEATURE_DB, "Chỉ chạy trong database nghiệm thu riêng.");
   test.setTimeout(180000);
   const db = new PrismaClient(), tag = `PLAN-${randomUUID().slice(0, 6)}`, password = randomUUID();
-  let semesterId: string, facultyId: string, otherFacultyId: string, homeId: string, otherHomeId: string, commonId: string, specificId: string;
+  let wrongSystemId:string,semesterId: string, facultyId: string, otherFacultyId: string, homeId: string, otherHomeId: string, commonId: string, specificId: string;
   const teachers: string[] = [], groups: string[] = [], courseIds: string[] = [], students: { id: string; email: string }[] = [];
   test.beforeAll(async () => {
     expect(new URL(process.env.DATABASE_URL!).pathname).toBe(`/${process.env.ISOLATED_FEATURE_DB}`);
@@ -26,6 +26,7 @@ test.describe("phân công chung theo lớp và ngoại lệ sinh viên", () => 
       groups.push((await db.courseClass.create({ data: { code: `${tag}-G${i}`, courseId: course.id, semesterId, teachingConfigured: true, teachings: { create: { lecturerId: teachers[0] } } } })).id);
     }
     groups.push((await db.courseClass.create({ data: { code: `${tag}-G-ALT`, courseId: courseIds[0], semesterId, teachingConfigured: true, teachings: { create: { lecturerId: teachers[1] } } } })).id);
+    wrongSystemId=(await db.courseClass.create({data:{code:`${tag}-DISTANCE`,courseId:courseIds[0],semesterId,educationSystem:"DISTANCE",teachingConfigured:true,teachings:{create:{lecturerId:teachers[1]}}}})).id;
     for (let i = 0; i < 3; i++) {
       const student = await db.user.create({ data: { name: `${tag} Sinh viên ${i}`, email: `${tag}-sv${i}@example.invalid`, passwordHash, roles: { create: { role: "STUDENT" } }, student: { create: { studentCode: `${tag}-SV${i}`, academicClassId: i === 2 ? otherHomeId : homeId } } }, include: { student: true } });
       students.push({ id: student.student!.id, email: student.email });
@@ -46,15 +47,31 @@ test.describe("phân công chung theo lớp và ngoại lệ sinh viên", () => 
     await page.getByRole("combobox", {name:"Học kỳ phân công", exact:true}).selectOption(semesterId);
     await page.getByRole("combobox", {name:"Khoa của lớp", exact:true}).selectOption(facultyId);
     await page.getByRole("combobox", {name:"Lớp hành chính được phân công", exact:true}).selectOption(homeId);
-    for (const id of groups.slice(0, 2)) await page.locator(`input[name="classIds"][value="${id}"]`).check();
+    const firstCourse=page.locator(`select[data-course-id="${courseIds[0]}"]`);
+    await expect(page.locator('select[data-course-id]')).toHaveCount(2);
+    await expect(firstCourse).not.toHaveAttribute("multiple");
+    await expect(firstCourse.locator(`option[value="${wrongSystemId}"]`)).toHaveCount(0);
+    await firstCourse.selectOption(groups[0]);
+    await firstCourse.selectOption(groups[2]);
+    await expect(firstCourse).toHaveValue(groups[2]);
+    await expect(firstCourse.locator('option:checked')).toHaveCount(1);
+    await firstCourse.selectOption(groups[0]);
+    await page.locator(`select[data-course-id="${courseIds[1]}"]`).selectOption(groups[1]);
+    await page.setViewportSize({width:390,height:844});
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    await page.setViewportSize({width:1440,height:1000});
+    await page.screenshot({path:".playwright-cli/assignment-single-teacher.png",fullPage:true});
     await page.getByRole("button", { name: "Lưu phân công cho lớp", exact: true }).click();
     await expect(page.locator("main").getByRole("status")).toContainText("Đã lưu phân công chung");
     expect(await db.enrollment.count({ where: { studentId: { in: students.map(s => s.id) } } })).toBe(0);
     await page.goto(`/admin/students/${students[1].id}`);
     const adjustment = page.locator("section").filter({ has: page.getByRole("heading", { name: "Điều chỉnh môn học riêng", exact: true }) });
     await adjustment.getByRole("combobox", {name:"Học kỳ điều chỉnh riêng", exact:true}).selectOption(semesterId);
-    for (const id of groups.slice(0, 2)) { await expect(adjustment.locator(`input[value="${id}"]`)).toBeChecked(); await adjustment.locator(`input[value="${id}"]`).uncheck(); }
-    await adjustment.locator(`input[value="${groups[2]}"]`).check();
+    for (const [i,id] of groups.slice(0,2).entries()) {
+      await expect(adjustment.locator(`select[data-course-id="${courseIds[i]}"]`)).toHaveValue(id);
+      await adjustment.locator(`select[data-course-id="${courseIds[i]}"]`).selectOption("");
+    }
+    await adjustment.locator(`select[data-course-id="${courseIds[0]}"]`).selectOption(groups[2]);
     await adjustment.getByRole("button", { name: "Lưu môn học riêng", exact: true }).click();
     await expect(adjustment.getByRole("status")).toContainText("Đã lưu môn học riêng");
     // A newly added student inherits the plan without copying enrollments.

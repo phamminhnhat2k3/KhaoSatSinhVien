@@ -8,7 +8,7 @@ import { saveClassStudyPlan, saveStudentStudyPlan } from "@/modules/academic/stu
 export async function assignClassStudy(_: string | undefined, form: FormData) {
   const actor = await requireUser(Role.ADMIN);
   try {
-    await db.$transaction(tx => saveClassStudyPlan(tx, actor.id, { ...Object.fromEntries(form), classIds: form.getAll("classIds") }), { isolationLevel: "Serializable" });
+    await db.$transaction(tx => saveClassStudyPlan(tx, actor.id, { ...Object.fromEntries(form), classIds: form.getAll("classIds").map(String).filter(Boolean) }), { isolationLevel: "Serializable" });
   } catch (error) {
     return error instanceof Error && ["Chỉ chọn", "Mỗi môn"].some(p => error.message.startsWith(p)) ? error.message : "Không lưu được phân công. Kiểm tra lớp, khoa và học kỳ.";
   }
@@ -19,7 +19,7 @@ export async function assignClassStudy(_: string | undefined, form: FormData) {
 export async function adjustStudentStudy(_: string | undefined, form: FormData) {
   const actor = await requireUser(Role.ADMIN);
   try {
-    await db.$transaction(tx => saveStudentStudyPlan(tx, actor.id, { ...Object.fromEntries(form), classIds: form.getAll("classIds"), reset: form.get("operation") === "reset" }), { isolationLevel: "Serializable" });
+    await db.$transaction(tx => saveStudentStudyPlan(tx, actor.id, { ...Object.fromEntries(form), classIds: form.getAll("classIds").map(String).filter(Boolean), reset: form.get("operation") === "reset" }), { isolationLevel: "Serializable" });
   } catch (error) {
     return error instanceof Error && ["Chỉ chọn", "Mỗi môn", "Phân lớp"].some(p => error.message.startsWith(p)) ? error.message : "Không lưu được môn học riêng. Kiểm tra sinh viên, khoa và học kỳ.";
   }

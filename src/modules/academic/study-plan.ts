@@ -7,10 +7,15 @@ export function effectiveEnrollments<T extends { class: { id: string } }>(shared
   return [...new Map((overridden ? personal : [...shared, ...personal]).map(e => [e.class.id, e])).values()];
 }
 
-async function validateGroups(tx: Prisma.TransactionClient, semesterId: string, ids: string[], facultyId: string) {
-  const groups = await tx.courseClass.findMany({ where: { id: { in: ids }, semesterId, course: { facultyId } }, select: { id: true, courseId: true } });
-  if (groups.length !== ids.length) throw new Error("Chỉ chọn lớp học phần thuộc khoa và học kỳ đã chọn.");
-  if (new Set(groups.map(g => g.courseId)).size !== groups.length) throw new Error("Mỗi môn chỉ chọn một lớp học phần. Nếu cùng dạy, phân công nhiều giảng viên trong một lớp học phần.");
+async function validateGroups(tx: Prisma.TransactionClient, semesterId: string, ids: string[], facultyId: string, educationSystem: string) {
+  const teacher = { facultyId: true, user: { select: { active: true, roles: { select: { role: true } } } } } as const;
+  const groups = await tx.courseClass.findMany({ where: { id: { in: ids }, semesterId, educationSystem, course: { facultyId } }, select: { id: true, courseId: true, teachingConfigured: true, lecturer: { select: teacher }, teachings: { select: { lecturer: { select: teacher } } } } });
+  if (groups.length !== ids.length) throw new Error("Chỉ chọn lớp học phần thuộc khoa, học kỳ và hệ học của lớp hành chính.");
+  if (new Set(groups.map(g => g.courseId)).size !== groups.length) throw new Error("Mỗi môn chỉ chọn một lớp học phần và một giảng viên.");
+  for (const group of groups) {
+    const teachers = group.teachings.length ? group.teachings.map(t => t.lecturer) : !group.teachingConfigured && group.lecturer ? [group.lecturer] : [];
+    if (teachers.length !== 1 || teachers[0].facultyId !== facultyId || !teachers[0].user.active || !teachers[0].user.roles.some(r => r.role === "LECTURER")) throw new Error("Mỗi lớp học phần phải có đúng một giảng viên đang hoạt động trong khoa. Kiểm tra lại phân công giảng viên.");
+  }
 }
 
 export async function saveClassStudyPlan(tx: Prisma.TransactionClient, actorId: string, input: unknown) {
@@ -18,7 +23,7 @@ export async function saveClassStudyPlan(tx: Prisma.TransactionClient, actorId: 
   const group = await tx.academicClass.findUniqueOrThrow({ where: { id: data.academicClassId } });
   const ids = [...new Set(data.classIds)];
   await tx.semester.findUniqueOrThrow({ where: { id: data.semesterId } });
-  await validateGroups(tx, data.semesterId, ids, group.facultyId);
+  await validateGroups(tx, data.semesterId, ids, group.facultyId, group.educationSystem);
   await tx.classStudyAssignment.deleteMany({ where: { academicClassId: group.id, class: { semesterId: data.semesterId } } });
   if (ids.length) await tx.classStudyAssignment.createMany({ data: ids.map(classId => ({ academicClassId: group.id, classId })) });
   await tx.auditLog.create({ data: { actorId, action: "ASSIGN_CLASS_STUDY", entity: "AcademicClass", entityId: group.id } });
@@ -30,7 +35,7 @@ export async function saveStudentStudyPlan(tx: Prisma.TransactionClient, actorId
   if (!student.academicClass) throw new Error("Phân lớp hành chính cho sinh viên trước khi điều chỉnh môn học.");
   await tx.semester.findUniqueOrThrow({ where: { id: data.semesterId } });
   const ids = [...new Set(data.classIds)];
-  if (!data.reset) await validateGroups(tx, data.semesterId, ids, student.academicClass.facultyId);
+  if (!data.reset) await validateGroups(tx, data.semesterId, ids, student.academicClass.facultyId, student.academicClass.educationSystem);
   await tx.enrollment.deleteMany({ where: { studentId: data.studentId, class: { semesterId: data.semesterId } } });
   await tx.studentStudyPlan.deleteMany({ where: { studentId: data.studentId, semesterId: data.semesterId } });
   if (!data.reset) {

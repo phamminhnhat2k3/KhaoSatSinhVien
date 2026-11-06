@@ -1,3 +1,4 @@
+import { studyGroupOption } from "@/modules/academic/study-options";
 import { academicClassLabel } from "@/modules/academic/education";
 import Link from "next/link";
 import { Role } from "@prisma/client";
@@ -18,6 +19,6 @@ export default async function AssignmentsPage() {
     <Link className="text-button" href="/admin">← Trung tâm điều hành</Link><p className="eyebrow">Học vụ</p><h1>Phân công học kỳ</h1>
     <p className="lead">Thiết lập môn học và giảng viên chung cho lớp hành chính. Sinh viên học khác được điều chỉnh riêng trong hồ sơ quản lý.</p>
     <div className="actions"><Link className="button secondary" href="/admin/classes/new">Tạo lớp học phần / Phân công giảng viên</Link><Link className="button secondary" href="/admin/users?role=STUDENT">Điều chỉnh sinh viên</Link><Link className="button" href="/admin/campaigns/new">Tạo đợt khảo sát</Link></div>
-    <section className="card section-title"><ClassStudyForm semesters={semesters.map(s => ({ id: s.id, label: s.name }))} faculties={faculties.map(f => ({ id: f.id, label: f.name }))} classes={classes.map(c => ({ id: c.id, label: academicClassLabel(c), facultyId: c.facultyId, assignments: c.studyAssignments.map(a => a.classId), students: c._count.students }))} groups={groups.map(g => ({ id: g.id, semesterId: g.semesterId, facultyId: g.course.facultyId, label: `${g.course.code} · ${g.course.name} · ${g.code} · ${g.teachings.length ? g.teachings.map(t => t.lecturer.user.name).join(", ") : !g.teachingConfigured && g.lecturer ? g.lecturer.user.name : "Chưa phân công giảng viên"}` }))}/></section>
+    <section className="card section-title"><ClassStudyForm semesters={semesters.map(s => ({ id: s.id, label: s.name }))} faculties={faculties.map(f => ({ id: f.id, label: f.name }))} classes={classes.map(c => ({ id: c.id, label: academicClassLabel(c), facultyId: c.facultyId, educationSystem: c.educationSystem, assignments: c.studyAssignments.map(a => a.classId), students: c._count.students }))} groups={groups.map(studyGroupOption)}/></section>
   </AppShell>;
 }

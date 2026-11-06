@@ -1,0 +1,8 @@
+.summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.courses { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px; }
+.course { padding: 18px; border: 1px solid #d8e1eb; border-radius: 10px; background: #fff; min-width: 0; }
+.course h3 { margin: 6px 0 16px; font-size: 18px; overflow-wrap: anywhere; }
+.course select { width: 100%; min-width: 0; }
+.course p { margin-bottom: 0; font-size: 14px; overflow-wrap: anywhere; }
+.code { color: #0a66c2; font-size: 13px; font-weight: 600; }
+.changed { color: #8a4b00; font-size: 14px; }
