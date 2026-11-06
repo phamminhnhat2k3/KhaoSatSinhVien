@@ -24,21 +24,19 @@ with ZipFile(FILE) as z:
  assert len(dates)==13 and dates==sorted(set(dates)),dates
  git_dates=subprocess.check_output(['git','-c','safe.directory=C:/KhaoSatSinhVien','log','--format=%ad','--date=short'],cwd=ROOT,text=True).splitlines()
  assert set(dates)<=set(git_dates)
- tables=body.xpath('//w:tbl',namespaces=NS)
- assert len(tables)==2
- for table,count,state in zip(tables,[27,8],['Đã làm','Chưa làm']):
-  rows=table.xpath('./w:tr',namespaces=NS)
-  assert len(rows)==count+1
-  assert rows[0].xpath('./w:trPr/w:tblHeader',namespaces=NS)
-  for i,row in enumerate(rows[1:],1):
-   cells=row.xpath('./w:tc',namespaces=NS)
-   assert len(cells)==3 and text(cells[0])==str(i)
-   assert text(cells[2])==state
+ assert not body.xpath('//w:tbl',namespaces=NS)
+ paragraphs=[text(p) for p in body.xpath('//w:body/w:p',namespaces=NS)]
+ bullets=[t for t in paragraphs if t.startswith('- ')]
+ assert len(bullets)>=50
+ assert all(len(t.split())<=30 for t in bullets)
+ assert len([t for t in bullets if t.startswith('- Đã làm — ')])==14
+ assert len([t for t in bullets if t.startswith('- Chưa làm — ')])==8
+ assert len(content.split())<1700
  for xml in [body,etree.fromstring(z.read('word/styles.xml'))]:
   for color in xml.xpath('//w:color/@w:val',namespaces=NS):
    assert color in ['000000','auto'],color
  styles=etree.fromstring(z.read('word/styles.xml'))
  assert not styles.xpath('//w:pBdr',namespaces=NS)
- assert 'Đăng nhập tài khoản trường' in text(tables[1])
- assert 'Trưởng khoa xem báo cáo thuộc khoa mình' in text(tables[0])
-print('PASS: 13 Git dates, 27 completed functions, 8 planned items, black text, no password or decorations.')
+ assert '- Chưa làm — Đăng nhập tài khoản trường' in content
+ assert 'Trưởng khoa chỉ xem kết quả của khoa mình' in content
+print('PASS: 13 Git dates, 14 completed groups, 8 planned items, concise bullets, black text, no password or decorations.')
