@@ -4,10 +4,11 @@ import path from "node:path";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { avatarMime, MAX_AVATAR_BYTES } from "@/modules/profile/avatar";
+import { entityReadAccess } from "@/modules/academic/entity-access";
 export const runtime = "nodejs";
 async function actor() {
   const session=await auth();
-  return session?.user?.id ? db.user.findUnique({where:{id:session.user.id},select:{id:true,active:true,roles:true}}) : null;
+  return session?.user?.id ? db.user.findUnique({where:{id:session.user.id},select:{id:true,active:true,roles:true,lecturer:{select:{facultyId:true}}}}) : null;
 }
 const directory=path.join(process.cwd(),".data","avatars");
 export async function GET(request:Request) {
@@ -15,7 +16,12 @@ export async function GET(request:Request) {
   if(!user?.active) return new Response(null,{status:401});
   const id=new URL(request.url).searchParams.get("id") || user.id;
   if(!/^[a-zA-Z0-9_-]{1,100}$/.test(id)) return new Response(null,{status:400});
-  if(id!==user.id && !user.roles.some(r=>r.role==="ADMIN")) return new Response(null,{status:403});
+  if(id!==user.id && !user.roles.some(r=>r.role==="ADMIN")) {
+    const access=entityReadAccess(user);
+    if(!access?.facultyId) return new Response(null,{status:403});
+    const target=await db.user.findUnique({where:{id},select:{lecturer:{select:{facultyId:true}},student:{select:{academicClass:{select:{facultyId:true}}}}}});
+    if(target?.lecturer?.facultyId!==access.facultyId && target?.student?.academicClass?.facultyId!==access.facultyId) return new Response(null,{status:403});
+  }
   try { const bytes=await readFile(path.join(directory,`${id}.img`));const mime=avatarMime(bytes);if(!mime) return new Response(null,{status:404});return new Response(new Uint8Array(bytes),{headers:{"Content-Type":mime,"Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff"}}); }
   catch { return new Response(null,{status:404}); }
 }

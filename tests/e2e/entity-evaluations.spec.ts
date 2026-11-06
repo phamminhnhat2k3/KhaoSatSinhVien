@@ -13,6 +13,9 @@ test("tab đánh giá trong popup đúng đối tượng và giữ lịch sử s
     const faculty = await db.faculty.create({ data: { code: tag, name: `${tag} Khoa` } });
     const home = await db.academicClass.create({ data: { code: tag, name: tag, facultyId: faculty.id } });
     const admin = await db.user.create({ data: { name: `${tag} Admin`, email: `${tag}-admin@example.invalid`, passwordHash, roles: { create: { role: "ADMIN" } } } });
+    const dean = await db.user.create({ data: { name: `${tag} Dean`, email: `${tag}-dean@example.invalid`, passwordHash, roles: { create: [{ role: "LECTURER" }, { role: "DEAN" }] }, lecturer: { create: { lecturerCode: `${tag}-dean`, facultyId: faculty.id } } } });
+    const otherFaculty = await db.faculty.create({ data: { code: `${tag}-outside`, name: `${tag} Outside` } });
+    const outsider = await db.user.create({ data: { name: `${tag} Outside`, email: `${tag}-outside@example.invalid`, passwordHash, roles: { create: { role: "LECTURER" } }, lecturer: { create: { lecturerCode: `${tag}-outside`, facultyId: otherFaculty.id } } } });
     const teachers: Prisma.UserGetPayload<{ include: { lecturer: true } }>[] = [];
     for (let i = 0; i < 2; i++) teachers.push(await db.user.create({ data: { name: `${tag} GV ${i}`, email: `${tag}-gv${i}@example.invalid`, passwordHash, roles: { create: { role: "LECTURER" } }, lecturer: { create: { lecturerCode: `${tag}-gv${i}`, facultyId: faculty.id } } }, include: { lecturer: true } }));
     const students = [];
@@ -67,6 +70,29 @@ test("tab đánh giá trong popup đúng đối tượng và giữ lịch sử s
     expect(courseData.report.questions.every((q: { courseId: string }) => q.courseId === courses[0].id)).toBe(true);
     const facultyData = await (await page.request.get(`/api/admin/details/evaluations?type=faculty&id=${faculty.id}`)).json();
     expect(facultyData.total).toBe(2);
+    await page.context().clearCookies();
+    await page.goto("/login");
+    await page.getByLabel("Email", { exact: true }).fill(dean.email);
+    await page.getByLabel("Mật khẩu", { exact: true }).fill(password);
+    await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
+    await page.waitForURL("**/dean");
+    await page.getByRole("link", { name: "Giảng viên và sinh viên", exact: true }).click();
+    await expect(page).toHaveURL(/\/dean\/people$/);
+    await expect(page.getByRole("button", { name: outsider.name, exact: true })).toHaveCount(0);
+    await page.getByRole("button", { name: teachers[0].name, exact: true }).click();
+    dialog = page.getByRole("dialog");
+    await expect(dialog.getByRole("button", { name: /Khóa|Mở khóa/ })).toHaveCount(0);
+    await dialog.getByRole("tab", { name: "Đánh giá", exact: true }).click();
+    await dialog.locator("li").filter({ has: page.getByRole("heading", { name: campaign.title, exact: true }) }).getByRole("button", { name: "Xem kết quả" }).click();
+    await expect(dialog.getByText(`${tag} Nhận xét riêng 0`, { exact: true })).toHaveCount(2);
+    await dialog.getByRole("button", { name: "Đóng thông tin" }).click();
+    await page.getByRole("button", { name: students[0].name, exact: true }).click();
+    dialog = page.getByRole("dialog");
+    await dialog.getByRole("tab", { name: "Đánh giá", exact: true }).click();
+    await expect(dialog.getByText("1 phiếu đã gửi trong khoa", { exact: true })).toBeVisible();
+    await expect(dialog.getByRole("link", { name: "Quản lý học vụ" })).toHaveCount(0);
+    expect((await page.request.get(`/api/admin/details?type=user&id=${outsider.id}`)).status()).toBe(403);
+    expect((await page.request.get(`/api/admin/details/evaluations?type=user&id=${outsider.id}`)).ok()).toBe(false);
     expect(errors).toEqual([]);
   } finally {
     try {
@@ -75,7 +101,7 @@ test("tab đánh giá trong popup đúng đối tượng và giữ lịch sử s
       await db.user.deleteMany({ where: { email: { startsWith: `${tag}-` } } });
       await db.course.deleteMany({ where: { code: { startsWith: `${tag}-` } } });
       await db.academicClass.deleteMany({ where: { code: tag } });
-      await db.faculty.deleteMany({ where: { code: tag } });
+      await db.faculty.deleteMany({ where: { code: { startsWith: tag } } });
     } finally { await db.$disconnect(); }
   }
 });

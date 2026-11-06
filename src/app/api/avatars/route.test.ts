@@ -25,3 +25,12 @@ test("từ chối ảnh giả, origin ngoài hệ thống và tài khoản khóa
   expect((await POST(new Request("http://localhost/api/avatars",{method:"POST",body:data}))).status).toBe(401);
   expect(m.writeFile).not.toHaveBeenCalled();
 });
+test("Trưởng khoa đọc được ảnh trong khoa, không đọc ảnh khoa khác",async()=>{
+  const dean={id:"owner",active:true,roles:[{role:"DEAN"}],lecturer:{facultyId:"own"}};
+  m.findUnique.mockResolvedValueOnce(dean).mockResolvedValueOnce({lecturer:{facultyId:"own"},student:null});
+  expect((await GET(new Request("http://localhost/api/avatars?id=teacher"))).status).toBe(200);
+  m.readFile.mockClear();
+  m.findUnique.mockResolvedValueOnce(dean).mockResolvedValueOnce({lecturer:null,student:{academicClass:{facultyId:"other"}}});
+  expect((await GET(new Request("http://localhost/api/avatars?id=student"))).status).toBe(403);
+  expect(m.readFile).not.toHaveBeenCalled();
+});

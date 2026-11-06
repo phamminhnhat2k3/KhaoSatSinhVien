@@ -49,3 +49,24 @@ test("đối tượng đã xóa báo lỗi, Admin không có lịch sử giả",
   expect(await getEntityEvaluations(db, "user", "admin", 1)).toMatchObject({ kind: "other", total: 0 });
   expect(m.db.surveyParticipation.count).not.toHaveBeenCalled();
 });
+test("Trưởng khoa chỉ xem lịch sử sinh viên của khoa và không xem khảo sát ngoài khoa", async () => {
+  m.db.user.findUnique.mockResolvedValue({ student: { id: "s", academicClass: { facultyId: "other" } }, lecturer: null });
+  await expect(getEntityEvaluations(db, "user", "u", 1, undefined, "own")).rejects.toThrow("trong khoa");
+  expect(m.db.surveyParticipation.count).not.toHaveBeenCalled();
+  m.db.user.findUnique.mockResolvedValue({ student: { id: "s", academicClass: { facultyId: "own" } }, lecturer: null });
+  m.db.surveyParticipation.count.mockResolvedValue(0); m.db.surveyParticipation.findMany.mockResolvedValue([]);
+  expect(await getEntityEvaluations(db, "user", "u", 1, undefined, "own")).toMatchObject({ facultyOnly: true, total: 0 });
+  expect(m.db.surveyParticipation.count).toHaveBeenCalledWith({ where: { studentId: "s", status: "COMPLETED", campaign: { scope: "FACULTY", facultyId: "own" } } });
+});
+test("Trưởng khoa không xem điểm giảng viên trong đợt ngoài khoa dù có phân công", async () => {
+  m.db.user.findUnique.mockResolvedValue({ student: null, lecturer: { id: "teacher", facultyId: "own" } });
+  m.db.surveyCampaign.findFirst.mockResolvedValue(null);
+  await expect(getEntityEvaluations(db, "user", "u", 1, "foreign", "own")).rejects.toThrow("phạm vi");
+  expect(m.db.surveyCampaign.findFirst.mock.calls[0][0].where).toMatchObject({ id: "foreign", scope: "FACULTY", facultyId: "own" });
+});
+test("Trưởng khoa không mở khoa hoặc môn của khoa khác", async () => {
+  await expect(getEntityEvaluations(db, "faculty", "other", 1, undefined, "own")).rejects.toThrow("trong khoa");
+  m.db.course.findUnique.mockResolvedValue({ id: "course", facultyId: "other" });
+  await expect(getEntityEvaluations(db, "course", "course", 1, undefined, "own")).rejects.toThrow("trong khoa");
+  expect(m.db.surveyCampaign.count).not.toHaveBeenCalled();
+});

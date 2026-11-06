@@ -25,3 +25,13 @@ test("đối tượng không hợp lệ hoặc đã xóa trả lỗi",async()=>{
   m.faculty.findUnique.mockResolvedValue(null);
   expect((await GET(new Request("http://localhost/api/admin/details?type=faculty&id=gone"))).status).toBe(404);
 });
+test("Trưởng khoa chỉ đọc hồ sơ trong khoa, không nhận thao tác quản trị", async () => {
+  const dean = { active: true, roles: [{ role: "DEAN" }], lecturer: { facultyId: "own" } };
+  const target = { name: "Sinh viên", email: "s@example.invalid", active: true, student: { studentCode: "SV1", academicClass: { facultyId: "own", name: "Lớp", educationSystem: "REGULAR", faculty: { name: "Khoa" } } }, lecturer: null };
+  m.user.findUnique.mockResolvedValueOnce(dean).mockResolvedValueOnce(target);
+  const response = await GET(new Request("http://test/api/admin/details?type=user&id=s"));
+  const data = await response.json();
+  expect(response.status).toBe(200); expect(data.account.manageable).toBe(false); expect(data.links).toEqual([]);
+  m.user.findUnique.mockResolvedValueOnce(dean).mockResolvedValueOnce({ ...target, student: { ...target.student, academicClass: { ...target.student.academicClass, facultyId: "other" } } });
+  expect((await GET(new Request("http://test/api/admin/details?type=user&id=s"))).status).toBe(403);
+});
