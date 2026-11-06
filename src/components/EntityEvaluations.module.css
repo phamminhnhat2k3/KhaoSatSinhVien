@@ -1,0 +1,12 @@
+.tabs { display:flex; padding:0 24px; border-bottom:1px solid #dce2e8; gap:20px; }
+.tabs button { padding:12px 4px; background:none; border:0; border-bottom:3px solid transparent; color:#536774; cursor:pointer; font-weight:600; }
+.tabs button[aria-selected="true"] { color:#0a66c2; border-bottom-color:#0a66c2; }
+.panel { padding:20px 24px 24px; overflow-wrap:anywhere; scroll-margin-top:16px; }
+.total { font-size:16px; }.total strong { font-size:28px; color:#0a66c2; margin-right:6px; }
+.list { list-style:none; padding:0; margin:20px 0; display:grid; gap:12px; }
+.list li { border:1px solid #dce2e8; border-radius:10px; padding:16px; }
+.list h3 { font-size:16px; margin:0 0 6px; }.list p { margin:0 0 4px; }.list small { display:block; color:#637384; }.list button { margin-top:12px; }
+.pagination { display:flex; justify-content:space-between; gap:8px; align-items:center; }
+.pagination button { border:1px solid #dce2e8; border-radius:6px; padding:8px 12px; background:white; cursor:pointer; }.pagination button:disabled { opacity:.45; cursor:default; }
+.panel :global(.report-viewer) { margin:16px 0 0; }.panel :global(.report-viewer h2) { font-size:19px; }.panel :global(.report-question) { padding:16px; }.panel :global(.report-section-filter) { width:100%; }.panel :global(select) { max-width:100%; }
+@media(max-width:600px) { .panel { padding:16px; }.tabs { padding:0 16px; } }
