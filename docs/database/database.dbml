@@ -388,3 +388,23 @@ Table CampaignAcademicClass {
 
 Ref: CampaignAcademicClass.campaignId > SurveyCampaign.id
 Ref: CampaignAcademicClass.academicClassId > AcademicClass.id
+
+Table ResultNote {
+  id "varchar(191)" [pk]
+  campaignId "varchar(191)" [not null]
+  authorId "varchar(191)" [not null]
+  kind "varchar(191)" [not null]
+  courseId "varchar(191)" [not null]
+  lecturerId "varchar(191)" [null]
+  title "varchar(200)" [not null]
+  observation "text" [not null]
+  plan "text" [not null]
+  status "varchar(191)" [not null]
+  snapshot "json" [not null]
+  createdAt "datetime(3)" [not null]
+  updatedAt "datetime(3)" [not null]
+  sentAt "datetime(3)" [null]
+}
+
+Ref: ResultNote.campaignId > SurveyCampaign.id
+Ref: ResultNote.authorId > User.id

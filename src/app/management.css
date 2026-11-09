@@ -202,3 +202,19 @@
 .leave-dialog { width: min(560px, calc(100vw - 32px)); }
 .leave-dialog .actions { justify-content: flex-end; margin-top: 20px; }
 .leave-dialog .button { font-size: .85rem; padding: 8px 12px; }
+@media print {
+  .nav, .sidebar, .context-sidebar, .skip-link, .print-hidden, .leave-dialog { display: none !important; }
+  .workspace, .main { display: block !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+  .result-print .card { border: 0; box-shadow: none; padding: 8px 0; }
+  .result-print { color: #000; background: white; font-size: 11pt; }
+  .result-print table { width: 100%; min-width: 0 !important; font-size: 9pt; }
+  .result-print tr { break-inside: avoid; }
+  .table-scroll { overflow: visible !important; }
+}
+.table-scroll { max-width: 100%; overflow-x: auto; }
+.table-scroll table { width: 100%; min-width: 640px; border-collapse: collapse; font-size: .9rem; }
+.table-scroll th, .table-scroll td { padding: 12px; border-bottom: 1px solid #e1e5e9; text-align: left; vertical-align: top; }
+.table-scroll th { background: #f7f9fb; }
+.table-scroll caption { text-align: left; font-weight: 600; padding: 10px 0; }
+.table-scroll meter { display: block; width: 110px; max-width: 100%; margin-top: 6px; }
+.table-scroll small.error { display: block; margin-top: 4px; }

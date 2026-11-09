@@ -1,5 +1,6 @@
 "use client";
 import {useState} from "react";
+import Link from "next/link";
 import type {getCampaignReport} from "@/modules/reporting/service";
 import {initialReportSection} from "@/modules/reporting/presentation";
 type Report=Awaited<ReturnType<typeof getCampaignReport>>;
@@ -9,6 +10,7 @@ export function ReportViewer({report,compact=false,embedded=false,initialSection
  const questions=report.questions.filter(q=>section==="all"||q.sectionId===section);
  return <section id={embedded?undefined:"ket-qua"} className="role-section report-viewer" aria-label="Báo cáo tổng hợp"><div className="section-heading"><div><p className="eyebrow">Báo cáo tổng hợp</p><h2>{report.title}</h2><p className="muted">Chỉ hiển thị dữ liệu trong phạm vi bạn được xem.</p></div>{!embedded&&<a className="button secondary" href={`/api/reports/campaigns/${report.id}/export`}>Xuất CSV</a>}</div>
  {!embedded&&<div className="role-stats"><article className="card"><span className="muted">Tỷ lệ tham gia</span><strong>{report.participationRate}%</strong><small>{report.completed}/{report.invited} sinh viên được giao</small></article><article className="card"><span className="muted">Phản hồi ẩn danh</span><strong>{report.responses}</strong><small>Số bài trong phạm vi báo cáo</small></article></div>}
+ {!embedded&&report.evaluationMode==="LECTURER"&&<Link className="button secondary" href={`/results?campaign=${report.id}`}>Đối chiếu kết quả / Viết hướng cải thiện →</Link>}
  <p className="notice">{report.evaluationMode==="LECTURER"?"Mỗi phần là kết quả của một môn và giảng viên đã chốt khi công bố khảo sát.":"Đây là phản hồi về chất lượng môn học hoặc nội dung chung, không phải điểm đánh giá cá nhân giảng viên."}</p>
  {!embedded&&<details className="card section-title"><summary><strong>Tổng quan các phần đánh giá ({sections.length})</strong></summary><p className="muted">Mỗi phần ghi riêng số phản hồi. Không cộng điểm của các môn hay thang điểm khác nhau thành một điểm chung.</p><div className="stack">{sections.map(s=><article className="question" key={s.id}><div className="section-heading"><h3>{s.title}</h3><button type="button" className="button secondary" onClick={()=>setSection(s.id)}>Xem phần này</button></div><p className="muted">{s.responses}/{s.invited} phản hồi · {s.responses<report.minimum?`Cần tối thiểu ${report.minimum} phản hồi`:"Đủ ngưỡng mở phần"}</p><meter className="report-meter" min={0} max={Math.max(1,s.invited)} value={s.responses} aria-label={`Phản hồi ${s.title}`}/></article>)}</div></details>}
  <label className="field report-section-filter">Phần đánh giá<select className="input" value={section} onChange={e=>setSection(e.target.value)}><option value="all">Tất cả các phần</option>{sections.map(s=><option key={s.id} value={s.id}>{s.title}{s.responses<report.minimum?" · Chưa đủ phản hồi":""}</option>)}</select></label>

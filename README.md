@@ -71,6 +71,8 @@ Những lần sau, khi dịch vụ `MySQL80` đang chạy, chỉ cần `pnpm dev
 
 ## Chức năng chính
 
+- Nhập sinh viên, giảng viên và phân công bằng CSV UTF-8 có xem trước, kiểm tra từng dòng và ghi toàn bộ trong giao dịch. Nhắc sinh viên chưa hoàn thành trong web. Đối chiếu giảng viên cùng môn, đối chiếu học kỳ có điều kiện, ghi nhận hướng cải thiện và gửi nhận xét cho Admin. Admin in/lưu PDF để gửi nhà trường. Xem [quy tắc và hướng dẫn khai thác kết quả](docs/KHAI_THAC_KET_QUA.md).
+
 - Auth.js Credentials, mật khẩu Argon2id và phân quyền máy chủ theo `STUDENT`, `LECTURER`, `DEAN`, `ADMIN`.
 - Quản trị có trang riêng cho mẫu, đợt, lớp và sinh viên. Trình dựng mẫu hỗ trợ kéo thả, nhân bản, đổi thứ tự bằng bàn phím, bắt buộc/tùy chọn, xem trước; lựa chọn tự nhập và thang số nguyên từ 0 đến 1.000 với bước nhảy tùy chỉnh. Mẫu đã dùng được bảo toàn bằng phiên bản mới khi chỉnh sửa. Mẫu chưa dùng có thể sửa hoặc xóa.
 - Tạo đợt theo khoa hoặc toàn trường, gắn học kỳ và mẫu câu hỏi chung. Đợt khoa có thể kèm mẫu đánh giá môn; mỗi sinh viên chỉ nhận các môn thực học trong học kỳ thuộc phạm vi đã chọn. Người nhận và phần môn được chốt khi công bố, không phải khi tạo nháp.

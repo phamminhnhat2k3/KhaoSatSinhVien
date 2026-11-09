@@ -224,3 +224,21 @@ erDiagram
   }
   SurveyCampaign ||--o{ CampaignAcademicClass : "campaignId"
   AcademicClass ||--o{ CampaignAcademicClass : "academicClassId"
+  ResultNote {
+    varchar_191 id PK
+    varchar_191 campaignId FK
+    varchar_191 authorId FK
+    varchar_191 kind
+    varchar_191 courseId
+    varchar_191 lecturerId
+    varchar_200 title
+    text observation
+    text plan
+    varchar_191 status
+    json snapshot
+    datetime_3 createdAt
+    datetime_3 updatedAt
+    datetime_3 sentAt
+  }
+  SurveyCampaign ||--o{ ResultNote : "campaignId"
+  User ||--o{ ResultNote : "authorId"

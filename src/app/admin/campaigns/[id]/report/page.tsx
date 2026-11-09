@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ReminderForm } from "@/components/ReminderForm";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { CampaignProgress } from "@/components/CampaignProgress";
@@ -25,6 +26,7 @@ export default async function AdminReportPage({ params, searchParams }: { params
     <nav className="actions section-title" aria-label="Nội dung báo cáo"><a className="button secondary" href="#tien-do">Tiến độ tham gia</a><a className="button secondary" href="#ket-qua">Kết quả đánh giá</a><Link className="button secondary" href={`/admin/campaigns/${id}/responses`}>Xem các phiếu ẩn danh</Link></nav>
     <div id="tien-do"><CampaignProgress invited={campaign.participations.length} completed={completed} drafts={drafts} groups={progressGroups(campaign.participations)}/></div>
     <p className="muted">Tải lại trang để lấy tiến độ mới nhất. Biểu đồ theo dõi người được giao phiếu, không phải số câu trả lời.</p>
+    {campaignPhase(campaign) === "OPEN" && <ReminderForm id={id} count={campaign.participations.length-completed}/>}
     {error && <section id="ket-qua" className="card section-title"><h2>Kết quả đánh giá</h2><p className="notice" role="status">{error}</p><p className="muted">Bạn vẫn theo dõi được tiến độ ở trên. Điểm và góp ý chỉ hiển thị khi đủ điều kiện bảo vệ tính ẩn danh.</p></section>}
     {report && <ReportViewer report={report} initialSection={course}/>}
   </AppShell>;

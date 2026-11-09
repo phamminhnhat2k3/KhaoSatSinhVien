@@ -1,0 +1,21 @@
+CREATE TABLE `ResultNote` (
+  `id` VARCHAR(191) NOT NULL,
+  `campaignId` VARCHAR(191) NOT NULL,
+  `authorId` VARCHAR(191) NOT NULL,
+  `kind` VARCHAR(191) NOT NULL,
+  `courseId` VARCHAR(191) NOT NULL,
+  `lecturerId` VARCHAR(191) NULL,
+  `title` VARCHAR(200) NOT NULL,
+  `observation` TEXT NOT NULL,
+  `plan` TEXT NOT NULL,
+  `status` VARCHAR(191) NOT NULL DEFAULT 'DRAFT',
+  `snapshot` JSON NOT NULL,
+  `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `updatedAt` DATETIME(3) NOT NULL,
+  `sentAt` DATETIME(3) NULL,
+  PRIMARY KEY (`id`),
+  INDEX `ResultNote_campaignId_status_idx` (`campaignId`, `status`),
+  INDEX `ResultNote_authorId_status_idx` (`authorId`, `status`),
+  CONSTRAINT `ResultNote_campaignId_fkey` FOREIGN KEY (`campaignId`) REFERENCES `SurveyCampaign` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `ResultNote_authorId_fkey` FOREIGN KEY (`authorId`) REFERENCES `User` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

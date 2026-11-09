@@ -27,3 +27,6 @@ SurveyTarget và CourseClass.lecturerId vẫn được web đọc để xem báo
 Cập nhật 06/11/2026: thêm ClassStudyAssignment (phân công môn cho lớp), StudentStudyPlan (đánh dấu danh sách riêng theo sinh viên/học kỳ) và CampaignAcademicClass (lớp nhận khảo sát). Bản đầy đủ hiện có 28 bảng, gồm 27 model Prisma và một bảng liên kết tự động. SVG, HTML, draw.io và DBML đã bổ sung ba bảng này. Bản tinh gọn và PNG cũ vẫn là tài liệu tổng quan trước cập nhật.
 
 Lớp hành chính có educationSystem: REGULAR (CQ), PART_TIME (VLVH), DISTANCE (ĐTTX). Cột mới mặc định REGULAR cho dữ liệu cũ. Nhãn hệ học chỉ bổ sung khi hiển thị, không đổi mã/tên lớp trong database.
+# Nhận xét kết quả (10/11/2026)
+
+Thêm ResultNote lưu nhận xét, hướng cải thiện và ảnh chụp số liệu căn cứ. Bản vector SVG, HTML, draw.io, DBML và Mermaid đầy đủ hiện có 29 bảng, 137 cột đang dùng và 48 khóa ngoại. PNG và bản tinh gọn là tài liệu tổng quan cũ. courseId/lecturerId của ResultNote là mã ngữ cảnh, không vẽ thành quan hệ khóa ngoại.
