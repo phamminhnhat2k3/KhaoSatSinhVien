@@ -1,16 +1,19 @@
 "use client";
 import {useActionFeedback} from "./useActionFeedback";
-import { startTransition, type FormEvent } from "react";
+import { startTransition, useRef, useState, type FormEvent } from "react";
+import { useUnsavedForm } from "@/lib/unsaved";
 import { updatePassword, updateProfile } from "@/app/profile/actions";
 
 export function ProfileForm({ profile }: { profile: { name: string; phone: string; department: string; bio: string; coverTheme: string } }) {
-  const [state, action, pending] = useActionFeedback(updateProfile, undefined);
+  const ref=useRef<HTMLFormElement>(null),[dirty,setDirty]=useState(false);
+  const [state, action, pending] = useActionFeedback(async(previous:{ok:boolean;message:string}|undefined,data:FormData)=>{const result=await updateProfile(previous,data);if(result.ok)setDirty(false);return result;}, undefined);
+  useUnsavedForm(ref,dirty,{label:"Hồ sơ cá nhân",saveLabel:"Lưu thay đổi và rời trang",save:async()=>{if(!ref.current||pending||!ref.current.reportValidity())return false;const result=await updateProfile(undefined,new FormData(ref.current));if(result.ok)setDirty(false);return result.ok;}});
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     startTransition(() => action(data));
   }
-  return <form method="post" onSubmit={submit} className="stack">
+  return <form ref={ref} data-leave-managed method="post" onChange={()=>setDirty(true)} onSubmit={submit} className="stack">
     <div className="form-columns profile-fields"><label className="field">Họ và tên<input className="input" name="name" defaultValue={profile.name} required minLength={2} maxLength={100} autoComplete="name"/></label><label className="field">Số điện thoại<input className="input" name="phone" defaultValue={profile.phone} type="tel" maxLength={20} autoComplete="tel" placeholder="Chưa cập nhật"/></label></div>
     <label className="field">Khoa / đơn vị<input className="input" name="department" defaultValue={profile.department} maxLength={120} placeholder="Ví dụ: Khoa Công nghệ thông tin"/></label>
     <label className="field">Giới thiệu<textarea className="input" name="bio" defaultValue={profile.bio} maxLength={1000} rows={4} placeholder="Một vài dòng giới thiệu về bạn…"/></label>

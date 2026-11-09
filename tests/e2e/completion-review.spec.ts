@@ -51,11 +51,14 @@ test("rà soát ghi danh, CSV an toàn và khóa quyền API của phiên cũ", 
     const student = await db.studentProfile.findUniqueOrThrow({ where: { studentCode: tag }, include: { user: true } });
     await page.goto(`/admin/students/${student.id}`);
     const enroll = page.locator("form").filter({ has: page.getByRole("button", { name: "Bổ sung lớp học phần", exact: true }) });
+    const previousSemester = await enroll.getByRole("combobox", { name: "Học kỳ ghi danh", exact: true }).inputValue();
     await enroll.getByRole("combobox", { name: "Học kỳ ghi danh", exact: true }).selectOption(term.id);
     await enroll.locator(`input[value="${alternate.id}"]`).check();
     await enroll.getByRole("button", { name: "Bổ sung lớp học phần", exact: true }).click();
     await expect(enroll.getByRole("status")).toContainText("Mỗi môn chỉ chọn một");
     expect(await db.enrollment.count({ where: { studentId: student.id, classId: alternate.id } })).toBe(0);
+    await enroll.locator(`input[value="${alternate.id}"]`).uncheck();
+    await enroll.getByRole("combobox", { name: "Học kỳ ghi danh", exact: true }).selectOption(previousSemester);
     const placement = page.locator("form").filter({ has: page.getByRole("button", { name: "Lưu khoa/lớp", exact: true }) });
     await placement.getByRole("combobox", { name: "Lớp hành chính", exact: true }).selectOption(otherHome.id);
     await placement.getByRole("button", { name: "Lưu khoa/lớp", exact: true }).click();

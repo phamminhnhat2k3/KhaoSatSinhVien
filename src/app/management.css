@@ -199,3 +199,6 @@
 .campaign-more-actions { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0 0; }
 .admin-campaign-empty { padding: 20px; margin: 0; }
 @media (max-width: 640px) { .admin-campaign-list .admin-campaign-row, .admin-campaign-list .admin-campaign-row:last-child { padding: 14px; } .campaign-row-heading { gap: 10px; } .campaign-row-info h3 { font-size: .9rem; } .campaign-row-status > small { white-space: normal; text-align: right; } }
+.leave-dialog { width: min(560px, calc(100vw - 32px)); }
+.leave-dialog .actions { justify-content: flex-end; margin-top: 20px; }
+.leave-dialog .button { font-size: .85rem; padding: 8px 12px; }

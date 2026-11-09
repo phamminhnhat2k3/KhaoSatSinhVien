@@ -2,12 +2,14 @@
 import {useActionFeedback} from "./useActionFeedback";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { manageFaculty } from "@/app/admin/academic/actions";
+import { requestUnsavedLeave } from "@/lib/unsaved";
 import { updateUser, changeUserState } from "@/app/admin/users/actions";
 export function QuickEdit({ title, children }: { title: string; children: ReactNode }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState(false);
   useEffect(() => { if (open) dialog.current?.showModal(); }, [open]);
-  return <><button className="button secondary quick-edit-button" type="button" onClick={() => setOpen(true)}>Sửa nhanh</button><dialog className="management-dialog" ref={dialog} aria-label={title} onClose={() => setOpen(false)}>{open && <><div className="section-heading"><h2>{title}</h2><button className="icon-button" type="button" onClick={() => dialog.current?.close()} aria-label="Đóng chỉnh sửa">✕</button></div>{children}</>}</dialog></>;
+  const close = () => requestUnsavedLeave(() => dialog.current?.close(), dialog.current ?? undefined);
+  return <><button className="button secondary quick-edit-button" type="button" onClick={() => setOpen(true)}>Sửa nhanh</button><dialog className="management-dialog" ref={dialog} aria-label={title} onClose={() => setOpen(false)} onCancel={e=>{e.preventDefault();close();}}>{open && <><div className="section-heading"><h2>{title}</h2><button className="icon-button" type="button" onClick={close} aria-label="Đóng chỉnh sửa">✕</button></div>{children}</>}</dialog></>;
 }
 export function FacultyQuickForm({ faculty, remove = false }: { faculty: { id: string; code: string; name: string }; remove?: boolean }) {
   const [message, action, pending] = useActionFeedback(manageFaculty, undefined);

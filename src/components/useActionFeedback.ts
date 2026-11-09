@@ -6,6 +6,7 @@ export function useActionFeedback<State>(action: (state: Awaited<State>, form: F
     try {
       const result = await action(state, form);
       const feedback = actionFeedback(result);
+      if (feedback) window.dispatchEvent(new CustomEvent("form-action-complete", { detail: { data: form, ok: feedback.kind === "success" } }));
       if (feedback) showActionToast(feedback.message, feedback.kind);
       return result;
     } finally { window.dispatchEvent(new Event("consume-action-feedback")); }

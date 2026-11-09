@@ -1,4 +1,5 @@
 "use client";
+import {useUnsavedForm} from "@/lib/unsaved";
 import {useActionFeedback} from "./useActionFeedback";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -15,6 +16,7 @@ export function TemplateForm({ initial,draftKey,edit }: { initial?: TemplateInpu
   const initialTitle=initial?(edit?initial.title:`${initial.title} (bản sao)`.slice(0,120)):"";
   const [title, setTitle] = useState(initialTitle);
   const [questions, setQuestions] = useState<EditorQuestion[]>(() => (initial?.questions ?? []).map((q, i) => ({ ...q, key: `initial-${i}` })));
+  const [unsaved,setUnsaved]=useState(false);
   const [preview, setPreview] = useState(false);
   const [ready,setReady]=useState(false);
   const [draftStatus,setDraftStatus]=useState("Đang kiểm tra bản nháp…");
@@ -23,7 +25,7 @@ export function TemplateForm({ initial,draftKey,edit }: { initial?: TemplateInpu
       const result=await (edit?updateTemplate:createTemplate)(previous,form);
       if(typeof result==="string")return result;
       showActionToast("versioned" in result&&result.versioned?"Đã lưu phiên bản mẫu mới.":edit?"Đã cập nhật mẫu khảo sát.":"Đã tạo mẫu khảo sát.");
-      dirty.current=false;
+      dirty.current=false;setUnsaved(false);
       try{localStorage.removeItem(draftKey);}catch{/* The server has saved the template even if local storage is unavailable. */}
       router.push(`/admin/templates?saved=1${"versioned" in result&&result.versioned?"&versioned=1":edit?"&updated=1":""}`);router.refresh();
     }catch{return "Chưa lưu được mẫu. Nội dung và bản nháp được giữ lại để bạn thử tiếp.";}
@@ -56,26 +58,12 @@ export function TemplateForm({ initial,draftKey,edit }: { initial?: TemplateInpu
     const timer=window.setTimeout(()=>persist(),600);
     return()=>window.clearTimeout(timer);
   },[title,questions,ready,persist]);
-  useEffect(() => {
-    const warn = (event: BeforeUnloadEvent) => { if (dirty.current&&!persist(false)) { event.preventDefault(); event.returnValue = ""; } };
-    const allowLeave=()=>{
-      if(!dirty.current||persist())return true;
-      if(!window.confirm("Chưa lưu được bản nháp. Rời trang sẽ mất các thay đổi chưa lưu. Bạn vẫn muốn rời trang?"))return false;
-      dirty.current=false;return true;
-    };
-    const leave=(event:MouseEvent)=>{
-      const link=event.target instanceof Element?event.target.closest("a[href]"):null;
-      if(!link||event.defaultPrevented||event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey||link.getAttribute("target")==="_blank"||link.getAttribute("href")?.startsWith("#"))return;
-      if(!allowLeave()){event.preventDefault();event.stopPropagation();}
-    };
-    const leaveForm=(event:SubmitEvent)=>{if(event.target!==formRef.current&&!allowLeave()){event.preventDefault();event.stopPropagation();}};
+  useUnsavedForm(formRef,unsaved,{label:"Mẫu khảo sát đang soạn · Nháp trên trình duyệt này",save:()=>{const ok=persist();if(ok)setUnsaved(false);return ok;},discard:()=>{try{localStorage.removeItem(draftKey);}catch{/* Leave without writing the current changes when storage is blocked. */}dirty.current=false;setUnsaved(false);}});
+  useEffect(()=>{
     const background=()=>{if(document.visibilityState==="hidden")persist(false);};
-    window.addEventListener("beforeunload", warn);
-    document.addEventListener("click",leave,true);
-    document.addEventListener("submit",leaveForm,true);
     document.addEventListener("visibilitychange",background);
-    return () => {window.removeEventListener("beforeunload",warn);document.removeEventListener("click",leave,true);document.removeEventListener("submit",leaveForm,true);document.removeEventListener("visibilitychange",background);persist(false);};
-  }, [persist]);
+    return()=>{document.removeEventListener("visibilitychange",background);persist(false);};
+  },[persist]);
   useEffect(()=>{
     const toolbar=toolbarRef.current;if(!toolbar)return;
     const resize=()=>formRef.current?.style.setProperty("--builder-toolbar-height",`${toolbar.getBoundingClientRect().height}px`);
@@ -84,9 +72,9 @@ export function TemplateForm({ initial,draftKey,edit }: { initial?: TemplateInpu
   function discardDraft(){
     if(!window.confirm("Bỏ các thay đổi trong bản nháp này? Mẫu đã lưu trong thư viện không bị ảnh hưởng."))return;
     try{localStorage.removeItem(draftKey);}catch{setDraftStatus("Không thể xóa bản nháp trên trình duyệt. Vui lòng thử lại.");return;}
-    dirty.current=false;setTitle(initialTitle);setQuestions((initial?.questions??[]).map((q,i)=>({...q,key:`initial-${i}`})));setValidation([]);setDraftStatus("Đã bỏ bản nháp · Bạn có thể bắt đầu lại");
+    dirty.current=false;setUnsaved(false);setTitle(initialTitle);setQuestions((initial?.questions??[]).map((q,i)=>({...q,key:`initial-${i}`})));setValidation([]);setDraftStatus("Đã bỏ bản nháp · Bạn có thể bắt đầu lại");
   }
-  function change(next: EditorQuestion[]) { dirty.current = true; setQuestions(next); setValidation([]); }
+  function change(next: EditorQuestion[]) { dirty.current = true;setUnsaved(true); setQuestions(next); setValidation([]); }
   function add(type: QuestionInput["type"], position = questions.length) {
     if (questions.length >= 100) { setMessage("Đã đạt giới hạn 100 câu hỏi."); return; }
     const next = [...questions];
@@ -101,7 +89,7 @@ export function TemplateForm({ initial,draftKey,edit }: { initial?: TemplateInpu
     if (Object.hasOwn(questionTypes, type)) add(type, index);
     else { const raw = event.dataTransfer.getData("question-index"); if (/^\d+$/.test(raw)) move(Number(raw), Math.min(index, questions.length - 1)); }
   }
-  return <form ref={formRef} className="template-builder" action={action} onSubmit={event => {
+  return <form ref={formRef} data-leave-managed className="template-builder" action={action} onSubmit={event => {
     const parsed = templateSchema.safeParse({ title, questions });
     if (!parsed.success) { event.preventDefault(); showActionToast("Kiểm tra lại tên mẫu và nội dung câu hỏi.","error"); setValidation(parsed.error.issues.map(i => `${typeof i.path[1] === "number" ? `Câu ${i.path[1] + 1}: ` : ""}${i.message}`)); }
     else persist();
@@ -115,7 +103,7 @@ export function TemplateForm({ initial,draftKey,edit }: { initial?: TemplateInpu
       <div className="stack">
         {(error || validation.length > 0) && <div className="notice error" role="alert">{error}{validation.map((v, i) => <p key={i}>{v}</p>)}</div>}
         <p className="sr-only" aria-live="polite">{message}</p>
-        <section className="card template-intro"><p className="eyebrow">{preview ? "Góc nhìn người trả lời" : "Thông tin mẫu"}</p>{preview ? <h2>{title || "Mẫu khảo sát chưa đặt tên"}</h2> : <label className="field">Tên mẫu khảo sát<input className="input title-input" value={title} onChange={e => { dirty.current = true; setTitle(e.target.value); }} maxLength={120} placeholder="Ví dụ: Đánh giá chất lượng học phần"/></label>}<p className="muted">{preview ? "Đây là bản xem trước. Câu trả lời tại đây không được lưu." : "Mẫu được lưu độc lập. Bạn sẽ chọn mẫu khi tạo đợt khảo sát."}</p></section>
+        <section className="card template-intro"><p className="eyebrow">{preview ? "Góc nhìn người trả lời" : "Thông tin mẫu"}</p>{preview ? <h2>{title || "Mẫu khảo sát chưa đặt tên"}</h2> : <label className="field">Tên mẫu khảo sát<input className="input title-input" value={title} onChange={e => { dirty.current = true;setUnsaved(true); setTitle(e.target.value); }} maxLength={120} placeholder="Ví dụ: Đánh giá chất lượng học phần"/></label>}<p className="muted">{preview ? "Đây là bản xem trước. Câu trả lời tại đây không được lưu." : "Mẫu được lưu độc lập. Bạn sẽ chọn mẫu khi tạo đợt khảo sát."}</p></section>
         {questions.map((q, index) => preview ? <fieldset className="card" key={q.key}><legend>{index + 1}. {q.content || "Câu hỏi chưa có nội dung"}{q.required && " *"}</legend><QuestionFields question={q} name={`preview-${q.key}`}/></fieldset> : <section className="card question-editor" key={q.key} onDragOver={e => e.preventDefault()} onDrop={e => drop(e, index)}>
           <div className="question-editor-heading"><span className="pill">Câu {index + 1} · {questionTypes[q.type]}</span><div className="actions"><button type="button" className="icon-button drag-handle" draggable onDragStart={e => e.dataTransfer.setData("question-index", String(index))} aria-label={`Kéo câu ${index + 1}`}>⠿</button><button type="button" className="icon-button" disabled={index === 0} aria-label={`Đưa câu ${index + 1} lên`} onClick={() => move(index, index - 1)}>↑</button><button type="button" className="icon-button" disabled={index === questions.length - 1} aria-label={`Đưa câu ${index + 1} xuống`} onClick={() => move(index, index + 1)}>↓</button><button type="button" className="icon-button" aria-label={`Nhân bản câu ${index + 1}`} disabled={questions.length >= 100} onClick={() => { const next = [...questions]; next.splice(index + 1, 0, { ...q, options: q.options.map(o => ({ ...o })), key: `new-${nextKey.current++}` }); change(next); }}>Nhân bản</button><button type="button" className="icon-button text-danger" aria-label={`Xóa câu ${index + 1}`} onClick={() => { if (!q.content || window.confirm(`Xóa câu ${index + 1}?`)) change(questions.filter((_, i) => i !== index)); }}>Xóa</button></div></div>
           <label className="field">Nội dung câu {index + 1}<textarea className="input" value={q.content} maxLength={1000} rows={2} onChange={e => update(index, { content: e.target.value })} placeholder="Nhập câu hỏi rõ ràng, cụ thể…"/></label>

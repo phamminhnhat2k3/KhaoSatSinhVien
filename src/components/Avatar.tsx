@@ -2,6 +2,7 @@
 import {showActionToast} from "@/lib/action-feedback";
 import { useEffect, useRef, useState } from "react";
 import { avatarCrop } from "@/modules/profile/crop";
+import { useUnsavedForm } from "@/lib/unsaved";
 export function Avatar({ id, name, className="" }: { id?:string; name?:string|null; className?:string }) {
   const [revision,setRevision]=useState(0),[failed,setFailed]=useState(false),[loaded,setLoaded]=useState(false);
   const photo=useRef<HTMLImageElement>(null);
@@ -12,6 +13,8 @@ export function Avatar({ id, name, className="" }: { id?:string; name?:string|nu
 export function AvatarUpload() {
   const [message,setMessage]=useState(""),[pending,setPending]=useState(false);
   const [image,setImage]=useState<ImageBitmap|null>(null);
+  const formRef=useRef<HTMLFormElement>(null);
+  useUnsavedForm(formRef,!!image,{label:"Ảnh đại diện đang căn chỉnh"});
   const [zoom,setZoom]=useState(1),[x,setX]=useState(0),[y,setY]=useState(0);
   const canvas=useRef<HTMLCanvasElement>(null);
   const selection=useRef(0);
@@ -25,7 +28,7 @@ export function AvatarUpload() {
     ctx.drawImage(image,crop.sx,crop.sy,crop.size,crop.size,0,0,512,512);
   },[image,zoom,x,y]);
   const reset=()=>{setZoom(1);setX(0);setY(0);};
-  return <form className="stack" onSubmit={async e=>{
+  return <form ref={formRef} data-leave-managed method="post" className="stack" onSubmit={async e=>{
     e.preventDefault();const form=e.currentTarget;if(!canvas.current||!image)return;
     setPending(true);setMessage("");
     try {

@@ -1,6 +1,7 @@
 "use client";
 
-import { startTransition, useActionState, useState } from "react";
+import { startTransition, useActionState, useRef, useState } from "react";
+import { unsavedChanged, useUnsavedForm } from "@/lib/unsaved";
 import {answerProgress} from "@/modules/response/progress";
 import {surveySections} from "@/modules/response/sections";
 import {answersFrom,validateAnswers} from "@/modules/response/rules";
@@ -12,13 +13,26 @@ type Question = { id: string; sectionTitle?: string; courseId?:string|null;lectu
 
 export function SurveyForm({ campaignId, questions, draft }: { campaignId: string; questions: Question[]; draft: Record<string, string | string[]> }) {
   const [dirty,setDirty]=useState(false);
+  const formRef=useRef<HTMLFormElement>(null);
+  useUnsavedForm(formRef, dirty, { label: "Phiếu khảo sát đang trả lời", save: async () => {
+    if (!formRef.current || saving || submitting) return false;
+    const result = await saveDraftAction(undefined, new FormData(formRef.current));
+    if (!result.startsWith("Đã ")) return false;
+    setDirty(false); return true;
+  }});
   const [answers,setAnswers]=useState(draft);
   const sections=surveySections(questions);
   const [active,setActive]=useState(()=>Math.max(0,sections.findIndex(s=>answerProgress(s.questions,draft).remainingRequired>0)));
   const [errors,setErrors]=useState<Record<string,string>>({});
   const progress=answerProgress(questions,answers);
-  const [saveMessage, save, saving] = useActionState(async(previous:string|undefined,data:FormData)=>{const result=await saveDraftAction(previous,data);if(result.startsWith("Đã "))setDirty(false);return result;}, undefined);
-  const [submitError, submit, submitting] = useActionState(submitAction, undefined);
+  const [saveMessage, save, saving] = useActionState(async(previous:string|undefined,data:FormData)=>{
+    try { const result=await saveDraftAction(previous,data);if(result.startsWith("Đã ")){setDirty(false);window.dispatchEvent(new CustomEvent("form-action-complete",{detail:{data,ok:true}}));}else unsavedChanged();return result; }
+    catch { unsavedChanged();return "Chưa lưu được bản nháp. Nội dung đang nhập vẫn được giữ lại, vui lòng thử lại."; }
+  }, undefined);
+  const [submitError, submit, submitting] = useActionState(async(previous:string|undefined,data:FormData)=>{
+    try { const result=await submitAction(previous,data);if(result)setDirty(true);return result; }
+    catch { setDirty(true);return "Chưa gửi được phản hồi. Nội dung đang nhập vẫn được giữ lại, vui lòng thử lại."; }
+  }, undefined);
   function goToSection(index:number){
     setActive(index);
     requestAnimationFrame(()=>{
@@ -26,7 +40,7 @@ export function SurveyForm({ campaignId, questions, draft }: { campaignId: strin
       panel?.focus({preventScroll:true});panel?.scrollIntoView({block:"start",behavior:"smooth"});
     });
   }
-  return <form className={`card student-survey ${styles.form}`} method="post" noValidate onChange={event=>{
+  return <form ref={formRef} data-leave-managed className={`card student-survey ${styles.form}`} method="post" noValidate onChange={event=>{
     if(!(event.target as HTMLInputElement).name?.startsWith("q_"))return;
     setAnswers(answersFrom(new FormData(event.currentTarget)));setDirty(true);setErrors({});
   }} onSubmit={event => {

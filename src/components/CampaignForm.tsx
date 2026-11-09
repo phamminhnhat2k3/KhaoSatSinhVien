@@ -1,19 +1,37 @@
 "use client";
 import {useActionFeedback} from "./useActionFeedback";
-import { startTransition, useEffect, useState } from "react";
+import { startTransition, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { closeCampaign, createCampaign, updateCampaign, cancelCampaign, publishCampaign } from "@/app/admin/actions";
 
+import { useUnsavedForm } from "@/lib/unsaved";
+import { campaignDraftFromForm, readCampaignDraft } from "@/modules/survey-campaign/draft";
+
 type Option = { id: string; label: string };
 type Initial = { evaluationMode?:string;title:string;scope:string;facultyId:string;semesterId:string;templateId:string;courseTemplateId:string;courseIds:string[];academicClassIds?:string[];startsAt:string;endsAt:string };
-export function CampaignForm({ faculties, semesters, templates, courses, academicClasses, initial, editId }: { academicClasses: (Option & {facultyId:string;students:number;semesterIds:string[]})[]; faculties: Option[]; semesters: Option[]; templates: Option[]; courses: (Option & { semesterIds: string[]; facultyId: string | null })[]; initial?:Initial;editId?:string }) {
+function CampaignEditor({ faculties, semesters, templates, courses, academicClasses, initial, editId, draftKey, restored }: { draftKey:string;restored?:boolean;academicClasses: (Option & {facultyId:string;students:number;semesterIds:string[]})[]; faculties: Option[]; semesters: Option[]; templates: Option[]; courses: (Option & { semesterIds: string[]; facultyId: string | null })[]; initial?:Initial;editId?:string }) {
   const router = useRouter();
+  const ref=useRef<HTMLFormElement>(null),[dirty,setDirty]=useState(false);
+  const submitted=useRef(false);
+  useEffect(()=>()=>{
+    const url=new URL(window.location.href);
+    const saved=editId ? url.pathname===`/admin/campaigns/${editId}/review`&&url.searchParams.get("saved")==="1" : url.pathname==="/admin"&&url.searchParams.get("created")==="1";
+    if(submitted.current&&saved)try{localStorage.removeItem(draftKey);}catch{/* The server copy is already saved. */}
+  },[draftKey,editId]);
+  useUnsavedForm(ref,dirty,{label:"Đợt khảo sát đang soạn · Nháp trên trình duyệt này",save:()=>{
+    if(!ref.current)return false;
+    localStorage.setItem(draftKey,JSON.stringify(campaignDraftFromForm(new FormData(ref.current))));setDirty(false);return true;
+  },discard:()=>{try{localStorage.removeItem(draftKey);}catch{/* Leave without writing the current changes when storage is blocked. */}setDirty(false);}});
   useEffect(() => {
     const refresh = () => router.refresh();
     window.addEventListener("focus", refresh);
     return () => window.removeEventListener("focus", refresh);
   }, [router]);
-  const [error, action, pending] = useActionFeedback(editId?updateCampaign:createCampaign, undefined);
+  const [error, action, pending] = useActionFeedback(async(previous:string|undefined,data:FormData)=>{
+    const result=await(editId?updateCampaign:createCampaign)(previous,data);
+    if(result)submitted.current=false;
+    if(!result){try{localStorage.removeItem(draftKey);}catch{/* Server save already succeeded. */}setDirty(false);}return result;
+  }, undefined);
   const [faculty, setFaculty] = useState(initial?.facultyId??"");
   const [scope, setScope] = useState(initial?.scope??"FACULTY");
   const [semester, setSemester] = useState(initial?.semesterId??"");
@@ -21,7 +39,8 @@ export function CampaignForm({ faculties, semesters, templates, courses, academi
   const [courseTemplate, setCourseTemplate] = useState(initial?.courseTemplateId??"");
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" });
   const nextMonth = new Date(Date.now() + 30 * 86400000).toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" });
-  return <form className="stack" method="post" onSubmit={e => { e.preventDefault(); const data = new FormData(e.currentTarget); startTransition(() => action(data)); }}>
+  return <form ref={ref} data-leave-managed className="stack" method="post" onChange={()=>setDirty(true)} onSubmit={e => { e.preventDefault(); submitted.current=true; const data = new FormData(e.currentTarget); startTransition(() => action(data)); }}>
+    {restored&&<p className="notice" role="status">Đã khôi phục nội dung đang soạn trên trình duyệt này. Nội dung này chưa được công bố hay giao phiếu.</p>}
     {editId&&<input type="hidden" name="id" value={editId}/>}
     <div className="actions"><a className="button secondary" href="/admin/templates/new" target="_blank" rel="noopener noreferrer">Tạo mẫu khảo sát mới ↗</a><button className="button secondary" type="button" onClick={() => router.refresh()}>Cập nhật danh sách mẫu</button></div>
     <p className="muted">Tạo mẫu ở tab mới để giữ thông tin đợt đang nhập. Khi quay lại, danh sách mẫu sẽ tự cập nhật; bạn cũng có thể bấm Cập nhật danh sách mẫu.</p>
@@ -39,6 +58,11 @@ export function CampaignForm({ faculties, semesters, templates, courses, academi
     {editId&&<p className="notice">Chỉ chỉnh sửa đợt nháp. Đợt đã giao phiếu giữ nguyên danh sách môn và giảng viên đã chốt.</p>}
     {error && <p className="error" role="alert">{error}</p>}<button className="button" disabled={pending}>{pending ? "Đang lưu…" : editId?"Lưu bản nháp":"Tạo đợt khảo sát"}</button>
   </form>;
+}
+export function CampaignForm(props:Parameters<typeof CampaignEditor>[0]) {
+  const [draft,setDraft]=useState<Initial|null>(null),[ready,setReady]=useState(false);
+  useEffect(()=>{try{setDraft(readCampaignDraft(localStorage.getItem(props.draftKey)));}catch{/* Keep the server values when browser storage is unavailable. */}setReady(true);},[props.draftKey]);
+  return ready?<CampaignEditor {...props} initial={draft??props.initial} restored={!!draft}/>:<p role="status">Đang tải biểu mẫu…</p>;
 }
 export function CancelCampaignForm({campaignId}:{campaignId:string}) {
   const [error,action,pending]=useActionFeedback(cancelCampaign,undefined);
