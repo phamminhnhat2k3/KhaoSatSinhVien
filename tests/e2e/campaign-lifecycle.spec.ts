@@ -31,13 +31,13 @@ test.describe("quản lý vòng đời khảo sát",()=>{
       await db.surveyParticipation.create({data:{campaignId,studentId:student.student!.id,status:"COMPLETED"}});
       await db.submission.create({data:{campaignId,answers:{create:{questionId:campaign.template.questions[0].id,value:String(4+i)}}}});
     }
-    await page.goto(`/admin/campaigns/${campaignId}/report`);await expect(page.getByRole("heading",{name:"Kết quả tổng hợp",exact:true})).toBeVisible();await expect(page.locator("main")).toContainText("4.5");await expect(page.getByRole("link",{name:"Xuất báo cáo CSV",exact:true})).toBeVisible();
+    await page.goto(`/admin/campaigns/${campaignId}/report`);await expect(page.getByRole("region",{name:"Báo cáo tổng hợp",exact:true})).toBeVisible();await expect(page.locator("main")).toContainText("4.5");await expect(page.getByRole("link",{name:"Xuất CSV",exact:true})).toBeVisible();
     const csv=await page.request.get(`/api/reports/campaigns/${campaignId}/export`);expect(csv.status()).toBe(200);expect(await csv.text()).toContain("Số người trả lời câu này");
     await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:".playwright-cli/admin-report-mobile.png",fullPage:true});
     await db.surveyCampaign.update({where:{id:campaignId},data:{status:"PUBLISHED",startsAt:new Date(Date.now()-3*86400000),endsAt:new Date(Date.now()-86400000)}});
     const scheduled=await db.surveyCampaign.create({data:{title:`${tag} chờ`,scope:"UNIVERSITY",templateId:campaign.templateId,semesterId:campaign.semesterId,status:"PUBLISHED",startsAt:new Date(Date.now()+86400000),endsAt:new Date(Date.now()+3*86400000)}});
     await page.goto("/admin?status=EXPIRED");await expect(page.getByRole("heading",{name:`${tag} đã sửa`,exact:true})).toBeVisible();await expect(page.getByRole("heading",{name:scheduled.title,exact:true})).toHaveCount(0);
     await page.goto("/admin?status=SCHEDULED");await expect(page.getByRole("heading",{name:scheduled.title,exact:true})).toBeVisible();
-    await page.goto(`/admin/campaigns/${campaignId}/report`);await expect(page.getByRole("heading",{name:"Kết quả tổng hợp",exact:true})).toBeVisible();
+    await page.goto(`/admin/campaigns/${campaignId}/report`);await expect(page.getByRole("region",{name:"Báo cáo tổng hợp",exact:true})).toBeVisible();
   });
 });

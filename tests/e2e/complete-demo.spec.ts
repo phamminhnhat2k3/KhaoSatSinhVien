@@ -37,7 +37,7 @@ test.describe("bộ demo mới trên database nghiệm thu riêng", () => {
     await login(page, email); await expect(page).toHaveURL(/\/admin$/);
     const closed = seeded.campaigns.find(c => c.kind === "closed" && c.facultyId === "demo-khoa-cntt")!;
     expect((await page.request.get(`/api/reports/campaigns/${closed.id}/export`)).status()).toBe(200);
-    await page.goto(`/admin/campaigns/${closed.id}/report`); await expect(page.getByRole("heading", { name: "Kết quả tổng hợp", exact: true })).toBeVisible();
+    await page.goto(`/admin/campaigns/${closed.id}/report`); await expect(page.getByRole("region", { name: "Báo cáo tổng hợp", exact: true })).toBeVisible();
     await login(page, "sv.cntt01@demo.vn"); await expect(page).toHaveURL(/\/student$/);
     const open = seeded.campaigns.find(c => c.kind === "open" && c.facultyId === "demo-khoa-cntt")!;
     const survey = await (await page.request.get(`/api/surveys/${open.id}`)).json();

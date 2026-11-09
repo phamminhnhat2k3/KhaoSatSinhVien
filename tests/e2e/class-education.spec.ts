@@ -28,8 +28,10 @@ test.describe("hệ học của lớp hành chính", () => {
     }
     const code = `${tag}-REGULAR`.toUpperCase();
     const row = page.locator("tbody tr").filter({ hasText: code });
-    await row.getByRole("combobox", { name: `Hệ học lớp ${code}`, exact: true }).selectOption("DISTANCE");
-    await row.getByRole("button", { name: "Lưu hệ học", exact: true }).click();
+    await row.getByRole("button", { name: "Sửa nhanh", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: `Sửa lớp hành chính ${code}`, exact: true });
+    await dialog.getByRole("combobox", { name: "Hệ học", exact: true }).selectOption("DISTANCE");
+    await dialog.getByRole("button", { name: "Lưu lớp hành chính", exact: true }).click();
     await expect.poll(async () => (await db.academicClass.findUnique({where:{code}}))?.educationSystem).toBe("DISTANCE");
     const saved = await db.academicClass.findUniqueOrThrow({ where: { code } });
     expect(saved).toMatchObject({ code, name: `Lớp ${tag} CQ`, educationSystem: "DISTANCE" });

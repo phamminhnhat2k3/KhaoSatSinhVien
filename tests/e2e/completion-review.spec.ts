@@ -62,10 +62,12 @@ test("rà soát ghi danh, CSV an toàn và khóa quyền API của phiên cũ", 
     await expect(placement.getByRole("status")).toContainText("Không thể chuyển lớp");
     expect((await db.studentProfile.findUniqueOrThrow({ where: { id: student.id } })).academicClassId).toBe(home.id);
     await page.goto("/admin/academic");
-    const homeRow = page.locator("tbody tr").filter({ has: page.getByRole("combobox", { name: `Hệ học lớp ${tag}`, exact: true }) });
-    await homeRow.getByRole("combobox").selectOption("PART_TIME");
-    await homeRow.getByRole("button", { name: "Lưu hệ học", exact: true }).click();
-    await expect(homeRow.getByRole("status")).toContainText("không khớp hệ học mới");
+    const homeRow = page.locator("tbody tr").filter({ has: page.getByRole("dialog", { name: `Sửa lớp hành chính ${tag}`, exact: true, includeHidden: true }) });
+    await homeRow.getByRole("button", { name: "Sửa nhanh", exact: true }).click();
+    const editHome = page.getByRole("dialog", { name: `Sửa lớp hành chính ${tag}`, exact: true });
+    await editHome.getByRole("combobox", { name: "Hệ học", exact: true }).selectOption("PART_TIME");
+    await editHome.getByRole("button", { name: "Lưu lớp hành chính", exact: true }).click();
+    await expect(editHome.getByRole("status")).toContainText("Không thể đổi hệ học");
     expect((await db.academicClass.findUniqueOrThrow({ where: { id: home.id } })).educationSystem).toBe("REGULAR");
 
     const template = await db.surveyTemplate.create({ data: { title: tag, questions: { create: { content: tag, type: "TEXT", required: false, position: 1 } } }, include: { questions: true } });
