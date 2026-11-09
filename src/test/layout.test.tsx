@@ -34,6 +34,12 @@ test("khung trang hiển thị tiếng Việt, điều hướng và co giãn kh�
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       expect(await page.getByRole("button", { name: "Đăng xuất" }).isVisible()).toBe(true);
       expect(await page.getByRole("link", { name: "Trang chủ" }).getAttribute("href")).toBe("/dashboard");
+      expect(await page.locator("header").getByRole("link", { name: "Hướng dẫn", exact: true }).isVisible()).toBe(true);
+      if (width === 1440) {
+        expect(await page.locator("header.nav").evaluate(el => el.getBoundingClientRect().height)).toBeLessThanOrEqual(86);
+        const items = await page.locator(".nav-links > a, .nav-links > button, .nav-links > form").evaluateAll(els => els.map(el => { const r = el.getBoundingClientRect(); return r.top + r.height / 2; }));
+        expect(Math.max(...items) - Math.min(...items)).toBeLessThan(3);
+      }
       const heading = await page.locator("h1").evaluate(el => ({ size: parseFloat(getComputedStyle(el).fontSize), line: parseFloat(getComputedStyle(el).lineHeight) }));
       expect(heading.line / heading.size).toBeGreaterThanOrEqual(1.3);
       if (width === 1440 || width === 390) await page.screenshot({ path: `.playwright-cli/layout-${width}.png`, fullPage: true });

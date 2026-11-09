@@ -81,6 +81,7 @@ test.describe("nghiệm thu trình dựng với dữ liệu riêng", () => {
     await page.getByLabel("Mật khẩu", { exact: true }).fill(password);
     await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
     await expect(page).toHaveURL(/\/admin$/);
+    await page.getByText("Quản lý và thiết lập", { exact: true }).click();
     await page.getByRole("link", { name: /Tạo mẫu khảo sát/ }).click();
     await page.getByRole("button", { name: /Thang điểm/ }).dragTo(page.locator(".drop-zone"));
     await expect(page.getByText("Câu 1 · Thang điểm", { exact: true })).toBeVisible();

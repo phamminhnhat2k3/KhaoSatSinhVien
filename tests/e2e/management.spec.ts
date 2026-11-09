@@ -42,6 +42,9 @@ test("quản lý người dùng, sửa/xóa khoa và thông báo trượt đúng
     await courseInfo.getByRole("button",{name:"Đóng thông tin",exact:true}).click(); await expect(courseInfo).toHaveCount(0);
     expect(hydrationErrors).toEqual([]); page.off("pageerror",collect);
     await page.goto("/admin");
+    await expect(page.locator(".admin-overview").getByRole("link")).toHaveCount(4);
+    await expect(page.locator(".admin-tools")).not.toHaveAttribute("open");
+    await expect(page.locator(".admin-overview").getByRole("link", { name: /^Người dùng:/ })).toHaveAttribute("href", "/admin/users");
     const campaignFilters = page.getByRole("navigation", { name: "Lọc đợt khảo sát", exact: true });
     await campaignFilters.getByRole("link", { name: /^Bản nháp/ }).click();
     await expect(page.locator("section.question").getByRole("heading", { name: tag, exact: true })).toBeVisible();
@@ -54,6 +57,7 @@ test("quản lý người dùng, sửa/xóa khoa và thông báo trượt đúng
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: ".playwright-cli/admin-home-mobile.png", fullPage: true });
     await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.getByText("Quản lý và thiết lập", { exact: true }).click();
     await page.locator("main").getByRole("link", { name: "Tất cả người dùng", exact: true }).click();
     await expect(page).toHaveURL(/\/admin\/users$/);
     await page.getByLabel("Tìm người dùng", { exact: true }).fill(tag);
