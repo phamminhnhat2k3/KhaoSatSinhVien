@@ -7,6 +7,40 @@ export function effectiveEnrollments<T extends { class: { id: string } }>(shared
   return [...new Map((overridden ? personal : [...shared, ...personal]).map(e => [e.class.id, e])).values()];
 }
 
+export async function checkStudentPlacement(tx: Prisma.TransactionClient, studentId: string, academicClassId: string) {
+  const currentTerms = { semester: { endsAt: { gte: new Date() } } };
+  const classSelect = { id: true, courseId: true, semesterId: true, educationSystem: true, course: { select: { facultyId: true } } } as const;
+  const target = await tx.academicClass.findUniqueOrThrow({ where: { id: academicClassId }, include: { studyAssignments: { where: { class: currentTerms }, select: { class: { select: classSelect } } } } });
+  const student = await tx.studentProfile.findUniqueOrThrow({ where: { id: studentId }, include: { studyPlans: true, enrollments: { where: { class: currentTerms }, select: { class: { select: classSelect } } } } });
+  const terms = new Set([...target.studyAssignments, ...student.enrollments].map(e => e.class.semesterId));
+  for (const semesterId of terms) {
+    const effective = effectiveEnrollments(target.studyAssignments.filter(e => e.class.semesterId === semesterId), student.enrollments.filter(e => e.class.semesterId === semesterId), student.studyPlans.some(p => p.semesterId === semesterId));
+    if (effective.some(e => e.class.course.facultyId !== target.facultyId || e.class.educationSystem !== target.educationSystem) || new Set(effective.map(e => e.class.courseId)).size !== effective.length) {
+      throw new Error("Không thể chuyển lớp vì môn đăng ký riêng hoặc phân công của lớp mới chưa khớp khoa, hệ học hoặc bị trùng môn. Điều chỉnh môn học riêng trước khi chuyển lớp.");
+    }
+  }
+}
+
+export async function addStudentEnrollments(tx: Prisma.TransactionClient, studentId: string, classIds: string[], semesterId?: string) {
+  const ids = [...new Set(classIds)];
+  if (!ids.length) return;
+  const classSelect = { id: true, courseId: true, semesterId: true, educationSystem: true, course: { select: { facultyId: true } } } as const;
+  const student = await tx.studentProfile.findUniqueOrThrow({ where: { id: studentId }, include: {
+    academicClass: { include: { studyAssignments: { select: { class: { select: classSelect } } } } },
+    enrollments: { select: { class: { select: classSelect } } }, studyPlans: { select: { semesterId: true } },
+  } });
+  if (!student.academicClass) throw new Error("Phân lớp hành chính trước khi ghi danh.");
+  const groups = await tx.courseClass.findMany({ where: { id: { in: ids }, ...(semesterId ? { semesterId } : {}), educationSystem: student.academicClass.educationSystem, course: { facultyId: student.academicClass.facultyId } }, select: classSelect });
+  if (groups.length !== ids.length) throw new Error("Chỉ chọn lớp học phần đúng khoa, hệ học và học kỳ của sinh viên.");
+  for (const term of new Set(groups.map(g => g.semesterId))) {
+    const shared = student.academicClass.studyAssignments.filter(e => e.class.semesterId === term);
+    const personal = [...student.enrollments.filter(e => e.class.semesterId === term), ...groups.filter(g => g.semesterId === term).map(group => ({ class: group }))];
+    const effective = effectiveEnrollments(shared, personal, student.studyPlans.some(p => p.semesterId === term));
+    if (new Set(effective.map(e => e.class.courseId)).size !== effective.length) throw new Error("Mỗi môn chỉ chọn một lớp học phần trong học kỳ. Dùng Điều chỉnh môn học riêng nếu sinh viên học khác phân công chung.");
+  }
+  await tx.enrollment.createMany({ data: ids.map(classId => ({ classId, studentId })), skipDuplicates: true });
+}
+
 async function validateGroups(tx: Prisma.TransactionClient, semesterId: string, ids: string[], facultyId: string, educationSystem: string) {
   const teacher = { facultyId: true, user: { select: { active: true, roles: { select: { role: true } } } } } as const;
   const groups = await tx.courseClass.findMany({ where: { id: { in: ids }, semesterId, educationSystem, course: { facultyId } }, select: { id: true, courseId: true, teachingConfigured: true, lecturer: { select: teacher }, teachings: { select: { lecturer: { select: teacher } } } } });

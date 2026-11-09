@@ -6,7 +6,7 @@ export function validateAnswers(questions: SurveyQuestion[], answers: SurveyAnsw
   for (const id of Object.keys(answers)) if (!questions.some(q => q.id === id)) errors[id] = "Câu hỏi không thuộc mẫu khảo sát.";
   for (const question of questions) {
     const answer = answers[question.id];
-    if (question.required && (answer == null || answer === "" || (Array.isArray(answer) && answer.length === 0))) {
+    if (question.required && (answer == null || typeof answer === "string" && !answer.trim() || (Array.isArray(answer) && answer.length === 0))) {
       errors[question.id] = "Vui lòng trả lời câu hỏi này.";
       continue;
     }

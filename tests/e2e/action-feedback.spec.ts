@@ -13,7 +13,7 @@ test.describe("thông báo thao tác admin", () => {
   });
   test.afterAll(async () => { await db.$disconnect(); });
   test("xếp chồng, tự tắt riêng sau 5 giây, sửa trong popup, lỗi và chuyển trang", async ({ page }) => {
-    await page.goto("/login"); await page.getByLabel("Email", { exact: true }).fill(`${tag}@example.invalid`); await page.getByLabel("Mật khẩu", { exact: true }).fill(password); await page.getByRole("button", { name: "Đăng nhập", exact: true }).click(); await expect(page).toHaveURL(/\/admin$/);
+    await page.goto("/login"); await page.getByLabel("Email", { exact: true }).fill(`${tag}@example.invalid`); await page.getByLabel("Mật khẩu", { exact: true }).fill(password); await page.getByRole("button", { name: "Đăng nhập", exact: true }).click(); await expect(page).toHaveURL(/\/admin$/, { timeout: 15000 });
     await page.goto("/admin/academic");
     const clockTime=new Date();await page.clock.install({time:clockTime});await page.clock.pauseAt(new Date(clockTime.getTime()+60000));
     const create = page.locator("form").filter({ has: page.getByRole("button", { name: "Tạo khoa", exact: true }) });

@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/access";
 import { userEditSchema, userRemovalIssue } from "@/modules/academic/user-management";
+import { checkStudentPlacement } from "@/modules/academic/study-plan";
 function refresh() { for (const p of ["/admin/users","/admin/students","/admin/lecturers","/admin/academic","/profile","/dean"]) revalidatePath(p); }
 export async function updateUser(_: string | undefined, form: FormData) {
   const actor = await requireUser("ADMIN");
@@ -13,10 +14,11 @@ export async function updateUser(_: string | undefined, form: FormData) {
     const user = await tx.user.findUniqueOrThrow({ where: { id }, select: { student: { select: { id: true } } } });
     if (user.student) {
       if (studentCode.length < 3 || !academicClassId) throw new Error("Chọn lớp hành chính và mã sinh viên từ 3 ký tự.");
+      await checkStudentPlacement(tx, user.student.id, academicClassId);
       await tx.studentProfile.update({ where: { id: user.student.id }, data: { studentCode: studentCode.toUpperCase(), academicClassId } });
     }
     await tx.auditLog.create({ data: { actorId: actor.id, action: "UPDATE", entity: "User", entityId: id } });
-  }); } catch { return "Chưa lưu được. Kiểm tra email/mã trùng và lớp hành chính còn tồn tại."; }
+  }); } catch (error) { return error instanceof Error && error.message.startsWith("Không thể chuyển lớp") ? error.message : "Chưa lưu được. Kiểm tra email/mã trùng và lớp hành chính còn tồn tại."; }
   refresh(); return "Đã cập nhật người dùng.";
 }
 export async function changeUserState(_: string | undefined, form: FormData) {

@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { requireUser } from "@/lib/access";
 import { normalizeAcademicCode } from "@/modules/academic/rules";
 import { educationSystemSchema } from "@/modules/academic/education";
+import { addStudentEnrollments, checkStudentPlacement } from "@/modules/academic/study-plan";
 
 const code = z.string().trim().min(2).max(30).transform(normalizeAcademicCode);
 const facultySchema = z.object({ code, name: z.string().trim().min(3).max(120) });
@@ -56,10 +57,16 @@ export async function updateClassEducation(_: string | undefined, form: FormData
   if (!parsed.success) return "Chọn hệ học hợp lệ cho lớp hành chính.";
   try {
     await db.$transaction(async tx => {
+      const incompatible = { educationSystem: { not: parsed.data.educationSystem }, semester: { endsAt: { gte: new Date() } } };
+      const [shared, personal] = await Promise.all([
+        tx.classStudyAssignment.count({ where: { academicClassId: parsed.data.id, class: incompatible } }),
+        tx.enrollment.count({ where: { student: { academicClassId: parsed.data.id }, class: incompatible } }),
+      ]);
+      if (shared || personal) throw new Error("Lớp đang có phân công hoặc ghi danh ở học kỳ chưa kết thúc không khớp hệ học mới. Gỡ hoặc điều chỉnh phân công trước khi đổi hệ học.");
       await tx.academicClass.update({ where: { id: parsed.data.id }, data: { educationSystem: parsed.data.educationSystem } });
       await tx.auditLog.create({ data: { actorId: actor.id, action: "UPDATE_EDUCATION_SYSTEM", entity: "AcademicClass", entityId: parsed.data.id } });
     });
-  } catch { return "Không cập nhật được hệ học. Kiểm tra lại lớp hành chính."; }
+  } catch (error) { return error instanceof Error && error.message.startsWith("Lớp đang có") ? error.message : "Không cập nhật được hệ học. Kiểm tra lại lớp hành chính."; }
   revalidatePath("/admin", "layout"); revalidatePath("/profile");
   return "Đã cập nhật hệ học của lớp hành chính.";
 }
@@ -79,9 +86,10 @@ export async function updatePlacement(_: string | undefined, form: FormData) {
   const parsed = z.object({ studentId: z.string().min(1), academicClassId: z.string().min(1) }).safeParse(Object.fromEntries(form));
   if (!parsed.success) return "Chọn lớp hành chính hợp lệ.";
   try { await db.$transaction(async tx => {
+    await checkStudentPlacement(tx, parsed.data.studentId, parsed.data.academicClassId);
     await tx.studentProfile.update({ where: { id: parsed.data.studentId }, data: { academicClassId: parsed.data.academicClassId } });
     await tx.auditLog.create({ data: { actorId: user.id, action: "UPDATE_PLACEMENT", entity: "StudentProfile", entityId: parsed.data.studentId } });
-  }); } catch { return "Không thể cập nhật lớp hành chính."; }
+  }); } catch (error) { return error instanceof Error && error.message.startsWith("Không thể chuyển lớp") ? error.message : "Không thể cập nhật lớp hành chính."; }
   revalidatePath("/admin/students"); revalidatePath("/admin/users"); revalidatePath(`/admin/students/${parsed.data.studentId}`); revalidatePath("/profile"); return "Đã cập nhật khoa/lớp hành chính. Các phiếu đã giao được giữ nguyên.";
 }
 export async function enrollStudent(_: string | undefined, form: FormData) {
@@ -90,9 +98,8 @@ export async function enrollStudent(_: string | undefined, form: FormData) {
   if (!parsed.success) return "Chọn học kỳ và ít nhất một lớp học phần.";
   try { await db.$transaction(async tx => {
     const ids = [...new Set(parsed.data.classIds)];
-    if (await tx.courseClass.count({ where: { id: { in: ids }, semesterId: parsed.data.semesterId } }) !== ids.length) throw new Error("Invalid semester");
-    await tx.enrollment.createMany({ data: ids.map(classId => ({ classId, studentId: parsed.data.studentId })), skipDuplicates: true });
+    await addStudentEnrollments(tx, parsed.data.studentId, ids, parsed.data.semesterId);
     await tx.auditLog.create({ data: { actorId: user.id, action: "ENROLL", entity: "StudentProfile", entityId: parsed.data.studentId } });
-  }); } catch { return "Không thể ghi danh. Kiểm tra sinh viên và lớp học phần đúng học kỳ."; }
+  }); } catch (error) { return error instanceof Error && /^(Chỉ chọn|Mỗi môn|Phân lớp)/.test(error.message) ? error.message : "Không thể ghi danh. Kiểm tra sinh viên và lớp học phần đúng học kỳ."; }
   revalidatePath(`/admin/students/${parsed.data.studentId}`); revalidatePath("/admin/users"); return "Đã bổ sung lớp học phần. Các phiếu đã công bố không tự thay đổi.";
 }

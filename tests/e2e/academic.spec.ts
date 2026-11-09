@@ -19,7 +19,7 @@ test.describe("trang học vụ và ghi danh", () => {
     lecturerUserId = teacher.id;
     semesterId = (await db.semester.create({ data: { name: tag, startsAt: new Date("2026-01-01"), endsAt: new Date("2027-01-01") } })).id;
     facultyId = (await db.faculty.create({ data: { code: tag, name: `Khoa ${tag}` } })).id;
-    academicClassId = (await db.academicClass.create({ data: { code: tag, name: tag, facultyId } })).id;
+    academicClassId = (await db.academicClass.create({ data: { code: tag, name: tag, facultyId, educationSystem: "PART_TIME" } })).id;
   });
   test.afterAll(async () => {
     if (!db) return;

@@ -33,3 +33,11 @@ test("đánh giá giảng viên thông báo theo người dạy đã chốt, kh�
   await notifyCampaign(tx as never,"campaign","admin","PUBLISHED");
   expect(tx.notification.createMany.mock.calls[0][0].data.map((r:{userId:string})=>r.userId)).toEqual(["student","actual","admin"]);
 });
+test("đóng đợt môn học thông báo cả phân công mới và giữ đường dẫn đúng báo cáo", async () => {
+  const tx = {
+    surveyCampaign: { findUniqueOrThrow: vi.fn().mockResolvedValue({ title: "Đợt môn", facultyId: "f", semesterId: "s", evaluationMode: "COURSE", startsAt: new Date(), endsAt: new Date(), participations: [], targets: [], courseTargets: [{ course: { lecturers: [{ userId: "actual" }], classes: [{ semesterId: "s", teachingConfigured: true, lecturer: { userId: "old" }, teachings: [{ lecturer: { userId: "actual" } }] }, { semesterId: "other", teachings: [{ lecturer: { userId: "wrong-term" } }] }] } }] }) },
+    lecturerProfile: { findMany: vi.fn().mockResolvedValue([{ userId: "dean" }]) }, notification: { createMany: vi.fn() },
+  };
+  await notifyCampaign(tx as never, "c", "admin", "CLOSED");
+  expect(tx.notification.createMany.mock.calls[0][0].data.map((r: { userId: string; href: string }) => [r.userId, r.href])).toEqual([["actual", "/lecturer?campaign=c"], ["dean", "/dean?campaign=c"], ["admin", "/admin"]]);
+});

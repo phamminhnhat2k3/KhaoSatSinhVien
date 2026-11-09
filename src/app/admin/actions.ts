@@ -15,6 +15,7 @@ import { saveCampaignDraft, cancelCampaignDraft } from "@/modules/survey-campaig
 import { publishToAudience } from "@/modules/survey-campaign/audience";
 import { studentSchema } from "@/modules/academic/students";
 import {assignClassTeachers} from "@/modules/academic/teaching";
+import { addStudentEnrollments } from "@/modules/academic/study-plan";
 
 export async function saveClassTeachers(_:string|undefined,form:FormData){
   const user=await requireUser(Role.ADMIN);const id=String(form.get("classId")??"");
@@ -52,10 +53,10 @@ export async function createStudent(_: string | undefined, formData: FormData) {
     await db.$transaction(async tx => {
       const user = await tx.user.create({ data: { email: parsed.data.email.toLowerCase(), name: parsed.data.name, passwordHash, roles: { create: { role: Role.STUDENT } }, student: { create: { studentCode: parsed.data.studentCode, academicClassId: parsed.data.academicClassId } } }, include: { student: true } });
       const classIds = [...new Set(parsed.data.courseClassIds)];
-      if (classIds.length) await tx.enrollment.createMany({ data: classIds.map(classId => ({ classId, studentId: user.student!.id })) });
+      await addStudentEnrollments(tx, user.student!.id, classIds);
       await tx.auditLog.create({ data: { actorId: actor.id, action: "CREATE", entity: "StudentProfile", entityId: user.student!.id } });
     });
-  } catch { return "Không thể tạo sinh viên. Email/mã sinh viên có thể trùng, hoặc lớp không còn khả dụng."; }
+  } catch (error) { return error instanceof Error && /^(Chỉ chọn|Mỗi môn|Phân lớp)/.test(error.message) ? error.message : "Không thể tạo sinh viên. Email/mã sinh viên có thể trùng, hoặc lớp không còn khả dụng."; }
   revalidatePath("/admin"); revalidatePath("/admin/students"); await flashActionToast("Đã tạo sinh viên."); redirect("/admin/users?created=1&role=STUDENT");
 }
 

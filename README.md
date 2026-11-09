@@ -1,6 +1,6 @@
 # Hệ thống khảo sát và phản hồi sinh viên
 
-Ứng dụng khảo sát sinh viên đang được phát triển theo [phương án kỹ thuật](docs/PHUONG_AN_KY_THUAT_MVP.md). Các luồng trình dựng, học vụ, hồ sơ và thông báo có nghiệm thu Playwright với dữ liệu MySQL riêng. Xem [báo cáo tiến độ](docs/TIEN_DO_2026-10-23.md) để phân biệt phần đã hoàn thành và phần chưa triển khai.
+Ứng dụng khảo sát sinh viên đang được phát triển theo [phương án kỹ thuật](docs/PHUONG_AN_KY_THUAT_MVP.md). Các luồng trình dựng, học vụ, hồ sơ và thông báo có nghiệm thu Playwright với dữ liệu MySQL riêng. Xem [kết quả rà soát và phần còn thiếu](docs/RA_SOAT_HOAN_THIEN_2026-11-09.md) để phân biệt phần đã hoàn thành và phần chưa triển khai.
 
 ## Chạy local
 
@@ -71,18 +71,20 @@ Những lần sau, khi dịch vụ `MySQL80` đang chạy, chỉ cần `pnpm dev
 
 ## Chức năng chính
 
-- Auth.js Credentials, mật khẩu Argon2id và phân quyền máy chủ theo `STUDENT`, `LECTURER`, `ADMIN`.
-- Quản trị có trang riêng cho mẫu, đợt, lớp và sinh viên. Trình dựng mẫu hỗ trợ kéo thả, nhân bản, đổi thứ tự bằng bàn phím, bắt buộc/tùy chọn, xem trước; lựa chọn tự nhập và thang số nguyên từ 0 đến 1.000 với bước nhảy tùy chỉnh. Mẫu đã lưu được bảo toàn, chỉnh tiếp bằng cách tạo bản sao.
+- Auth.js Credentials, mật khẩu Argon2id và phân quyền máy chủ theo `STUDENT`, `LECTURER`, `DEAN`, `ADMIN`.
+- Quản trị có trang riêng cho mẫu, đợt, lớp và sinh viên. Trình dựng mẫu hỗ trợ kéo thả, nhân bản, đổi thứ tự bằng bàn phím, bắt buộc/tùy chọn, xem trước; lựa chọn tự nhập và thang số nguyên từ 0 đến 1.000 với bước nhảy tùy chỉnh. Mẫu đã dùng được bảo toàn bằng phiên bản mới khi chỉnh sửa. Mẫu chưa dùng có thể sửa hoặc xóa.
 - Tạo đợt theo khoa hoặc toàn trường, gắn học kỳ và mẫu câu hỏi chung. Đợt khoa có thể kèm mẫu đánh giá môn; mỗi sinh viên chỉ nhận các môn thực học trong học kỳ thuộc phạm vi đã chọn. Người nhận và phần môn được chốt khi công bố, không phải khi tạo nháp.
 - `/admin/academic`: tạo khoa, lớp hành chính và học kỳ. Lớp hành chính quản lý sinh viên theo khoa; lớp học phần là lớp đăng ký môn với giảng viên trong một học kỳ.
-- `/admin/students`: danh sách tất cả sinh viên có tìm MSSV/tên/email, lọc khoa/lớp hành chính và phân trang. Hồ sơ học vụ cho phép phân lớp và bổ sung đăng ký lớp học phần; tạo sinh viên không bắt buộc ghi danh môn ngay.
+- `/admin/users`: danh sách người dùng có tìm tên/mã/email, lọc vai trò/khoa/lớp/trạng thái và phân trang. Có sửa nghiệp vụ, khóa, mở khóa và xóa có kiểm tra liên quan. Hồ sơ học vụ cho phép phân lớp và bổ sung ghi danh đúng khoa, hệ học và học kỳ. Mỗi môn trong học kỳ chỉ chọn một lớp học phần, trường hợp học khác dùng Điều chỉnh môn học riêng.
 - Admin bấm tên khảo sát hoặc “Xem bài đánh giá” để mở danh sách phiếu đã nộp và xem từng câu trả lời ngay khi có phiếu gửi. Phiếu không gắn tên/mã sinh viên; quyền này chỉ dành cho admin, không thay đổi điều kiện mở báo cáo tổng hợp của giảng viên.
 - Sinh viên chỉ thấy khảo sát được giao, có thể lưu nháp và chỉ gửi một lần.
+- `/dean/people`: Trưởng khoa tra cứu giảng viên và sinh viên trong khoa qua popup Thông tin / Đánh giá, chỉ đọc. Số phiếu sinh viên chỉ tính các đợt thuộc khoa, không nối danh tính với nội dung bài nộp.
+- `/admin/assignments`: phân công chung theo lớp hành chính và học kỳ, hỗ trợ danh sách riêng cho sinh viên học khác. Lớp có hệ Chính quy, Vừa học vừa làm hoặc Đào tạo từ xa.
 - Transaction đồng thời tạo phản hồi và ghi nhận hoàn thành; `Submission` không chứa khóa định danh sinh viên.
 - Báo cáo theo phạm vi giảng dạy, chỉ mở sau khi đóng và đủ `MIN_REPORT_RESPONSES` cho từng môn; hỗ trợ CSV với số người được giao và số phiếu thực tế của từng phần. Giảng viên không được xem phần chung của khoa/toàn trường qua báo cáo môn.
 - Giao diện tiếng Việt, responsive và dữ liệu seed cho nghiệm thu.
-- `/profile`: hồ sơ cá nhân cho cả ba vai trò, thông tin nghiệp vụ chỉ đọc, chỉnh họ tên/liên hệ/đơn vị/giới thiệu/màu bìa và đổi mật khẩu có xác thực mật khẩu cũ. Chưa hỗ trợ tải ảnh đại diện; đổi mật khẩu không thu hồi các phiên đã đăng nhập.
-- `/notifications`: thông báo trong ứng dụng khi công bố/đóng đợt (sinh viên được mời, giảng viên phụ trách và admin thực hiện), hoặc khi tự đổi mật khẩu. Có bộ lọc, phân trang, đánh dấu đọc theo chủ sở hữu và số chưa đọc tự cập nhật mỗi 30 giây khi trang đang hiển thị. Chưa gửi email/push.
+- `/profile`: hồ sơ cá nhân cho cả bốn vai trò, thông tin nghiệp vụ chỉ đọc, chỉnh họ tên/liên hệ/đơn vị/giới thiệu/màu bìa và đổi mật khẩu có xác thực mật khẩu cũ. Có tải và căn chỉnh ảnh đại diện. Đổi mật khẩu chưa thu hồi các phiên đã đăng nhập.
+- Thông báo nhanh trong bảng trượt bên phải, có phân trang và đánh dấu đọc. Thông báo trong ứng dụng khi công bố/đóng đợt (sinh viên được mời, giảng viên phụ trách và admin thực hiện), hoặc khi tự đổi mật khẩu. Có bộ lọc, phân trang, đánh dấu đọc theo chủ sở hữu và số chưa đọc tự cập nhật mỗi 30 giây khi trang đang hiển thị. Chưa gửi email/push.
 
 Sau khi cập nhật mã nguồn, dừng dev server rồi chạy `pnpm db:migrate` và `pnpm exec prisma generate` trước khi `pnpm dev`. Các migration mới bổ sung cột/bảng và mở rộng độ dài nội dung, không cần chạy lại seed. Ngày khảo sát được hiểu theo giờ Việt Nam, bao gồm trọn ngày kết thúc.
 

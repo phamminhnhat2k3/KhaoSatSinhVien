@@ -19,16 +19,18 @@ export function CourseClassForm({ semesters, faculties }: { semesters: Option[];
   </form>;
 }
 
-export function StudentForm({ classes, faculties, courseClasses }: { classes: (Option & { facultyId: string })[]; faculties: Option[]; courseClasses: Option[] }) {
+export function StudentForm({ classes, faculties, courseClasses }: { classes: (Option & { facultyId: string; educationSystem: string })[]; faculties: Option[]; courseClasses: (Option & { facultyId: string | null; educationSystem: string })[] }) {
   const [error, action, pending] = useActionFeedback(createStudent, undefined);
   const [faculty, setFaculty] = useState("");
+  const [academicClass, setAcademicClass] = useState("");
+  const selectedClass = classes.find(c => c.id === academicClass);
   return <form className="stack" method="post" onSubmit={e => { e.preventDefault(); const data = new FormData(e.currentTarget); startTransition(() => action(data)); }}>
     <div className="grid" style={{marginTop: 0}}><label className="field">Họ tên<input className="input" name="name" required /></label><label className="field">Mã sinh viên<input className="input" name="studentCode" required /></label></div>
     <label className="field">Email<input className="input" name="email" type="email" required /></label>
     <label className="field">Mật khẩu khởi tạo<input className="input" name="password" type="password" minLength={8} autoComplete="new-password" required /></label>
-    <label className="field">Khoa<select className="input" value={faculty} onChange={e => setFaculty(e.target.value)} required><option value="">Chọn khoa</option>{faculties.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}</select></label>
-    <label className="field">Lớp hành chính<select className="input" name="academicClassId" required key={faculty} disabled={!faculty}><option value="">Chọn lớp hành chính</option>{classes.filter(c => c.facultyId === faculty).map(c => <option key={c.id} value={c.id}>{c.label}</option>)}</select></label>
-    <fieldset className="question"><legend><strong>Đăng ký lớp học phần (không bắt buộc)</strong></legend><p className="muted">Đây là các lớp môn học sinh viên thực sự đăng ký. Có thể bổ sung sau trong hồ sơ học vụ.</p><div className="class-options">{courseClasses.map(c => <label className="option" key={c.id}><input type="checkbox" name="courseClassIds" value={c.id}/>{c.label}</label>)}</div></fieldset>
+    <label className="field">Khoa<select className="input" value={faculty} onChange={e => { setFaculty(e.target.value); setAcademicClass(""); }} required><option value="">Chọn khoa</option>{faculties.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}</select></label>
+    <label className="field">Lớp hành chính<select className="input" name="academicClassId" required value={academicClass} onChange={e => setAcademicClass(e.target.value)} disabled={!faculty}><option value="">Chọn lớp hành chính</option>{classes.filter(c => c.facultyId === faculty).map(c => <option key={c.id} value={c.id}>{c.label}</option>)}</select></label>
+    <fieldset className="question" key={academicClass}><legend><strong>Đăng ký lớp học phần (không bắt buộc)</strong></legend><p className="muted">Sinh viên dùng phân công chung của lớp. Chỉ bổ sung môn khác nếu cần, đúng khoa và hệ học. Đổi nhóm cùng môn tại phần Điều chỉnh môn học riêng.</p>{!selectedClass && <p>Chọn lớp hành chính để xem lớp học phần phù hợp.</p>}<div className="class-options">{courseClasses.filter(c => selectedClass && c.facultyId === selectedClass.facultyId && c.educationSystem === selectedClass.educationSystem).map(c => <label className="option" key={c.id}><input type="checkbox" name="courseClassIds" value={c.id}/>{c.label}</label>)}</div></fieldset>
     {error && <p className="error" role="alert">{error}</p>}<button className="button" disabled={pending}>{pending ? "Đang tạo…" : "Tạo sinh viên"}</button>
   </form>;
 }

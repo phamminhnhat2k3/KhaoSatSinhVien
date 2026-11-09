@@ -35,7 +35,7 @@ export async function getCampaignReport(db: PrismaClient, campaignId: string, le
     const responded = campaign.submissions.filter(s => s.answers.some(a => a.courseId === section.courseId && (a.lecturerId??null)===section.lecturerId));
     if (section.courseId && responded.length < minimum) return [];
     return section.questions.map(question => {
-      const values = responded.flatMap(s => s.answers.filter(a => a.questionId === question.id && a.courseId === section.courseId && (a.lecturerId??null)===section.lecturerId).map(a => a.value));
+      const values = responded.flatMap(s => s.answers.filter(a => a.questionId === question.id && a.courseId === section.courseId && (a.lecturerId??null)===section.lecturerId).map(a => a.value)).filter(value => Array.isArray(value) ? value.length > 0 : value != null && String(value).trim() !== "");
       const strings = values.flatMap(value => Array.isArray(value) ? value.map(String) : [String(value)]).filter(value => value !== "");
       const respondents = values.filter(value=>Array.isArray(value)?value.length>0:value!==""&&value!==null).length;
       const suppressed = respondents < minimum;
