@@ -69,7 +69,7 @@ test.describe("đánh giá giảng viên thực dạy",()=>{
       }
       expect((await page.request.post(`/api/surveys/${campaignId}/submit`,{data:answers})).status()).toBe(201);
     }
-    await login(page,`${tag}-admin@example.invalid`);await page.goto("/admin");const campaignRow=page.locator("section.question").filter({has:page.getByRole("heading",{name:`${tag} khảo sát`,exact:true})});await campaignRow.getByRole("button",{name:"Đóng khảo sát",exact:true}).click();await expect(campaignRow.getByText("Đã đóng",{exact:true})).toBeVisible();
+    await login(page,`${tag}-admin@example.invalid`);await page.goto("/admin");const campaignRow=page.locator("section.question").filter({has:page.getByRole("heading",{name:`${tag} khảo sát`,exact:true})});await campaignRow.getByText("Thao tác khác",{exact:true}).click();await campaignRow.getByRole("button",{name:"Đóng khảo sát",exact:true}).click();await expect(campaignRow.getByText("Đã đóng",{exact:true})).toBeVisible();
     const adminReport=await (await page.request.get(`/api/reports/campaigns/${campaignId}`)).json();expect(adminReport.questions.filter((q:{lecturerId:string|null})=>q.lecturerId).map((q:{average:number})=>q.average).sort()).toEqual([40,80]);
     for(let i=0;i<3;i++){
       await login(page,teachers[i].email);const response=await page.request.get(`/api/reports/campaigns/${campaignId}`);

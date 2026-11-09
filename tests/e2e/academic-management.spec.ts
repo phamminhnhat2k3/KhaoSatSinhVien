@@ -22,7 +22,7 @@ test("hướng dẫn theo quyền, sửa xóa học vụ và biểu đồ tiến
     return page.locator("dialog[open]");
   }
   page.on("dialog", dialog => void dialog.accept());
-  const errors: string[] = []; page.on("pageerror", e => errors.push(e.message));
+  const errors: string[] = []; page.on("pageerror", e => errors.push(`${page.url()}: ${e.message}`));
   try {
     const passwordHash = await hash(password);
     const faculty = await db.faculty.create({ data: { code: tag, name: `Khoa ${tag}` } }); facultyId = faculty.id;

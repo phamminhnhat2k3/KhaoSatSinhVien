@@ -51,6 +51,14 @@ test("quản lý người dùng, sửa/xóa khoa và thông báo trượt đúng
     await campaignFilters.getByRole("link", { name: /^Đang mở/ }).click();
     await expect(page.locator("section.question").getByRole("heading", { name: tag, exact: true })).toHaveCount(0);
     await campaignFilters.getByRole("link", { name: /^Tất cả/ }).click();
+    const campaignRow = page.locator(".admin-campaign-row").filter({ has: page.getByRole("heading", { name: tag, exact: true }) });
+    await expect(campaignRow.getByText("Bản nháp", { exact: true })).toBeVisible();
+    await expect(campaignRow.getByRole("link", { name: "Sửa đợt nháp", exact: true })).toBeHidden();
+    expect(await campaignRow.evaluate(el => el.getBoundingClientRect().height)).toBeLessThan(250);
+    await campaignRow.getByText("Thao tác khác", { exact: true }).click();
+    await expect(campaignRow.getByRole("link", { name: "Sửa đợt nháp", exact: true })).toHaveAttribute("href", /edit=/);
+    await expect(campaignRow.getByRole("link", { name: "Tạo bản sao đợt", exact: true })).toHaveAttribute("href", /copy=/);
+    await campaignRow.getByText("Thao tác khác", { exact: true }).click();
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.screenshot({ path: ".playwright-cli/admin-home-desktop.png", fullPage: true });
     await page.setViewportSize({ width: 390, height: 844 });

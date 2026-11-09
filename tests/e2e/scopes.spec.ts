@@ -122,6 +122,7 @@ test.describe("khảo sát khoa / toàn trường và danh sách sinh viên", ()
     }
     await login(page, "admin");
     const row = page.locator("section.question").filter({ has: page.getByRole("heading", { name: faculty.title, exact: true }) });
+    await row.getByText("Thao tác khác", { exact: true }).click();
     await row.getByRole("button", { name: "Đóng khảo sát", exact: true }).click();
     await expect(row.getByText("Đã đóng", { exact: true })).toBeVisible();
     const report = await (await page.request.get(`/api/reports/campaigns/${faculty.id}`)).json();

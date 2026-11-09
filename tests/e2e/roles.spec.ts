@@ -66,7 +66,7 @@ test.describe("hồ sơ, thông báo và khảo sát xuyên vai trò", () => {
     const row = page.locator("section.question").filter({ has: page.getByRole("heading", { name: tag, exact: true }) });
     await row.getByRole("link", { name: "Xem và công bố", exact: true }).click();
     await page.getByRole("button", { name: "Công bố", exact: true }).click();
-    await expect(row.getByText("Đã công bố", { exact: true })).toBeVisible();
+    await expect(row.getByText("Đang tiếp nhận", { exact: true })).toBeVisible();
     const campaign = await db.surveyCampaign.findFirstOrThrow({ where: { templateId } });
     expect(await db.notification.count({ where: { userId: { in: users.map(u => u.id) } } })).toBe(7);
     await page.goto("/notifications");
@@ -155,6 +155,7 @@ test.describe("hồ sơ, thông báo và khảo sát xuyên vai trò", () => {
       expect(response.status()).toBe(201);
     }
     await login(page, 0);
+    await row.getByText("Thao tác khác", { exact: true }).click();
     await row.getByRole("button", { name: "Đóng khảo sát", exact: true }).click();
     await expect(row.getByText("Đã đóng", { exact: true })).toBeVisible();
     expect(await db.notification.count({ where: { userId: { in: users.map(u => u.id) } } })).toBe(14);
