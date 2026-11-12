@@ -2,6 +2,8 @@
 
 Cập nhật ngày 10/11/2026.
 
+Phần Excel trực tiếp, PDF chuẩn và nhắc tự động đã được bổ sung ngày 13/11/2026. Xem [hướng dẫn cập nhật](BAO_CAO_EXCEL_NHAC_HAN.md). Các giới hạn CSV và nhắc thủ công bên dưới mô tả phiên bản ngày 10/11.
+
 ## Nhập dữ liệu
 
 - Admin mở Nhập dữ liệu hàng loạt. Nhận CSV UTF-8, tối đa 200 KB và 200 dòng. Có thể mở mẫu bằng Excel và lưu lại dưới dạng CSV UTF-8, không nhận trực tiếp XLSX.

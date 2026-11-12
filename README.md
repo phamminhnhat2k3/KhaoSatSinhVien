@@ -71,6 +71,8 @@ Những lần sau, khi dịch vụ `MySQL80` đang chạy, chỉ cần `pnpm dev
 
 ## Chức năng chính
 
+- Có [báo cáo PDF/XLSX chuẩn, nhập Excel trực tiếp và nhắc hạn tự động trong web](docs/BAO_CAO_EXCEL_NHAC_HAN.md). Máy chủ kiểm tra mỗi 15 phút khi đang hoạt động, nhắc đợt còn tối đa 3 ngày. Nút nhắc tay vẫn giữ, tránh nhắc lặp cùng sinh viên trong 24 giờ. Luồng đổi mật khẩu hiện tại không thay đổi.
+
 - Nhập sinh viên, giảng viên và phân công bằng CSV UTF-8 có xem trước, kiểm tra từng dòng và ghi toàn bộ trong giao dịch. Nhắc sinh viên chưa hoàn thành trong web. Đối chiếu giảng viên cùng môn, đối chiếu học kỳ có điều kiện, ghi nhận hướng cải thiện và gửi nhận xét cho Admin. Admin in/lưu PDF để gửi nhà trường. Xem [quy tắc và hướng dẫn khai thác kết quả](docs/KHAI_THAC_KET_QUA.md).
 
 - Auth.js Credentials, mật khẩu Argon2id và phân quyền máy chủ theo `STUDENT`, `LECTURER`, `DEAN`, `ADMIN`.

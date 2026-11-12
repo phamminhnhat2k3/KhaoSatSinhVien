@@ -7,6 +7,7 @@ export async function getCampaignReport(db: PrismaClient, campaignId: string, le
     where: { id: campaignId },
     include: {
       faculty: true,
+      semester: true,
       participations: { select: {teachings:{include:{course:true,lecturer:{select:{user:{select:{name:true}}}}}}, status: true, courses: { select: { courseId: true } } } },
       submissions: { include: { answers: true } },
       template: { include: { questions: { include: { options: true }, orderBy: { position: "asc" } } } },
@@ -53,5 +54,5 @@ export async function getCampaignReport(db: PrismaClient, campaignId: string, le
   });
   if (!rows.length) throw new Error(`Các môn thuộc phạm vi chưa đủ tối thiểu ${minimum} phản hồi để mở báo cáo.`);
   const completed = participants.filter(p => p.status === "COMPLETED").length;
-  return { id: campaign.id, title: campaign.title, evaluationMode:byTeacher?"LECTURER":"COURSE",minimum,sections:sections.filter(s=>s.questions.length).map(s=>({id:s.courseId?`${s.courseId}${s.lecturerId?`:${s.lecturerId}`:""}`:"common",title:s.name||"Nội dung chung",invited:s.invited,responses:campaign.submissions.filter(sub=>sub.answers.some(a=>a.courseId===s.courseId&&(a.lecturerId??null)===s.lecturerId)).length})),course: legacy ? campaign.targets[0]?.class.course.name : campaign.faculty?.name ?? "Toàn trường", invited: participants.length, completed, participationRate: participationRate(completed, participants.length), responses: submissions.length, questions: rows };
+  return { id: campaign.id, title: campaign.title, semester:campaign.semester?.name??"Đợt khảo sát cũ",startsAt:campaign.startsAt.toISOString(),endsAt:campaign.endsAt.toISOString(),evaluationMode:byTeacher?"LECTURER":"COURSE",minimum,sections:sections.filter(s=>s.questions.length).map(s=>({id:s.courseId?`${s.courseId}${s.lecturerId?`:${s.lecturerId}`:""}`:"common",title:s.name||"Nội dung chung",invited:s.invited,responses:campaign.submissions.filter(sub=>sub.answers.some(a=>a.courseId===s.courseId&&(a.lecturerId??null)===s.lecturerId)).length})),course: legacy ? campaign.targets[0]?.class.course.name : campaign.faculty?.name ?? "Toàn trường", invited: participants.length, completed, participationRate: participationRate(completed, participants.length), responses: submissions.length, questions: rows };
 }

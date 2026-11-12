@@ -3,6 +3,10 @@ import { PrismaClient } from "@prisma/client";
 import { hash } from "argon2";
 import { randomUUID } from "node:crypto";
 import { saveResultNote } from "../../src/modules/reporting/notes";
+import ExcelJS from "exceljs";
+import { PDFDocument } from "pdf-lib";
+import { writeFile } from "node:fs/promises";
+import { runAutomaticReminders } from "../../src/modules/notifications/automatic";
 test.use({ actionTimeout: 15000 });
 
 test("nhập CSV, nhắc đúng người, đối chiếu giảng viên và gửi nhận xét theo quyền", async ({ page }) => {
@@ -17,7 +21,7 @@ test("nhập CSV, nhắc đúng người, đối chiếu giảng viên và gửi
     await page.getByLabel("Email", { exact: true }).fill(email); await page.getByLabel("Mật khẩu", { exact: true }).fill(password);
     await page.getByRole("button", { name: "Đăng nhập", exact: true }).click(); await page.waitForURL(/\/(admin|student|lecturer|dean)$/);
   }
-  async function upload(raw: string) { await page.getByLabel("Tệp CSV UTF-8", { exact: true }).setInputFiles({ name: "data.csv", mimeType: "text/csv", buffer: Buffer.from("\uFEFF"+raw) }); await page.getByRole("button", { name: "Kiểm tra và xem trước", exact: true }).click(); }
+  async function upload(raw: string) { await page.getByLabel("Tệp CSV UTF-8 hoặc Excel XLSX", { exact: true }).setInputFiles({ name: "data.csv", mimeType: "text/csv", buffer: Buffer.from("\uFEFF"+raw) }); await page.getByRole("button", { name: "Kiểm tra và xem trước", exact: true }).click(); }
   async function applyImport() { await page.locator('input[name="confirm"]').check(); await page.getByRole("button", { name: "Xác nhận nhập dữ liệu", exact: true }).click(); await expect(page.getByRole("status").filter({ hasText: "Đã nhập thành công" }).first()).toBeVisible(); }
   try {
     const passwordHash = await hash(password);
@@ -54,7 +58,10 @@ test("nhập CSV, nhắc đúng người, đối chiếu giảng viên và gửi
     await page.getByLabel("Mật khẩu khởi tạo chung").fill(password); await applyImport();
     expect(await db.studentProfile.count({ where: { studentCode: `${tag}-NEW`, academicClassId: home.id } })).toBe(1);
     await page.getByRole("combobox", { name: "Loại dữ liệu", exact: true }).selectOption("lecturers");
-    await upload(`name,email,lecturerCode,facultyCode,dean\n${tag} imported GV,${tag.toLowerCase()}-importgv@example.invalid,${tag}-NEWGV,${tag},yes`);
+    const templateResponse=await page.request.get("/api/admin/import-template?kind=lecturers");expect(templateResponse.status()).toBe(200);
+    const teacherBook=new ExcelJS.Workbook();const teacherSheet=teacherBook.addWorksheet("Dữ liệu");teacherSheet.addRows([["name","email","lecturerCode","facultyCode","dean"],[`${tag} imported GV`,`${tag.toLowerCase()}-importgv@example.invalid`,`${tag}-NEWGV`,tag,"yes"]]);
+    await page.getByLabel("Tệp CSV UTF-8 hoặc Excel XLSX",{exact:true}).setInputFiles({name:"giangvien.xlsx",mimeType:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",buffer:Buffer.from(await teacherBook.xlsx.writeBuffer())});
+    await page.getByRole("button",{name:"Kiểm tra và xem trước",exact:true}).click();
     await page.getByLabel("Mật khẩu khởi tạo chung").fill(password); await applyImport();
     const imported = await db.user.findUniqueOrThrow({ where: { email: `${tag.toLowerCase()}-importgv@example.invalid` }, include: { roles: true } }); expect(imported.roles.map(r => r.role)).toContain("DEAN");
     await page.getByRole("combobox", { name: "Loại dữ liệu", exact: true }).selectOption("assignments");
@@ -68,6 +75,10 @@ test("nhập CSV, nhắc đúng người, đối chiếu giảng viên và gửi
     const notifications = await db.notification.findMany({ where: { title: "Nhắc hoàn thành khảo sát", userId: { in: students.map(s => s.id) } } });
     expect(notifications.map(n => n.userId).sort()).toEqual([students[1].id, students[2].id].sort());
     await page.getByRole("button", { name: "Gửi lời nhắc trong web", exact: true }).click(); await expect(page.getByRole("status").filter({ hasText: "24 giờ" }).first()).toBeVisible();
+    await db.surveyCampaign.update({where:{id:open.id},data:{endsAt:new Date(Date.now()+3*86400000)}});
+    const later=new Date(Date.now()+25*3600000);await runAutomaticReminders(db,later);await runAutomaticReminders(db,later);
+    const auto=await db.notification.findMany({where:{title:"Nhắc hạn khảo sát tự động",userId:{in:students.map(s=>s.id)}}});
+    expect(auto.map(n=>n.userId).sort()).toEqual([students[1].id,students[2].id].sort());
 
     await login(dean.email); await page.goto(`/results?campaign=${closed.id}&course=${course.id}&reference=${old.id}`);
     await expect(page.getByRole("table", { name: "Kết quả theo từng tiêu chí", exact: true })).toContainText("3.5");
@@ -97,8 +108,16 @@ test("nhập CSV, nhắc đúng người, đối chiếu giảng viên và gửi
     await expect(saveResultNote(db, { id: teachers[0].id, roles: ["LECTURER"], lecturerId: teachers[0].lecturer!.id, facultyId: faculty.id }, { campaignId: closed.id, courseId: course.id, lecturerIds: [teachers[1].lecturer!.id], title: "Cố xem điểm người khác", observation: "Không được truy cập giảng viên khác", plan: "Không được gửi thay giảng viên khác", send: true })).rejects.toThrow("phạm vi");
     await page.getByLabel("Tiêu đề", { exact: true }).fill(`${tag} cải thiện`); await page.getByLabel("Nhận xét dựa trên kết quả").fill("Tôi cần điều chỉnh thời gian trả bài và phản hồi."); await page.getByLabel("Hướng cải thiện và thời gian dự kiến").fill("Trả nhận xét bài tập trong vòng bảy ngày ở học kỳ tiếp theo."); await page.getByRole("button", { name: "Gửi báo cáo", exact: true }).click(); await page.waitForURL(/\/results\/notes\//);
     await login(admin.email); await page.goto(`/results/notes/${noteId}`); await expect(page.getByRole("button", { name: "In / Lưu PDF để gửi nhà trường" })).toBeVisible();
+    const pdfResponse=await page.request.get(`/api/reports/notes/${noteId}/export?format=pdf`);expect(pdfResponse.status()).toBe(200);expect(pdfResponse.headers()["content-type"]).toBe("application/pdf");
+    await writeFile(".tmp/report-standard-review.pdf",await pdfResponse.body());
+    const pdf=await PDFDocument.load(await pdfResponse.body());expect(pdf.getPageCount()).toBeGreaterThan(0);
+    const xlsxResponse=await page.request.get(`/api/reports/campaigns/${closed.id}/export?format=xlsx`);expect(xlsxResponse.status()).toBe(200);
+    const resultBook=new ExcelJS.Workbook();const resultBytes=await xlsxResponse.body();await resultBook.xlsx.load(resultBytes.buffer.slice(resultBytes.byteOffset,resultBytes.byteOffset+resultBytes.byteLength) as ArrayBuffer);expect(resultBook.getWorksheet("Kết quả")!.rowCount).toBeGreaterThan(1);
+    await page.getByRole("link",{name:"Tải PDF báo cáo",exact:true}).click();
     await page.emulateMedia({ media: "print" }); await expect(page.locator("header.nav")).toBeHidden(); await page.emulateMedia({ media: "screen" });
     await login(students[0].email); await page.goto("/admin/import"); await expect(page).toHaveURL(/\/unauthorized$/);
+    expect((await page.request.get(`/api/reports/notes/${noteId}/export?format=pdf`)).status()).toBe(403);
+    expect((await page.request.get(`/api/reports/campaigns/${closed.id}/export?format=pdf`)).ok()).toBe(false);
     expect(errors).toEqual([]);
   } finally {
     try {

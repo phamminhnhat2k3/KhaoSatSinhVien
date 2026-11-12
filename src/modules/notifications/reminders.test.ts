@@ -3,7 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { remindPending } from "./reminders";
 test("nhắc đúng sinh viên chưa hoàn thành và chặn nhắc lặp hoặc đợt đã đóng", async () => {
   const now = new Date(), campaign = { status: "PUBLISHED", startsAt: new Date(+now-1000), endsAt: new Date(+now+1000), title: "Đợt" };
-  const mock = { surveyCampaign: { findUniqueOrThrow: vi.fn().mockResolvedValue(campaign) }, auditLog: { findFirst: vi.fn().mockResolvedValue(null), create: vi.fn() }, surveyParticipation: { findMany: vi.fn().mockResolvedValue([{ student: { userId: "sv1" } }]) }, notification: { createMany: vi.fn() } };
+  const mock = { surveyCampaign: { findUniqueOrThrow: vi.fn().mockResolvedValue(campaign) }, auditLog: { findFirst: vi.fn().mockResolvedValue(null), create: vi.fn() }, surveyParticipation: { findMany: vi.fn().mockResolvedValue([{ student: { userId: "sv1" } }]) }, notification: { createMany: vi.fn().mockResolvedValue({count:1}) } };
   const tx = mock as unknown as Prisma.TransactionClient;
   expect(await remindPending(tx, "dot", "admin", now)).toBe(1);
   expect(mock.surveyParticipation.findMany.mock.calls[0][0].where.status).toEqual({ not: "COMPLETED" });

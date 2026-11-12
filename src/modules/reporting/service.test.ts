@@ -5,7 +5,7 @@ test("báo cáo môn dùng đúng người đánh giá môn đó và chặn nhó
   vi.stubEnv("MIN_REPORT_RESPONSES", "2");
   const q = { id: "q", content: "Điểm", type: "SCALE", scaleMin: 0, scaleMax: 100, options: [] };
   const courseTargets = ["A", "B"].map(courseId => ({ courseId, course: { code: courseId, name: courseId, classes: [{ lecturerId: `teacher-${courseId}`, semesterId: "semester" }] } }));
-  const campaign = { id: "c", title: "Khoa", scope: "FACULTY", facultyId: "faculty-a", status: "CLOSED", semesterId: "semester", faculty: { name: "CNTT" }, targets: [], courseTargets, template: { questions: [{ ...q, id: "common" }] }, courseTemplate: { questions: [q] },
+  const campaign = { id: "c", title: "Khoa",startsAt:new Date("2026-01-01"),endsAt:new Date("2026-02-01"), scope: "FACULTY", facultyId: "faculty-a", status: "CLOSED", semesterId: "semester", faculty: { name: "CNTT" }, targets: [], courseTargets, template: { questions: [{ ...q, id: "common" }] }, courseTemplate: { questions: [q] },
     participations: [{ status: "COMPLETED", courses: [{ courseId: "A" }, { courseId: "B" }] }, { status: "COMPLETED", courses: [{ courseId: "A" }] }],
     submissions: [{ answers: [{ questionId: "common", courseId: null, value: "50" }, { questionId: "q", courseId: "A", value: "80" }, { questionId: "q", courseId: "B", value: "20" }] }, { answers: [{ questionId: "common", courseId: null, value: "70" }, { questionId: "q", courseId: "A", value: "100" }] }]
   };
