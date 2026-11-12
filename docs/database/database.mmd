@@ -245,3 +245,13 @@ erDiagram
   }
   SurveyCampaign ||--o{ ResultNote : "campaignId"
   User ||--o{ ResultNote : "authorId"
+  PasswordReset {
+    varchar_191 id PK
+    varchar_191 userId FK
+    varchar_191 tokenHash
+    varchar_191 passwordVersion
+    datetime_3 expiresAt
+    datetime_3 usedAt
+    datetime_3 createdAt
+  }
+  User ||--o{ PasswordReset : "userId"

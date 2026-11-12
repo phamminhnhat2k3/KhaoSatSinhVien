@@ -71,6 +71,8 @@ Những lần sau, khi dịch vụ `MySQL80` đang chạy, chỉ cần `pnpm dev
 
 ## Chức năng chính
 
+- [Thu hồi phiên khi đổi mật khẩu và quên mật khẩu qua Gmail](docs/MAT_KHAU_VA_GMAIL.md): link 15 phút, dùng một lần, chỉ lưu băm token. Cần cấu hình Gmail và APP_URL trên máy chủ để gửi thư thật.
+
 - Có [báo cáo PDF/XLSX chuẩn, nhập Excel trực tiếp và nhắc hạn tự động trong web](docs/BAO_CAO_EXCEL_NHAC_HAN.md). Máy chủ kiểm tra mỗi 15 phút khi đang hoạt động, nhắc đợt còn tối đa 3 ngày. Nút nhắc tay vẫn giữ, tránh nhắc lặp cùng sinh viên trong 24 giờ. Luồng đổi mật khẩu hiện tại không thay đổi.
 
 - Nhập sinh viên, giảng viên và phân công bằng CSV UTF-8 có xem trước, kiểm tra từng dòng và ghi toàn bộ trong giao dịch. Nhắc sinh viên chưa hoàn thành trong web. Đối chiếu giảng viên cùng môn, đối chiếu học kỳ có điều kiện, ghi nhận hướng cải thiện và gửi nhận xét cho Admin. Admin in/lưu PDF để gửi nhà trường. Xem [quy tắc và hướng dẫn khai thác kết quả](docs/KHAI_THAC_KET_QUA.md).
@@ -87,7 +89,7 @@ Những lần sau, khi dịch vụ `MySQL80` đang chạy, chỉ cần `pnpm dev
 - Transaction đồng thời tạo phản hồi và ghi nhận hoàn thành; `Submission` không chứa khóa định danh sinh viên.
 - Báo cáo theo phạm vi giảng dạy, chỉ mở sau khi đóng và đủ `MIN_REPORT_RESPONSES` cho từng môn; hỗ trợ CSV với số người được giao và số phiếu thực tế của từng phần. Giảng viên không được xem phần chung của khoa/toàn trường qua báo cáo môn.
 - Giao diện tiếng Việt, responsive và dữ liệu seed cho nghiệm thu.
-- `/profile`: hồ sơ cá nhân cho cả bốn vai trò, thông tin nghiệp vụ chỉ đọc, chỉnh họ tên/liên hệ/đơn vị/giới thiệu/màu bìa và đổi mật khẩu có xác thực mật khẩu cũ. Có tải và căn chỉnh ảnh đại diện. Đổi mật khẩu chưa thu hồi các phiên đã đăng nhập.
+- `/profile`: hồ sơ cá nhân cho cả bốn vai trò, thông tin nghiệp vụ chỉ đọc, chỉnh họ tên/liên hệ/đơn vị/giới thiệu/màu bìa và đổi mật khẩu có xác thực mật khẩu cũ. Có tải và căn chỉnh ảnh đại diện. Đổi hoặc đặt lại mật khẩu vô hiệu hóa các phiên đăng nhập cũ.
 - Thông báo nhanh trong bảng trượt bên phải, có phân trang và đánh dấu đọc. Thông báo trong ứng dụng khi công bố/đóng đợt (sinh viên được mời, giảng viên phụ trách và admin thực hiện), hoặc khi tự đổi mật khẩu. Có bộ lọc, phân trang, đánh dấu đọc theo chủ sở hữu và số chưa đọc tự cập nhật mỗi 30 giây khi trang đang hiển thị. Chưa gửi email/push.
 
 Sau khi cập nhật mã nguồn, dừng dev server rồi chạy `pnpm db:migrate` và `pnpm exec prisma generate` trước khi `pnpm dev`. Các migration mới bổ sung cột/bảng và mở rộng độ dài nội dung, không cần chạy lại seed. Ngày khảo sát được hiểu theo giờ Việt Nam, bao gồm trọn ngày kết thúc.

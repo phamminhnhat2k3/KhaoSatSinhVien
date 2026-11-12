@@ -406,3 +406,15 @@ Table ResultNote {
 
 Ref: ResultNote.campaignId > SurveyCampaign.id
 Ref: ResultNote.authorId > User.id
+
+Table PasswordReset {
+  id "varchar(191)" [pk]
+  userId "varchar(191)" [not null]
+  tokenHash "varchar(191)" [unique, not null]
+  passwordVersion "varchar(191)" [not null]
+  expiresAt "datetime(3)" [not null]
+  usedAt "datetime(3)" [null]
+  createdAt "datetime(3)" [not null]
+}
+
+Ref: PasswordReset.userId > User.id

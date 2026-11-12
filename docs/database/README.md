@@ -30,3 +30,6 @@ Lớp hành chính có educationSystem: REGULAR (CQ), PART_TIME (VLVH), DISTANCE
 # Nhận xét kết quả (10/11/2026)
 
 Thêm ResultNote lưu nhận xét, hướng cải thiện và ảnh chụp số liệu căn cứ. Bản vector SVG, HTML, draw.io, DBML và Mermaid đầy đủ hiện có 29 bảng, 137 cột đang dùng và 48 khóa ngoại. PNG và bản tinh gọn là tài liệu tổng quan cũ. courseId/lecturerId của ResultNote là mã ngữ cảnh, không vẽ thành quan hệ khóa ngoại.
+# Khôi phục mật khẩu
+
+Thêm PasswordReset ngày 13/11/2026, liên kết với User. Chỉ lưu token đã băm, phiên bản mật khẩu và thời hạn, không lưu link hoặc token nguyên bản. Bản sơ đồ đầy đủ hiện có 30 bảng, 144 cột đang dùng và 49 khóa ngoại. PNG và bản tinh gọn cũ chưa phản ánh bảng này.

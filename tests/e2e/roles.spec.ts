@@ -183,7 +183,7 @@ test.describe("hồ sơ, thông báo và khảo sát xuyên vai trò", () => {
     await page.getByLabel("Mật khẩu mới", { exact: true }).fill(newPassword);
     await page.getByLabel("Xác nhận mật khẩu mới", { exact: true }).fill(newPassword);
     await page.getByRole("button", { name: "Đổi mật khẩu", exact: true }).click();
-    await expect(page.getByRole("status")).toHaveText("Đã đổi mật khẩu. Dùng mật khẩu mới cho lần đăng nhập tiếp theo.");
+    await page.waitForURL("**/login?passwordChanged=1");
     await login(page, 1, newPassword);
   });
 });

@@ -5,6 +5,7 @@ import { hash, verify } from "argon2";
 import { requireUser } from "@/lib/access";
 import { db } from "@/lib/db";
 import { profileSchema, passwordSchema } from "@/modules/profile/rules";
+import { signOut } from "@/auth";
 
 export async function updateProfile(_: { ok: boolean; message: string } | undefined, form: FormData) {
   const user = await requireUser();
@@ -33,5 +34,5 @@ export async function updatePassword(_: { ok: boolean; message: string } | undef
       await tx.notification.create({ data: { userId: user.id, title: "Mật khẩu đã được thay đổi", body: "Mật khẩu đăng nhập của bạn vừa được cập nhật từ trang hồ sơ.", href: "/profile" } });
     });
   } catch { return { ok: false, message: "Không thể đổi mật khẩu. Vui lòng thử lại." }; }
-  return { ok: true, message: "Đã đổi mật khẩu. Dùng mật khẩu mới cho lần đăng nhập tiếp theo." };
+  await signOut({ redirectTo: "/login?passwordChanged=1" });
 }
