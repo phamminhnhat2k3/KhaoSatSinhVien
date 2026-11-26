@@ -46,8 +46,10 @@ pnpm db:check
 Khởi động trang web ở `http://localhost:3005`:
 
 ```powershell
-pnpm dev -- --port 3005
+pnpm dev
 ```
+
+Nếu dùng npm, chạy `npm run dev`. Cả hai lệnh đều mở cổng 3005 theo script của dự án.
 
 Tạo dữ liệu mẫu **chỉ trên cơ sở dữ liệu thử nghiệm trống**. Lệnh seed xóa dữ liệu nghiệp vụ hiện có trước khi tạo lại; không chạy trên dữ liệu cần giữ.
 
@@ -59,7 +61,7 @@ Nếu terminal là Command Prompt (CMD, dấu nhắc dạng `C:\KhaoSatSinhVien>
 set "SEED_PASSWORD=THAY_BANG_MAT_KHAU_TOI_THIEU_8_KY_TU"
 pnpm db:seed
 set "SEED_PASSWORD="
-pnpm dev -- --port 3005
+pnpm dev
 ```
 
 Nếu dùng PowerShell 7, dùng:
@@ -68,12 +70,12 @@ Nếu dùng PowerShell 7, dùng:
 $env:SEED_PASSWORD = Read-Host -AsSecureString | ConvertFrom-SecureString -AsPlainText
 pnpm db:seed
 Remove-Item Env:SEED_PASSWORD
-pnpm dev -- --port 3005
+pnpm dev
 ```
 
 Mở `http://localhost:3005`. Dữ liệu seed tạo các tài khoản `admin@demo.vn`, `giangvien@demo.vn` và `sinhvien1@demo.vn` đến `sinhvien5@demo.vn`; tất cả dùng mật khẩu đã nhập qua `SEED_PASSWORD`. Mật khẩu không được lưu trong Git.
 
-Những lần sau, khi dịch vụ `MySQL80` đang chạy, dùng `pnpm dev -- --port 3005`. Giữ terminal mở và nhấn `Ctrl+C` để dừng website. Không cần Docker khi chạy local trực tiếp.
+Những lần sau, khi dịch vụ `MySQL80` đang chạy, dùng `pnpm dev`. Giữ terminal mở và nhấn `Ctrl+C` để dừng website. Không cần Docker khi chạy local trực tiếp.
 
 ## Đưa ứng dụng lên server bằng Docker
 
@@ -138,7 +140,7 @@ MySQL được lưu trong volume `mysql_data`; không xóa volume nếu cần gi
 - `/profile`: hồ sơ cá nhân cho cả bốn vai trò, thông tin nghiệp vụ chỉ đọc, chỉnh họ tên/liên hệ/đơn vị/giới thiệu/màu bìa và đổi mật khẩu có xác thực mật khẩu cũ. Có tải và căn chỉnh ảnh đại diện. Đổi hoặc đặt lại mật khẩu vô hiệu hóa các phiên đăng nhập cũ.
 - Thông báo nhanh trong bảng trượt bên phải, có phân trang và đánh dấu đọc. Thông báo trong ứng dụng khi công bố/đóng đợt (sinh viên được mời, giảng viên phụ trách và admin thực hiện), hoặc khi tự đổi mật khẩu. Có bộ lọc, phân trang, đánh dấu đọc theo chủ sở hữu và số chưa đọc tự cập nhật mỗi 30 giây khi trang đang hiển thị. Chưa gửi email/push.
 
-Sau khi cập nhật mã nguồn local, dừng dev server rồi chạy `pnpm db:migrate` và `pnpm exec prisma generate` trước khi `pnpm dev -- --port 3005`. Các migration mới bổ sung cột/bảng và mở rộng độ dài nội dung, không cần chạy lại seed. Ngày khảo sát được hiểu theo giờ Việt Nam, bao gồm trọn ngày kết thúc.
+Sau khi cập nhật mã nguồn local, dừng dev server rồi chạy `pnpm db:migrate` và `pnpm exec prisma generate` trước khi `pnpm dev`. Các migration mới bổ sung cột/bảng và mở rộng độ dài nội dung, không cần chạy lại seed. Ngày khảo sát được hiểu theo giờ Việt Nam, bao gồm trọn ngày kết thúc.
 
 Xem [hướng dẫn khảo sát theo khoa/toàn trường](docs/KHAO_SAT_THEO_PHAM_VI.md). Sinh viên cũ chưa có lớp hành chính cần được phân lớp trong danh sách sinh viên trước khi nhận đợt khoa; đợt khảo sát cũ và các phản hồi vẫn giữ nguyên. Trường `department` tự nhập trong hồ sơ không quyết định khoa.
 

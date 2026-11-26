@@ -10,6 +10,8 @@ test("Docker deployment keeps secrets outside Git and exposes the documented por
   const gitignore = read(".gitignore");
   const example = read(".env.example");
   const readme = read("README.md");
+  const packageJson = JSON.parse(read("package.json"));
+  const playwright = read("playwright.config.ts");
 
   expect(dockerfile).toContain("EXPOSE 3005");
   expect(dockerfile).toContain('"--port", "3005"');
@@ -23,4 +25,6 @@ test("Docker deployment keeps secrets outside Git and exposes the documented por
   expect(example).not.toContain("vitrung65");
   expect(readme).toContain("docker compose up -d --build");
   expect(readme).toContain("http://localhost:3005");
+  expect(packageJson.scripts.dev).toBe("next dev --port 3005");
+  expect(playwright).toContain("http://127.0.0.1:3005");
 });

@@ -7,7 +7,7 @@ test.use({actionTimeout:15000});
 test("đổi và đặt lại mật khẩu thu hồi cả phiên khác, mã khôi phục chỉ dùng một lần",async({page,browser})=>{
  test.skip(!process.env.ISOLATED_FEATURE_DB,"Chỉ dùng database nghiệm thu riêng.");test.setTimeout(120000);
  const db=new PrismaClient(),tag=`PWD-${randomUUID().slice(0,6)}`,email=`${tag}@example.invalid`,old=randomUUID(),next=randomUUID(),reset=randomUUID();
- const other=await browser.newContext({baseURL:process.env.PLAYWRIGHT_BASE_URL??"http://127.0.0.1:3000"}),b=await other.newPage();let userId="";
+ const other=await browser.newContext({baseURL:process.env.PLAYWRIGHT_BASE_URL??"http://127.0.0.1:3005"}),b=await other.newPage();let userId="";
  const errors:string[]=[];page.on("pageerror",e=>errors.push(e.message));b.on("pageerror",e=>errors.push(e.message));
  async function login(p:Page,password:string){await p.goto("/login");await p.getByLabel("Email",{exact:true}).fill(email);await p.getByLabel("Mật khẩu",{exact:true}).fill(password);await p.getByRole("button",{name:"Đăng nhập",exact:true}).click();await p.waitForURL("**/student",{timeout:15000});}
  try{
@@ -26,7 +26,7 @@ test("đổi và đặt lại mật khẩu thu hồi cả phiên khác, mã khô
   const response=await page.goto(link);expect(response?.headers()["referrer-policy"]).toBe("no-referrer");await page.getByLabel("Mật khẩu mới",{exact:true}).fill(reset);await page.getByLabel("Nhập lại mật khẩu mới",{exact:true}).fill("different-password");await page.getByRole("button",{name:"Đặt lại mật khẩu",exact:true}).click();await expect(page.getByRole("status")).toContainText("Không đặt lại được");
   await page.getByLabel("Mật khẩu mới",{exact:true}).fill(reset);await page.getByLabel("Nhập lại mật khẩu mới",{exact:true}).fill(reset);await page.getByRole("button",{name:"Đặt lại mật khẩu",exact:true}).click();await page.waitForURL("**/login?passwordReset=1",{timeout:15000});expect((await b.request.get("/api/me")).status()).toBe(401);
   await expect(resetPassword(db,{token,password:next,confirmPassword:next})).rejects.toThrow("Liên kết");
-  const replay=await browser.newContext({storageState:stolen,baseURL:process.env.PLAYWRIGHT_BASE_URL??"http://127.0.0.1:3000"});expect((await replay.request.get("/api/me")).status()).toBe(401);await replay.close();
+  const replay=await browser.newContext({storageState:stolen,baseURL:process.env.PLAYWRIGHT_BASE_URL??"http://127.0.0.1:3005"});expect((await replay.request.get("/api/me")).status()).toBe(401);await replay.close();
   await login(page,reset);expect((await page.request.get("/api/me")).status()).toBe(200);
   let unexpected=false;expect(await requestPasswordReset(db,`${tag}-missing@example.invalid`,"http://localhost:3000",async()=>{unexpected=true;})).toBe(resetMessage);expect(unexpected).toBe(false);
   expect(await db.auditLog.count({where:{actorId:userId,action:"RESET_PASSWORD"}})).toBe(1);expect(errors).toEqual([]);
