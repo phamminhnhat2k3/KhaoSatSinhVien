@@ -6,5 +6,5 @@ test("giảng viên đồng giảng xem kết quả chung của môn đúng họ
  expect(canViewCourseResult(course,"actual","other")).toBe(false);
  expect(canViewCourseResult(course,"old","s")).toBe(false);
  expect(canViewCourseResult({classes:[{lecturerId:"old",semesterId:"s"}]},"old","s")).toBe(true);
- expect(canViewCourseResult({...course,lecturers:[{id:"assigned"}]},"assigned","s")).toBe(true);
+ expect(canViewCourseResult({...course,lecturers:[{id:"former"}]},"former","s")).toBe(false);
 });

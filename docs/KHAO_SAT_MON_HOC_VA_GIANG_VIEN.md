@@ -23,7 +23,7 @@
 - Phân biệt rõ kết quả đánh giá cá nhân và kết quả chung của môn; trên thẻ đợt hiện tên môn thuộc phạm vi.
 - Xem phân công lớp học phần hiện tại theo học kỳ, số sinh viên đăng ký và thông báo phân biệt phân công hiện tại với danh sách đã chốt của đợt cũ.
 - Kết quả cá nhân chỉ lấy đúng giảng viên đã chốt trong phiếu, không trộn điểm người cùng dạy và không cho giảng viên mới xem đánh giá cá nhân của người cũ.
-- Kết quả chung của môn cho người phụ trách môn hoặc người thực dạy trong học kỳ được xem. Bổ sung trường hợp đồng giảng; không dùng giảng viên cũ trên trường dữ liệu lịch sử khi lớp đã cập nhật phân công mới.
+- Báo cáo môn học chỉ dành cho giảng viên đang được phân công dạy môn đó trong đúng học kỳ khảo sát; phân công ở học kỳ khác không cấp quyền xem. Nếu đợt đánh giá giảng viên, mỗi người chỉ thấy phần môn–giảng viên của mình. Nếu đợt đánh giá chất lượng môn, điểm vẫn là kết quả chung của môn, không tách theo từng lớp học phần.
 - Báo cáo chỉ mở khi đóng/hết hạn và đủ ngưỡng. Từng phần chưa đủ phản hồi được ghi rõ; từng câu thiếu ngưỡng vẫn ẩn điểm/góp ý.
 - Không hiển thị danh tính sinh viên trong báo cáo. Xuất CSV vẫn áp dụng cùng phạm vi quyền xem.
 

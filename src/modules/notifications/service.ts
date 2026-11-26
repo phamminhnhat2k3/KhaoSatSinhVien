@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 
 export async function notifyCampaign(tx: Prisma.TransactionClient, campaignId: string, actorId: string, event: "PUBLISHED" | "CLOSED") {
-  const campaign = await tx.surveyCampaign.findUniqueOrThrow({ where: { id: campaignId }, include: { courseTargets: { include: { course: { include: { lecturers: true, classes: { include: { lecturer: true, teachings: { include: { lecturer: true } } } } } } } }, targets: { include: { class: { include: { lecturer: true } } } }, participations: { include: { student: true,teachings:{include:{lecturer:{select:{userId:true}}}} } } } });
+  const campaign = await tx.surveyCampaign.findUniqueOrThrow({ where: { id: campaignId }, include: { courseTargets: { include: { course: { include: { classes: { include: { lecturer: true, teachings: { include: { lecturer: true } } } } } } } }, targets: { include: { class: { include: { lecturer: true } } } }, participations: { include: { student: true,teachings:{include:{lecturer:{select:{userId:true}}}} } } } });
   const recipients = new Map<string, string>();
   const lecturerHref = event === "CLOSED" ? `/lecturer?campaign=${campaignId}` : "/lecturer";
   for (const p of campaign.participations) recipients.set(p.student.userId, "/student");
@@ -10,7 +10,6 @@ export async function notifyCampaign(tx: Prisma.TransactionClient, campaignId: s
     if (c.lecturer && !c.teachingConfigured) recipients.set(c.lecturer.userId, lecturerHref);
     for (const teaching of c.teachings ?? []) recipients.set(teaching.lecturer.userId, lecturerHref);
   }
-  if(campaign.evaluationMode!=="LECTURER")for (const t of campaign.courseTargets ?? []) for (const l of t.course.lecturers ?? []) recipients.set(l.userId, lecturerHref);
   if(campaign.evaluationMode==="LECTURER")for(const p of campaign.participations)for(const t of p.teachings??[])recipients.set(t.lecturer.userId,event==="CLOSED"?`/lecturer?campaign=${campaignId}`:"/lecturer");
   if (campaign.facultyId) {
     const deans = await tx.lecturerProfile.findMany({ where: { facultyId: campaign.facultyId, user: { active: true, roles: { some: { role: "DEAN" } } } }, select: { userId: true } });

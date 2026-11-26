@@ -12,7 +12,7 @@ export async function getCampaignReport(db: PrismaClient, campaignId: string, le
       submissions: { include: { answers: true } },
       template: { include: { questions: { include: { options: true }, orderBy: { position: "asc" } } } },
       courseTemplate: { include: { questions: { include: { options: true }, orderBy: { position: "asc" } } } },
-      courseTargets: { include: { course: { include: { lecturers: { select: { id: true } }, classes: { select: { lecturerId: true, semesterId: true,teachingConfigured:true,teachings:{select:{lecturerId:true}} } } } } } },
+      courseTargets: { include: { course: { include: { classes: { select: { lecturerId: true, semesterId: true,teachingConfigured:true,teachings:{select:{lecturerId:true}} } } } } } },
       targets: { include: { class: { include: { course: true } } } }
     }
   });
