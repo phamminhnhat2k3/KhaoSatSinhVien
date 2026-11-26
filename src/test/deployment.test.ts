@@ -14,7 +14,12 @@ test("Docker deployment keeps secrets outside Git and exposes the documented por
   const playwright = read("playwright.config.ts");
 
   expect(dockerfile).toContain("EXPOSE 3005");
+  expect(dockerfile.match(/COPY package\.json pnpm-lock\.yaml pnpm-workspace\.yaml/g)).toHaveLength(2);
+  expect(dockerfile.indexOf("install --yes --no-install-recommends openssl")).toBeLessThan(dockerfile.indexOf("FROM base AS dependencies"));
+  expect(dockerfile).toContain("/app/prisma-generated-client");
+  expect(dockerfile).toContain("$prisma_dir/node_modules/.prisma/client");
   expect(dockerfile).toContain('"--port", "3005"');
+  expect(dockerfile).toContain('CMD ["pnpm", "exec", "next", "start"');
   expect(compose).toContain('"3005:3005"');
   expect(compose).toContain("DATABASE_URL_DOCKER");
   expect(compose).toContain("service_completed_successfully");
