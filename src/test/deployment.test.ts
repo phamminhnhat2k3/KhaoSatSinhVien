@@ -24,6 +24,8 @@ test("Docker deployment keeps secrets outside Git and exposes the documented por
   expect(compose).toContain("DATABASE_URL_DOCKER");
   expect(compose).toContain("service_completed_successfully");
   expect(compose).toContain("mysql_data:/var/lib/mysql");
+  expect(compose).toContain("--lower_case_table_names=1");
+  expect(compose).toContain("avatars_data:/app/.data/avatars");
   expect(dockerignore).toContain(".env*");
   expect(gitignore).toContain(".env*");
   expect(example).toContain("REPLACE_WITH_AT_LEAST_32_RANDOM_CHARACTERS");

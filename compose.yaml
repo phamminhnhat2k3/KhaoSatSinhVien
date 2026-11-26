@@ -1,6 +1,7 @@
 services:
   db:
     image: mysql:8.0
+    command: ["--lower_case_table_names=1"]
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
@@ -40,9 +41,12 @@ services:
       HOSTNAME: 0.0.0.0
     ports:
       - "3005:3005"
+    volumes:
+      - avatars_data:/app/.data/avatars
     depends_on:
       migrate:
         condition: service_completed_successfully
 
 volumes:
   mysql_data:
+  avatars_data:

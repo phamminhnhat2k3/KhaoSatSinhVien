@@ -114,7 +114,7 @@ docker compose up -d --build
 docker compose ps
 ```
 
-MySQL được lưu trong volume `mysql_data`; không xóa volume nếu cần giữ dữ liệu. Có thể xem lỗi khởi động bằng `docker compose logs -f app migrate db`. File `.env` và dữ liệu MySQL không nằm trong Git hoặc image.
+MySQL được lưu trong volume `mysql_data`, ảnh đại diện tải lên được lưu trong `avatars_data`; không xóa các volume này nếu cần giữ dữ liệu. MySQL Docker dùng tên bảng không phân biệt chữ hoa để tương thích bản sao lưu từ MySQL Windows. Có thể xem lỗi khởi động bằng `docker compose logs -f app migrate db`. File `.env` và dữ liệu MySQL không nằm trong Git hoặc image.
 
 
 ## Chức năng chính
