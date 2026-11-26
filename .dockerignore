@@ -1,0 +1,12 @@
+.git
+.env*
+node_modules
+.next
+.data
+.tmp
+.playwright-cli
+playwright-report
+test-results
+coverage
+debug.log
+TAI_KHOAN_MAU.md

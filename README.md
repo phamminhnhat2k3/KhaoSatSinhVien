@@ -2,7 +2,7 @@
 
 Ứng dụng khảo sát sinh viên đang được phát triển theo [phương án kỹ thuật](docs/PHUONG_AN_KY_THUAT_MVP.md). Các luồng trình dựng, học vụ, hồ sơ và thông báo có nghiệm thu Playwright với dữ liệu MySQL riêng. Xem [kết quả rà soát và phần còn thiếu](docs/RA_SOAT_HOAN_THIEN_2026-11-09.md) để phân biệt phần đã hoàn thành và phần chưa triển khai.
 
-## Chạy local
+## Chạy local trên Windows
 
 Yêu cầu: Node.js 22.13 trở lên (khuyến nghị Node.js 24), pnpm và MySQL Server 8.0 trở lên cài trực tiếp trên Windows. MySQL Workbench là công cụ quản lý tùy chọn.
 
@@ -43,6 +43,12 @@ pnpm db:migrate
 pnpm db:check
 ```
 
+Khởi động trang web ở `http://localhost:3005`:
+
+```powershell
+pnpm dev -- --port 3005
+```
+
 Tạo dữ liệu mẫu **chỉ trên cơ sở dữ liệu thử nghiệm trống**. Lệnh seed xóa dữ liệu nghiệp vụ hiện có trước khi tạo lại; không chạy trên dữ liệu cần giữ.
 
 `pnpm db:seed` tự nạp `DATABASE_URL` từ file `.env` ở thư mục gốc dự án. `SEED_PASSWORD` được đặt trong terminal hiện tại; biến môi trường của terminal được ưu tiên hơn giá trị trong `.env`.
@@ -53,7 +59,7 @@ Nếu terminal là Command Prompt (CMD, dấu nhắc dạng `C:\KhaoSatSinhVien>
 set "SEED_PASSWORD=THAY_BANG_MAT_KHAU_TOI_THIEU_8_KY_TU"
 pnpm db:seed
 set "SEED_PASSWORD="
-pnpm dev
+pnpm dev -- --port 3005
 ```
 
 Nếu dùng PowerShell 7, dùng:
@@ -62,12 +68,52 @@ Nếu dùng PowerShell 7, dùng:
 $env:SEED_PASSWORD = Read-Host -AsSecureString | ConvertFrom-SecureString -AsPlainText
 pnpm db:seed
 Remove-Item Env:SEED_PASSWORD
-pnpm dev
+pnpm dev -- --port 3005
 ```
 
-Mở `http://localhost:3000`. Dữ liệu seed tạo các tài khoản `admin@demo.vn`, `giangvien@demo.vn` và `sinhvien1@demo.vn` đến `sinhvien5@demo.vn`; tất cả dùng mật khẩu đã nhập qua `SEED_PASSWORD`. Mật khẩu không được lưu trong Git.
+Mở `http://localhost:3005`. Dữ liệu seed tạo các tài khoản `admin@demo.vn`, `giangvien@demo.vn` và `sinhvien1@demo.vn` đến `sinhvien5@demo.vn`; tất cả dùng mật khẩu đã nhập qua `SEED_PASSWORD`. Mật khẩu không được lưu trong Git.
 
-Những lần sau, khi dịch vụ `MySQL80` đang chạy, chỉ cần `pnpm dev`. Giữ terminal mở và nhấn `Ctrl+C` để dừng website. Không cần Docker.
+Những lần sau, khi dịch vụ `MySQL80` đang chạy, dùng `pnpm dev -- --port 3005`. Giữ terminal mở và nhấn `Ctrl+C` để dừng website. Không cần Docker khi chạy local trực tiếp.
+
+## Đưa ứng dụng lên server bằng Docker
+
+Server cần Git, Docker Engine và Docker Compose plugin đã cài. Các lệnh bên dưới chạy trong terminal Linux của server. Không đưa file `.env` lên GitHub hoặc chép nó vào image Docker.
+
+1. Tải dự án và tạo file cấu hình bí mật:
+
+```bash
+git clone https://github.com/phamminhnhat2k3/KhaoSatSinhVien.git
+cd KhaoSatSinhVien
+cp .env.example .env
+openssl rand -hex 32
+openssl rand -hex 24
+openssl rand -hex 24
+```
+
+2. Mở `.env` bằng `nano .env`. Thay các giá trị `CHANGE_THIS...` và `REPLACE...` bằng các chuỗi vừa tạo, theo thứ tự: mật khẩu MySQL root, mật khẩu MySQL của ứng dụng, rồi `AUTH_SECRET`. Dùng mật khẩu ứng dụng đó thay `YOUR_URL_ENCODED_MYSQL_PASSWORD` trong `DATABASE_URL_DOCKER`. Không dùng mật khẩu MySQL root cho ứng dụng. Mật khẩu hex do `openssl rand -hex` tạo không cần mã hóa ký tự URL.
+
+3. Nếu triển khai qua tên miền, sửa `APP_URL` thành địa chỉ HTTPS thực tế, ví dụ `https://khaosat.example.edu.vn`. Không để mật khẩu, `AUTH_SECRET` hoặc thông tin Gmail trong lệnh terminal hay tài liệu công khai.
+
+4. Build và khởi chạy:
+
+```bash
+docker compose up -d --build
+docker compose ps
+docker compose logs --tail=100 migrate app
+```
+
+Lần đầu, Compose tạo MySQL kèm vùng lưu dữ liệu bền vững, đợi database sẵn sàng, áp dụng migration rồi mới khởi động web. Mở `http://IP-SERVER:3005`. Để dùng HTTPS với tên miền, đặt reverse proxy phía trước ứng dụng và cho proxy chuyển tiếp đến cổng `3005`.
+
+5. Khi cập nhật phiên bản sau này:
+
+```bash
+git pull
+docker compose up -d --build
+docker compose ps
+```
+
+MySQL được lưu trong volume `mysql_data`; không xóa volume nếu cần giữ dữ liệu. Có thể xem lỗi khởi động bằng `docker compose logs -f app migrate db`. File `.env` và dữ liệu MySQL không nằm trong Git hoặc image.
+
 
 ## Chức năng chính
 
@@ -92,7 +138,7 @@ Những lần sau, khi dịch vụ `MySQL80` đang chạy, chỉ cần `pnpm dev
 - `/profile`: hồ sơ cá nhân cho cả bốn vai trò, thông tin nghiệp vụ chỉ đọc, chỉnh họ tên/liên hệ/đơn vị/giới thiệu/màu bìa và đổi mật khẩu có xác thực mật khẩu cũ. Có tải và căn chỉnh ảnh đại diện. Đổi hoặc đặt lại mật khẩu vô hiệu hóa các phiên đăng nhập cũ.
 - Thông báo nhanh trong bảng trượt bên phải, có phân trang và đánh dấu đọc. Thông báo trong ứng dụng khi công bố/đóng đợt (sinh viên được mời, giảng viên phụ trách và admin thực hiện), hoặc khi tự đổi mật khẩu. Có bộ lọc, phân trang, đánh dấu đọc theo chủ sở hữu và số chưa đọc tự cập nhật mỗi 30 giây khi trang đang hiển thị. Chưa gửi email/push.
 
-Sau khi cập nhật mã nguồn, dừng dev server rồi chạy `pnpm db:migrate` và `pnpm exec prisma generate` trước khi `pnpm dev`. Các migration mới bổ sung cột/bảng và mở rộng độ dài nội dung, không cần chạy lại seed. Ngày khảo sát được hiểu theo giờ Việt Nam, bao gồm trọn ngày kết thúc.
+Sau khi cập nhật mã nguồn local, dừng dev server rồi chạy `pnpm db:migrate` và `pnpm exec prisma generate` trước khi `pnpm dev -- --port 3005`. Các migration mới bổ sung cột/bảng và mở rộng độ dài nội dung, không cần chạy lại seed. Ngày khảo sát được hiểu theo giờ Việt Nam, bao gồm trọn ngày kết thúc.
 
 Xem [hướng dẫn khảo sát theo khoa/toàn trường](docs/KHAO_SAT_THEO_PHAM_VI.md). Sinh viên cũ chưa có lớp hành chính cần được phân lớp trong danh sách sinh viên trước khi nhận đợt khoa; đợt khảo sát cũ và các phản hồi vẫn giữ nguyên. Trường `department` tự nhập trong hồ sơ không quyết định khoa.
 
