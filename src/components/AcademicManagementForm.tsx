@@ -12,7 +12,7 @@ export function AcademicManagementForm({ kind, item, faculties = [], semesters =
   return <form action={action} className="stack" onSubmit={e => { if (remove && !window.confirm(`Xóa ${label} ${item.name ?? item.code}? Chỉ xóa được khi không còn dữ liệu phụ thuộc.`)) e.preventDefault(); }}>
     <input type="hidden" name="kind" value={kind}/><input type="hidden" name="id" value={item.id}/><input type="hidden" name="operation" value={remove ? "delete" : "update"}/>
     {!remove && <>
-      {kind !== "Semester" && <label className="field">Mã {label}<input className="input" name="code" defaultValue={item.code} minLength={2} maxLength={kind === "AcademicClass" ? 30 : 60} required/></label>}
+      {kind !== "Semester" && <label className="field">{kind === "CourseClass" ? "Mã lớp học phần" : `Mã ${label}`}<input className="input" name="code" defaultValue={item.code} minLength={2} maxLength={kind === "AcademicClass" || kind === "CourseClass" ? 30 : 60} required/></label>}
       {kind !== "CourseClass" && <label className="field">Tên {label}<input className="input" name="name" defaultValue={item.name} minLength={3} maxLength={120} required/></label>}
       {kind === "Semester" && <><label className="field">Ngày bắt đầu<input className="input" type="date" name="startsAt" defaultValue={item.startsAt} required/></label><label className="field">Ngày kết thúc<input className="input" type="date" name="endsAt" defaultValue={item.endsAt} required/></label><p className="muted">Học kỳ đã có dữ liệu chỉ đổi được tên, giữ nguyên thời gian để bảo toàn phân công và khảo sát.</p></>}
       {(kind === "AcademicClass" || kind === "Course") && select("facultyId", "Khoa", faculties, item.facultyId)}

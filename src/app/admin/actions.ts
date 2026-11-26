@@ -33,13 +33,13 @@ export async function createCourseClass(_: string | undefined, formData: FormDat
   try {
     await db.$transaction(async tx => {
       const existing = await tx.course.findUnique({ where: { code: parsed.data.courseCode } });
-      if (existing && existing.name !== parsed.data.courseName) throw new Error("Mã học phần đã có tên khác. Vui lòng sử dụng đúng tên học phần hiện có.");
-      if (existing?.facultyId && existing.facultyId !== parsed.data.facultyId) throw new Error("Mã học phần thuộc khoa khác.");
+      if (existing && existing.name !== parsed.data.courseName) throw new Error("Mã môn học đã có tên khác. Vui lòng sử dụng đúng tên môn hiện có.");
+      if (existing?.facultyId && existing.facultyId !== parsed.data.facultyId) throw new Error("Mã môn học thuộc khoa khác.");
       const course = existing ? await tx.course.update({ where: { id: existing.id }, data: { facultyId: parsed.data.facultyId } }) : await tx.course.create({ data: { code: parsed.data.courseCode, name: parsed.data.courseName, facultyId: parsed.data.facultyId } });
       const item = await tx.courseClass.create({ data: { code: parsed.data.classCode, courseId: course.id, semesterId: parsed.data.semesterId, educationSystem: parsed.data.educationSystem, capacity: parsed.data.capacity } });
       await tx.auditLog.create({ data: { actorId: user.id, action: "CREATE", entity: "CourseClass", entityId: item.id } });
     });
-  } catch (e) { return e instanceof Error && e.message.startsWith("Mã học phần") ? e.message : "Không thể tạo lớp. Kiểm tra mã lớp trùng hoặc học kỳ, giảng viên đã thay đổi."; }
+  } catch (e) { return e instanceof Error && e.message.startsWith("Mã môn học") ? e.message : "Không thể tạo lớp. Kiểm tra mã lớp trùng hoặc học kỳ, giảng viên đã thay đổi."; }
   revalidatePath("/admin"); revalidatePath("/admin/classes/new");
   await flashActionToast("Đã tạo lớp học phần."); redirect("/admin/classes/new?saved=1");
 }

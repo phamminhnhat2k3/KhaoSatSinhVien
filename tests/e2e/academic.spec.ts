@@ -63,8 +63,8 @@ test.describe("trang học vụ và ghi danh", () => {
     await expect(semesterForm.getByRole("status")).toHaveText("Đã tạo học kỳ.");
     await page.goto("/admin/classes/new");
     async function fillClass(name: string, code: string) {
-      await page.getByLabel("Mã học phần", { exact: true }).fill(tag);
-      await page.getByLabel("Tên học phần", { exact: true }).fill(name);
+      await page.getByLabel("Mã môn học", { exact: true }).fill(tag);
+      await page.getByLabel("Tên môn học", { exact: true }).fill(name);
       await page.getByLabel("Mã lớp học phần", { exact: true }).fill(code);
       await page.getByRole("combobox", { name: "Học kỳ", exact: true }).selectOption(semesterId);
       await page.getByRole("combobox", { name: "Khoa", exact: true }).selectOption(facultyId);
@@ -76,7 +76,7 @@ test.describe("trang học vụ và ghi danh", () => {
     await expect(page.getByRole("status")).toHaveText("Đã tạo lớp học phần.");
     const courseClass = await db.courseClass.findUniqueOrThrow({ where: { code: `${tag}.01` } });
     await fillClass("Tên không được ghi đè", `${tag}.02`);
-    await expect(page.locator("main").getByRole("alert")).toContainText("Mã học phần đã có tên khác");
+    await expect(page.locator("main").getByRole("alert")).toContainText("Mã môn học đã có tên khác");
     expect((await db.course.findUniqueOrThrow({ where: { code: tag } })).name).toBe(`Học phần ${tag}`);
     await page.goto("/admin/students/new");
     await page.getByLabel("Họ tên", { exact: true }).fill(`Sinh viên ${tag}`);

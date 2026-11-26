@@ -12,7 +12,7 @@ const id = z.string().min(1);
 const semester = z.object({ name, startsAt: z.iso.date(), endsAt: z.iso.date() }).refine(v => v.endsAt >= v.startsAt, "Ngày kết thúc không được trước ngày bắt đầu.");
 const academicClass = z.object({ code: code.pipe(z.string().max(30)), name, facultyId: id, educationSystem: educationSystemSchema });
 const course = z.object({ code, name, facultyId: id });
-const courseClass = z.object({ code, courseId: id, semesterId: id, educationSystem: educationSystemSchema, capacity: z.coerce.number().int().min(1).max(10000) });
+const courseClass = z.object({ code: code.pipe(z.string().max(30)), courseId: id, semesterId: id, educationSystem: educationSystemSchema, capacity: z.coerce.number().int().min(1).max(10000) });
 const request = z.object({ id, kind: z.enum(["Semester", "AcademicClass", "Course", "CourseClass"]), operation: z.enum(["update", "delete"]) });
 const inUse = (counts: Record<string, number>) => Object.values(counts).some(n => n > 0);
 
@@ -68,7 +68,7 @@ export async function manageAcademic(_: string | undefined, form: FormData) {
       } else {
         const old = await tx.courseClass.findUniqueOrThrow({ where: { id }, include: { _count: { select: { enrollments: true, academicAssignments: true, targets: true, teachings: true } } } });
         if (remove) {
-          if (old._count.enrollments || old._count.academicAssignments || old._count.targets) throw new Error("Không thể xóa lớp học phần còn ghi danh, phân công lớp hành chính hoặc đích khảo sát.");
+          if (old._count.enrollments || old._count.academicAssignments || old._count.targets || old._count.teachings || old.lecturerId) throw new Error("Không thể xóa lớp học phần còn ghi danh, phân công giảng viên, phân công lớp hành chính hoặc đích khảo sát.");
           await tx.courseClass.delete({ where: { id } });
         } else {
           const data = courseClass.parse(raw);

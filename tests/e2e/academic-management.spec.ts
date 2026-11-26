@@ -10,7 +10,7 @@ test("hướng dẫn theo quyền, sửa xóa học vụ và biểu đồ tiến
   expect(new URL(process.env.DATABASE_URL!).pathname).toBe(`/${process.env.ISOLATED_FEATURE_DB}`);
   const db = new PrismaClient(), tag = `EDIT-${randomUUID().slice(0, 6)}`.toUpperCase(), password = randomUUID();
   const userIds: string[] = [];
-  let facultyId = "", semesterId = "", homeId = "", courseId = "", groupId = "", templateId = "", campaignId = "";
+  let facultyId = "", semesterId = "", homeId = "", courseId = "", altCourseId = "", groupId = "", templateId = "", campaignId = "";
   async function login(email: string) {
     await page.context().clearCookies(); await page.goto("/login");
     await page.getByLabel("Email", { exact: true }).fill(email); await page.getByLabel("Mật khẩu", { exact: true }).fill(password);
@@ -29,10 +29,12 @@ test("hướng dẫn theo quyền, sửa xóa học vụ và biểu đồ tiến
     const semester = await db.semester.create({ data: { name: tag, startsAt: new Date("2026-01-01T00:00:00+07:00"), endsAt: new Date("2026-06-01T23:59:59.999+07:00") } }); semesterId = semester.id;
     const home = await db.academicClass.create({ data: { code: tag, name: tag, facultyId } }); homeId = home.id;
     const course = await db.course.create({ data: { code: tag, name: tag, facultyId } }); courseId = course.id;
+    const altCourse = await db.course.create({ data: { code: `${tag}-ALT`, name: `${tag} môn khác`, facultyId } }); altCourseId = altCourse.id;
     const group = await db.courseClass.create({ data: { code: tag, courseId, semesterId } }); groupId = group.id;
     const admin = await db.user.create({ data: { name: tag, email: `${tag}-admin@example.invalid`, passwordHash, roles: { create: { role: "ADMIN" } } } }); userIds.push(admin.id);
     const student = await db.user.create({ data: { name: tag, email: `${tag}-sv@example.invalid`, passwordHash, roles: { create: { role: "STUDENT" } }, student: { create: { studentCode: tag, academicClassId: homeId } } }, include: { student: true } }); userIds.push(student.id);
     const lecturer = await db.user.create({ data: { name: tag, email: `${tag}-gv@example.invalid`, passwordHash, roles: { create: { role: "LECTURER" } }, lecturer: { create: { lecturerCode: tag, facultyId } } } }); userIds.push(lecturer.id);
+    const lecturerProfile = await db.lecturerProfile.findUniqueOrThrow({ where: { userId: lecturer.id } });
     const dean = await db.user.create({ data: { name: tag, email: `${tag}-tk@example.invalid`, passwordHash, roles: { create: [{ role: "DEAN" }, { role: "LECTURER" }] }, lecturer: { create: { lecturerCode: `${tag}-TK`, facultyId } } } }); userIds.push(dean.id);
     for (const [user, title] of [[student, "Sinh viên"], [lecturer, "Giảng viên"], [dean, "Trưởng khoa"], [admin, "Quản trị viên"]] as const) {
       await login(user.email); await page.goto("/help");
@@ -60,15 +62,25 @@ test("hướng dẫn theo quyền, sửa xóa học vụ và biểu đồ tiến
     await expect(dialog.getByRole("status")).toHaveText("Đã cập nhật danh mục.");
     await dialog.getByRole("button", { name: "Đóng chỉnh sửa" }).click();
     dialog = await edit(`Sửa lớp học phần ${tag}`);
+    await dialog.getByLabel("Mã lớp học phần", { exact: true }).fill(`${tag}.02`);
     await dialog.getByLabel("Sĩ số", { exact: true }).fill("35");
     await dialog.getByRole("button", { name: "Lưu lớp học phần", exact: true }).click();
     await expect(dialog.getByRole("status")).toHaveText("Đã cập nhật danh mục.");
-    expect((await db.courseClass.findUniqueOrThrow({ where: { id: groupId } })).capacity).toBe(35);
+    expect(await db.courseClass.findUniqueOrThrow({ where: { id: groupId } })).toMatchObject({ capacity: 35, code: `${tag}.02` });
+    await db.courseTeaching.create({ data: { classId: groupId, lecturerId: lecturerProfile.id } });
+    await dialog.getByLabel("Môn học", { exact: true }).selectOption(altCourseId);
+    await dialog.getByRole("button", { name: "Lưu lớp học phần", exact: true }).click();
+    await expect(dialog.getByRole("status")).toContainText("Không thể đổi môn");
+    expect((await db.courseClass.findUniqueOrThrow({ where: { id: groupId } })).courseId).toBe(courseId);
+    await dialog.getByRole("button", { name: "Xóa lớp học phần", exact: true }).click();
+    await expect(dialog.getByRole("status").last()).toContainText("Không thể xóa lớp học phần còn");
+    await db.courseTeaching.deleteMany({ where: { classId: groupId } });
     await dialog.getByRole("button", { name: "Xóa lớp học phần", exact: true }).click();
     await expect.poll(() => db.courseClass.count({ where: { id: groupId } })).toBe(0);
     dialog = await edit(`Sửa môn học ${tag}`);
     await dialog.getByRole("button", { name: "Xóa môn học", exact: true }).click();
     await expect.poll(() => db.course.count({ where: { id: courseId } })).toBe(0);
+    await db.course.delete({ where: { id: altCourseId } });
     await page.goto("/admin/academic"); dialog = await edit(`Sửa học kỳ ${tag} đã sửa`);
     await dialog.getByRole("button", { name: "Xóa học kỳ", exact: true }).click();
     await expect.poll(() => db.semester.count({ where: { id: semesterId } })).toBe(0);
@@ -98,7 +110,7 @@ test("hướng dẫn theo quyền, sửa xóa học vụ và biểu đồ tiến
   } finally {
     await db.surveyCampaign.deleteMany({ where: { id: campaignId } });
     await db.surveyTemplate.deleteMany({ where: { id: templateId } });
-    await db.courseClass.deleteMany({ where: { id: groupId } }); await db.course.deleteMany({ where: { id: courseId } });
+    await db.courseClass.deleteMany({ where: { id: groupId } }); await db.course.deleteMany({ where: { id: { in: [courseId, altCourseId].filter(Boolean) } } });
     await db.auditLog.deleteMany({ where: { actorId: { in: userIds } } }); await db.user.deleteMany({ where: { id: { in: userIds } } });
     await db.academicClass.deleteMany({ where: { id: homeId } }); await db.semester.deleteMany({ where: { id: semesterId } }); await db.faculty.deleteMany({ where: { id: facultyId } });
     await db.$disconnect();
