@@ -22,6 +22,7 @@ test("Docker deployment keeps secrets outside Git and exposes the documented por
   expect(dockerfile).toContain('CMD ["pnpm", "exec", "next", "start"');
   expect(compose).toContain('"3005:3005"');
   expect(compose).toContain("DATABASE_URL_DOCKER");
+  expect(compose).toContain("AUTH_URL: ${APP_URL:-http://localhost:3005}");
   expect(compose).toContain("service_completed_successfully");
   expect(compose).toContain("mysql_data:/var/lib/mysql");
   expect(compose).toContain("--lower_case_table_names=1");

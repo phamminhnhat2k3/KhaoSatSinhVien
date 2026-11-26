@@ -37,6 +37,7 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL_DOCKER:?Set DATABASE_URL_DOCKER in .env}
       APP_URL: ${APP_URL:-http://localhost:3005}
+      AUTH_URL: ${APP_URL:-http://localhost:3005}
       PORT: "3005"
       HOSTNAME: 0.0.0.0
     ports:
