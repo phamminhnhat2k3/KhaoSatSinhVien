@@ -61,20 +61,34 @@ export function UnsavedChangesGuard() {
     };
     const click = (event: MouseEvent) => {
       const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[href]") : null;
-      if (!link || event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || link.target && link.target !== "_self" || link.hasAttribute("download") || !entries().length && !trapped) return;
+      if (!link || event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || link.target && link.target !== "_self" || link.hasAttribute("download")) return;
       const target = new URL(link.href, location.href), current = new URL(location.href);
+      const filterLink = target.origin === current.origin && target.pathname === current.pathname && target.search !== current.search && !target.hash;
+      if (!filterLink && !entries().length && !trapped) return;
       if (target.protocol !== "http:" && target.protocol !== "https:" || target.pathname === current.pathname && target.search === current.search && target.origin === current.origin) return;
       event.preventDefault(); event.stopPropagation();
-      const go = () => target.origin === current.origin ? router.push(target.pathname + target.search + target.hash) : location.assign(target.href);
+      const go = () => target.origin === current.origin ? router.push(target.pathname + target.search + target.hash, { scroll: !filterLink }) : location.assign(target.href);
       if (entries().length) ask(go); else release.current(go);
     };
     const submit = (event: SubmitEvent) => {
       const form = event.target as HTMLFormElement;
       if (allowed.has(form)) { allowed.delete(form); submissions.set(form, formSnapshot(new FormData(form))); return; }
       if (afterRelease) { event.preventDefault(); event.stopPropagation(); return; }
+      const target = new URL(form.action, location.href);
+      const filter = form.method.toLowerCase() === "get" && target.origin === location.origin && target.pathname === location.pathname && (!form.target || form.target === "_self");
       const other = entries().some(([dirty]) => dirty !== form);
-      const send = () => { allowed.add(form); form.requestSubmit(event.submitter instanceof HTMLButtonElement || event.submitter instanceof HTMLInputElement ? event.submitter : undefined); };
+      const send = () => {
+        if (filter) {
+          const data = new FormData(form, event.submitter);
+          target.search = new URLSearchParams([...data].map(([key, value]) => [key, typeof value === "string" ? value : value.name])).toString();
+          router.push(target.pathname + target.search + target.hash, { scroll: false });
+        } else {
+          allowed.add(form);
+          form.requestSubmit(event.submitter instanceof HTMLButtonElement || event.submitter instanceof HTMLInputElement ? event.submitter : undefined);
+        }
+      };
       if (other) { event.preventDefault(); event.stopPropagation(); ask(send); }
+      else if (filter) { event.preventDefault(); event.stopPropagation(); release.current(send); }
       else submissions.set(form, formSnapshot(new FormData(form)));
     };
     const saved = (event: Event) => {
