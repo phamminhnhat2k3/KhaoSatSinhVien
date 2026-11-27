@@ -43,6 +43,13 @@ test.describe("đánh giá giảng viên thực dạy",()=>{
     campaignId=(await db.surveyCampaign.findFirstOrThrow({where:{title:`${tag} khảo sát`}})).id;
     await page.goto(`/admin/campaigns/${campaignId}/review`);await expect(page.getByText("Cần sửa phân công trước khi công bố",{exact:true})).toBeVisible();await expect(page.getByRole("button",{name:"Công bố",exact:true})).toHaveCount(0);await expect(page.locator("main")).toContainText("Chưa phân công");expect(await db.surveyParticipation.count({where:{campaignId}})).toBe(0);
     await page.goto(`/admin/classes/new?q=${encodeURIComponent(tag)}&semesterId=${semesterId}&facultyId=${facultyId}&assigned=no`);await expect(page.locator("main table").first().locator("tbody tr")).toHaveCount(1);await expect(page.locator("main table").first().locator("tbody tr")).toContainText(`${tag}.0`);
+    const previousTeaching = await db.courseTeaching.findMany({ where: { classId: classes[2] } });
+    await db.courseTeaching.deleteMany({ where: { classId: classes[2] } });
+    await db.courseClass.update({ where: { id: classes[2] }, data: { teachingConfigured: true } });
+    await page.reload();
+    await expect(page.locator("main table").first().locator("tbody tr")).toHaveCount(2);
+    await expect(page.locator("main table").first()).toContainText(`${tag}.2`);
+    await db.courseTeaching.createMany({ data: previousTeaching.map(({ classId, lecturerId }) => ({ classId, lecturerId })) });
     await page.goto(`/admin/classes/new?q=${encodeURIComponent(tag)}`);const row=page.locator("main tbody tr").filter({has:page.getByText(`${tag}.0`,{exact:true})});await row.getByText("Phân công / Cập nhật",{exact:true}).click();
     await row.getByRole("combobox",{name:"Giảng viên thực dạy",exact:true}).selectOption(teachers[0].id);
     await row.getByRole("button",{name:"Lưu phân công",exact:true}).click();await expect(row.getByRole("status")).toContainText("Đã cập nhật");

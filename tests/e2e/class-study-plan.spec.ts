@@ -61,8 +61,16 @@ test.describe("phân công chung theo lớp và ngoại lệ sinh viên", () => 
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
     await page.setViewportSize({width:1440,height:1000});
     await page.screenshot({path:".playwright-cli/assignment-single-teacher.png",fullPage:true});
+    const courseSearch = page.getByRole("searchbox", { name: "Tìm môn hoặc giảng viên", exact: true });
+    await courseSearch.fill("không có môn phù hợp");
+    await expect(page.getByText("Không tìm thấy môn hoặc giảng viên phù hợp.", { exact: true })).toBeVisible();
+    await expect(firstCourse).toBeHidden();
     await page.getByRole("button", { name: "Lưu phân công cho lớp", exact: true }).click();
     await expect(page.locator("main").getByRole("status")).toContainText("Đã lưu phân công chung");
+    await page.getByRole("combobox", { name: "Học kỳ phân công", exact: true }).selectOption("");
+    await page.getByRole("combobox", { name: "Học kỳ phân công", exact: true }).selectOption(semesterId);
+    await expect(page.getByRole("combobox", { name: "Khoa của lớp", exact: true })).toHaveValue(facultyId);
+    await expect(page.getByRole("combobox", { name: "Lớp hành chính được phân công", exact: true })).toHaveValue(homeId);
     expect(await db.enrollment.count({ where: { studentId: { in: students.map(s => s.id) } } })).toBe(0);
     await page.goto(`/admin/students/${students[1].id}`);
     const adjustment = page.locator("section").filter({ has: page.getByRole("heading", { name: "Điều chỉnh môn học riêng", exact: true }) });

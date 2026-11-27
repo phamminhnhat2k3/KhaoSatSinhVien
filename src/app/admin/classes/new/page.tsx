@@ -17,7 +17,7 @@ export default async function NewClassPage({ searchParams }: { searchParams: Pro
   if (p.semesterId) filters.push({ semesterId: p.semesterId });
   if (p.facultyId) filters.push({ course: { facultyId: p.facultyId } });
   if (p.assigned === "yes") filters.push({ OR: [{ teachings: { some: {} } }, { teachingConfigured: false, lecturerId: { not: null } }] });
-  if (p.assigned === "no") filters.push({ teachings: { none: {} }, lecturerId: null });
+  if (p.assigned === "no") filters.push({ teachings: { none: {} }, OR: [{ teachingConfigured: true }, { lecturerId: null }] });
   const [semesters, faculties, classes,teachers,courses] = await Promise.all([db.semester.findMany({ orderBy: { startsAt: "desc" } }), db.faculty.findMany({ orderBy: { name: "asc" } }), db.courseClass.findMany({ where: filters.length ? { AND: filters } : undefined, include: {teachings:{include:{lecturer:{include:{user:true}}}},lecturer:{include:{user:true}}, course: { include: { faculty: true } }, semester: true, _count: { select: { enrollments: true } } }, orderBy: { code: "asc" } }),db.lecturerProfile.findMany({where:{user:{active:true,roles:{some:{role:"LECTURER"}}}},include:{user:{select:{name:true}}},orderBy:{lecturerCode:"asc"}}),db.course.findMany({ include: { faculty: true, _count: { select: { classes: true } } }, orderBy: { code: "asc" } })]);
   return <AppShell name={user.name} role="Quản trị viên" wide>
     <div className="section-heading"><Link className="text-button" href="/admin">← Trung tâm điều hành</Link><Link className="text-button" href="/admin/academic">Khoa / Lớp hành chính / Học kỳ →</Link></div>

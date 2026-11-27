@@ -11,6 +11,9 @@ type ClassOption = Option & { facultyId: string; educationSystem: string; assign
 
 function CourseAssignments({ groups, selectedIds, system }: { groups: StudyGroup[]; selectedIds: string[]; system: string }) {
   const courses = groupStudyCourses(groups);
+  const [search, setSearch] = useState("");
+  const query = search.trim().toLocaleLowerCase("vi");
+  const visibleCourses = courses.filter(course => [course.code, course.name, ...course.groups.flatMap(group => [group.code, group.teacherName])].join(" ").toLocaleLowerCase("vi").includes(query));
   const initial = Object.fromEntries(courses.map(course => {
     const chosen = course.groups.filter(g => selectedIds.includes(g.id));
     return [course.id, chosen.length === 1 ? chosen[0].id : ""];
@@ -20,11 +23,13 @@ function CourseAssignments({ groups, selectedIds, system }: { groups: StudyGroup
   return <>
     <div className={styles.summary}><strong>{Object.values(choices).filter(Boolean).length}/{courses.length} môn đã chọn</strong><span className="muted">{educationSystem(system).name} · Mỗi môn một giảng viên</span>{changed > 0 && <span className={styles.changed}>{changed} môn thay đổi, chưa lưu</span>}</div>
     {!courses.length && <p className="notice">Chưa có môn học phù hợp học kỳ, khoa và hệ học đã chọn. Tạo lớp học phần và phân công giảng viên trước.</p>}
+    {!!courses.length && <label className="field">Tìm môn hoặc giảng viên<input className="input" type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Mã môn, tên môn, lớp học phần hoặc giảng viên"/></label>}
+    {!!courses.length && !visibleCourses.length && <p role="status">Không tìm thấy môn hoặc giảng viên phù hợp.</p>}
     <div className={styles.courses}>{courses.map(course => {
       const chosen = course.groups.find(g => g.id === choices[course.id]);
       const invalid = !!chosen && (!chosen.eligible || chosen.educationSystem !== system);
       const conflict = course.groups.filter(g => selectedIds.includes(g.id)).length > 1;
-      return <article className={styles.course} key={course.id}>
+      return <article className={styles.course} key={course.id} hidden={!visibleCourses.includes(course)}>
         <span className={styles.code}>{course.code}</span><h3>{course.name}</h3>
         <label className="field">Giảng viên môn {course.code}<select className="input" name="classIds" data-course-id={course.id} value={choices[course.id]} onChange={e => setChoices(current => ({ ...current, [course.id]: e.target.value }))} aria-invalid={invalid || undefined} ref={element => { element?.setCustomValidity(invalid ? "Chọn một giảng viên đang hoạt động và đúng hệ học, hoặc bỏ môn này." : ""); }}>
           <option value="">Không học môn này</option>{course.groups.map(g => <option key={g.id} value={g.id} disabled={!g.eligible || g.educationSystem !== system}>{g.teacherName} · {g.code}{g.educationSystem !== system ? " · Khác hệ học" : ""}</option>)}
@@ -44,7 +49,7 @@ export function ClassStudyForm({ semesters, faculties, classes, groups }: { seme
   const selected = classes.find(c => c.id === academicClass);
   return <form action={action} className="stack">
     <div className="grid" style={{ marginTop: 0 }}>
-      <label className="field">Học kỳ phân công<select className="input" name="semesterId" value={semester} onChange={e => { setSemester(e.target.value); setFaculty(""); setAcademicClass(""); }} required><option value="">Chọn học kỳ</option>{semesters.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}</select></label>
+      <label className="field">Học kỳ phân công<select className="input" name="semesterId" value={semester} onChange={e => setSemester(e.target.value)} required><option value="">Chọn học kỳ</option>{semesters.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}</select></label>
       <label className="field">Khoa của lớp<select className="input" value={faculty} onChange={e => { setFaculty(e.target.value); setAcademicClass(""); }} disabled={!semester} required><option value="">Chọn khoa</option>{faculties.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}</select></label>
       <label className="field">Lớp hành chính được phân công<select className="input" name="academicClassId" value={academicClass} onChange={e => setAcademicClass(e.target.value)} disabled={!faculty} required><option value="">Chọn lớp hành chính</option>{classes.filter(c => c.facultyId === faculty).map(c => <option key={c.id} value={c.id}>{c.label} · {c.students} sinh viên</option>)}</select></label>
     </div>
