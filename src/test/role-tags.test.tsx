@@ -13,7 +13,7 @@ test("tag vai trò giữ nhãn rõ ràng, hỗ trợ nhiều vai trò và không
 });
 
 test("bốn vai trò có màu riêng, tương phản đủ đọc và không tràn trên điện thoại",async()=>{
-  const browser=await chromium.launch();
+  const browser=await chromium.launch(process.env.PLAYWRIGHT_CHANNEL ? {channel:process.env.PLAYWRIGHT_CHANNEL as "msedge"} : {});
   try{
     const page=await browser.newPage();
     const css=readFileSync("src/app/management.css","utf8");

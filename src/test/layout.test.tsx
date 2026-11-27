@@ -10,7 +10,7 @@ vi.mock("@/app/actions", () => ({ logoutAction: async () => {} }));
 vi.mock("next/navigation", () => ({ usePathname: () => "/student", useRouter: () => ({ push: vi.fn() }) }));
 
 test("khung trang hiển thị tiếng Việt, điều hướng và co giãn không tràn ngang", async () => {
-  const browser = await chromium.launch();
+  const browser = await chromium.launch(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL as "msedge" } : {});
   try {
     const page = await browser.newPage();
     await page.route("http://layout.test/hcm-ute-logo.png", route => route.fulfill({ path: resolve("public/hcm-ute-logo.png"), contentType: "image/png" }));
@@ -29,10 +29,19 @@ test("khung trang hiển thị tiếng Việt, điều hướng và co giãn kh�
     const logo = page.getByRole("img", { name: /HCM-UTE/ });
     expect(await logo.evaluate(el => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
     expect(await page.locator("header .brand-mark").count()).toBe(0);
+    await page.keyboard.press("Tab");
+    expect(await page.getByRole("link", { name: "Đi đến nội dung chính" }).evaluate(el => el === document.activeElement)).toBe(true);
+    await page.keyboard.press("Enter");
+    expect(await page.locator("main").evaluate(el => el === document.activeElement)).toBe(true);
     for (const width of [1440, 1024, 390, 320]) {
       await page.setViewportSize({ width, height: 1000 });
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-      expect(await page.getByRole("button", { name: "Đăng xuất" }).isVisible()).toBe(true);
+      if (width <= 760) {
+        const menu = page.locator(".mobile-menu");
+        await menu.locator("summary").click();
+        expect(await menu.getByRole("button", { name: "Đăng xuất" }).isVisible()).toBe(true);
+        await menu.locator("summary").click();
+      } else expect(await page.getByRole("button", { name: "Đăng xuất" }).isVisible()).toBe(true);
       expect(await page.getByRole("link", { name: "Trang chủ" }).getAttribute("href")).toBe("/dashboard");
       expect(await page.locator("header").getByRole("link", { name: "Hướng dẫn", exact: true }).isVisible()).toBe(true);
       if (width === 1440) {
@@ -44,9 +53,5 @@ test("khung trang hiển thị tiếng Việt, điều hướng và co giãn kh�
       expect(heading.line / heading.size).toBeGreaterThanOrEqual(1.3);
       if (width === 1440 || width === 390) await page.screenshot({ path: `.playwright-cli/layout-${width}.png`, fullPage: true });
     }
-    await page.keyboard.press("Tab");
-    expect(await page.getByRole("link", { name: "Đi đến nội dung chính" }).evaluate(el => el === document.activeElement)).toBe(true);
-    await page.keyboard.press("Enter");
-    expect(await page.locator("main").evaluate(el => el === document.activeElement)).toBe(true);
   } finally { await browser.close(); }
 }, 30000);

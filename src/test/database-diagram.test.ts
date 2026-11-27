@@ -25,7 +25,7 @@ test("ảnh SVG của web là vector, giữ các bảng và quan hệ đang dùn
  for(const model of Prisma.dmmf.datamodel.models)expect(svg).toContain(`<g id="${model.name}">`);
 });
 test("sơ đồ đơn giản vẫn chọn được bảng và phóng to mà không mất quan hệ",async()=>{
- const browser=await chromium.launch();
+ const browser=await chromium.launch(process.env.PLAYWRIGHT_CHANNEL ? {channel:process.env.PLAYWRIGHT_CHANNEL as "msedge"} : {});
  try{
   const page=await browser.newPage();await page.goto(pathToFileURL(resolve("docs/database/database-diagram.html")).href);
   expect(await page.locator(".table").count()).toBe(30);
