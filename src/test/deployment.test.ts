@@ -14,6 +14,7 @@ test("Docker deployment keeps secrets outside Git and exposes the documented por
   const playwright = read("playwright.config.ts");
 
   expect(dockerfile).toContain("EXPOSE 3005");
+  expect(dockerfile.match(/--fetch-timeout=300000/g)).toHaveLength(2);
   expect(dockerfile.match(/COPY package\.json pnpm-lock\.yaml pnpm-workspace\.yaml/g)).toHaveLength(2);
   expect(dockerfile.indexOf("install --yes --no-install-recommends openssl")).toBeLessThan(dockerfile.indexOf("FROM base AS dependencies"));
   expect(dockerfile).toContain("/app/prisma-generated-client");

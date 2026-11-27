@@ -8,7 +8,7 @@ WORKDIR /app
 
 FROM base AS dependencies
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=survey-pnpm,target=/pnpm/store pnpm install --frozen-lockfile --fetch-timeout=300000
 
 FROM dependencies AS build
 COPY . .
@@ -30,7 +30,7 @@ ENV PORT=3005
 ENV HOSTNAME="0.0.0.0"
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY prisma ./prisma
-RUN pnpm install --prod --frozen-lockfile
+RUN --mount=type=cache,id=survey-pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile --fetch-timeout=300000
 COPY --from=build /app/.next ./.next
 COPY --from=build /app/prisma-generated-client /tmp/prisma-generated-client
 RUN prisma_dir="$(find node_modules/.pnpm -maxdepth 1 -type d -name '@prisma+client@*' -print -quit)" \
