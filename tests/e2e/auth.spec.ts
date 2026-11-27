@@ -14,6 +14,9 @@ test("trang đăng nhập hiển thị biểu mẫu truy cập được", async 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.getByLabel("Email").fill("kiemtra@example.com");
   await expect(page.getByLabel("Email")).toHaveValue("kiemtra@example.com");
+  await page.getByRole("link", { name: "Xem tài khoản thử nghiệm" }).click();
+  await expect(page).toHaveURL(/\/accounts$/);
+  await expect(page.getByRole("heading", { name: "Tài khoản thử nghiệm" })).toBeVisible();
 });
 
 test.describe("ba hành trình nghiệp vụ với dữ liệu riêng", () => {

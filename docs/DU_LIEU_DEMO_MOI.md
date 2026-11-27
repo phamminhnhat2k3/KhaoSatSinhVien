@@ -25,7 +25,7 @@ Sinh viên đuôi 01/06/11 chưa làm khảo sát khoa hiện tại, 02/07/12 c�
 
 ## Tài khoản và hướng dẫn
 
-File `TAI_KHOAN_MAU.md` tại thư mục gốc chứa toàn bộ tài khoản, mật khẩu demo, danh sách lớp, phân công từng môn và các bước thử. File này đã được loại khỏi Git. Email giảng viên thường có dạng `gv.cntt2@demo.vn`, Trưởng khoa `tk.cntt@demo.vn`, sinh viên `sv.cntt01@demo.vn`.
+File `TAI_KHOAN_MAU.md` tại thư mục gốc chứa tài khoản demo, mật khẩu mẫu, danh sách lớp, phân công từng môn và các bước thử. File được công khai cùng dự án để dùng trang `/accounts`; tài khoản Admin không nằm trong danh sách này. Email giảng viên thường có dạng `gv.cntt2@demo.vn`, Trưởng khoa `tk.cntt@demo.vn`, sinh viên `sv.cntt01@demo.vn`.
 
 ## Chạy lại bộ demo
 

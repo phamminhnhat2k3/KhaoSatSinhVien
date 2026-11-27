@@ -136,18 +136,9 @@ docker compose run --rm migrate node --import tsx prisma/create-admin.ts
 
 Xóa hai dòng này khỏi `.env` sau khi tạo. Database và ảnh trên máy Windows cần được xuất, nhập riêng nếu muốn giữ dữ liệu hiện có. Clone Git chỉ tải mã nguồn.
 
-### Trang tài khoản mẫu khi triển khai
+### Trang tài khoản thử nghiệm
 
-Trang `/accounts` chỉ mở cho tài khoản Admin. Để hiển thị mật khẩu mẫu trên server, chép riêng file `TAI_KHOAN_MAU.md` từ máy đang lưu dữ liệu vào `.data/account-guide/TAI_KHOAN_MAU.md` trong thư mục dự án trên server. Tạo thư mục trước nếu chưa có:
-
-```bash
-mkdir -p .data/account-guide
-# Chép file vào thư mục này bằng công cụ truyền file riêng, rồi kiểm tra tên file.
-ls -l .data/account-guide/TAI_KHOAN_MAU.md
-docker compose up -d --build
-```
-
-File này không có trong Git hoặc image Docker; Compose gắn thư mục đó vào ứng dụng ở chế độ chỉ đọc. Nếu không chép file, trang vẫn hiện danh sách tài khoản nhưng không hiện mật khẩu. Mật khẩu đã đổi hoặc không có trong file cũng không thể xem lại từ database. Không đưa file này cùng bản sao lưu SQL lên kho Git công khai.
+Trang `/accounts` mở từ trang đăng nhập và chỉ liệt kê tài khoản demo đang có trong database. `TAI_KHOAN_MAU.md` được đưa vào Git và Docker image để người thử nghiệm xem mật khẩu mẫu trực tiếp trên web; không cần chép file riêng. Tài khoản Admin không xuất hiện trên trang này và phải dùng mật khẩu riêng, khác mật khẩu demo. Mật khẩu mẫu đã thay đổi sẽ không còn hiển thị vì web đối chiếu với mã băm trong database. Không dùng bộ tài khoản demo cho dữ liệu thật.
 
 6. Khi cập nhật phiên bản sau này:
 

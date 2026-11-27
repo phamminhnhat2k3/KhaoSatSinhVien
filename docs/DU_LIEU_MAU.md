@@ -13,9 +13,9 @@ Chạy `npm run db:demo` từ thư mục dự án để thêm bộ mẫu vào da
 
 ## Tài khoản
 
-File `TAI_KHOAN_MAU.md` ở thư mục gốc ghi 70 email, mật khẩu và vai trò theo khoa, cùng danh sách môn. Khi tạo mới, script sinh mật khẩu ngẫu nhiên; database chỉ lưu bản băm Argon2. File được loại khỏi Git.
+File `TAI_KHOAN_MAU.md` ở thư mục gốc ghi tài khoản demo hiện tại, mật khẩu và vai trò theo khoa, cùng danh sách môn. Database chỉ lưu bản băm Argon2. File được công khai để thử nghiệm; không dùng mật khẩu demo cho Admin hoặc tài khoản thật.
 
-Ngày 01/11/2026, theo yêu cầu người dùng, đã đổi đồng loạt mật khẩu của 70 tài khoản theo khoa và 7 tài khoản seed ban đầu (admin, giảng viên, 5 sinh viên), cập nhật file tài khoản tương ứng. Tổng cộng 77 tài khoản. Tài khoản tự tạo ngoài danh sách và dữ liệu khảo sát được giữ nguyên. Đã đối chiếu 77 bản băm và thử đăng nhập đại diện đủ bốn vai trò. Mật khẩu hiện tại xem trong file tài khoản riêng, không đưa vào Git.
+Ngày 01/11/2026, theo yêu cầu người dùng, đã đổi đồng loạt mật khẩu của 70 tài khoản theo khoa và 7 tài khoản seed ban đầu, cập nhật file tài khoản tương ứng. Tổng cộng 77 tài khoản. Tài khoản tự tạo ngoài danh sách và dữ liệu khảo sát được giữ nguyên. Đã đối chiếu 77 bản băm và thử đăng nhập đại diện đủ bốn vai trò. Đây là lịch sử bộ mẫu cũ; file tài khoản công khai hiện nay chỉ liệt kê tài khoản demo, không chứa Admin.
 
 Script `db:demo` chấp nhận mật khẩu hiện có từ 8 ký tự, khớp yêu cầu của ứng dụng; việc chạy lại script vẫn không tự đổi mật khẩu.
 

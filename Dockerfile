@@ -40,6 +40,7 @@ RUN prisma_dir="$(find node_modules/.pnpm -maxdepth 1 -type d -name '@prisma+cli
   && rm -rf /tmp/prisma-generated-client
 COPY --from=build /app/public ./public
 COPY --from=build /app/assets ./assets
+COPY TAI_KHOAN_MAU.md ./TAI_KHOAN_MAU.md
 COPY --from=build /app/next.config.ts ./next.config.ts
 EXPOSE 3005
 CMD ["pnpm", "exec", "next", "start", "--hostname", "0.0.0.0", "--port", "3005"]

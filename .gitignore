@@ -8,7 +8,6 @@ test-results/
 !.env.example
 !.env.gmail.example
 *.tsbuildinfo
-TAI_KHOAN_MAU.md
 .data/avatars/
 .data/backups/
 .data/account-guide/

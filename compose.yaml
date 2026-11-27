@@ -44,7 +44,6 @@ services:
       - "3005:3005"
     volumes:
       - avatars_data:/app/.data/avatars
-      - ./.data/account-guide:/app/.data/account-guide:ro
     depends_on:
       migrate:
         condition: service_completed_successfully

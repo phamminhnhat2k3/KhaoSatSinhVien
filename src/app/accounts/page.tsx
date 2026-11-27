@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { verify } from "argon2";
+import type { Prisma } from "@prisma/client";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { requireUser } from "@/lib/access";
 import { db } from "@/lib/db";
 import { userWhere } from "@/modules/academic/user-management";
 import { roleLabels } from "@/modules/profile/rules";
@@ -15,21 +15,20 @@ export const metadata: Metadata = { title: "Tài khoản mẫu", robots: { index
 type Params = { q?: string; role?: string; facultyId?: string; academicClassId?: string; page?: string };
 
 export default async function AccountsPage({ searchParams }: { searchParams: Promise<Params> }) {
-  await requireUser("ADMIN");
   const raw = await searchParams;
   const params = Object.fromEntries(Object.entries(raw).filter(([, value]) => typeof value === "string")) as Params;
-  const where = userWhere(params);
+  const guide = await readFile(path.join(process.cwd(), "TAI_KHOAN_MAU.md"), "utf8").catch(() => null);
+  const passwords = accountPasswords(guide ?? "");
+  const demoEmails = [...passwords.keys()];
+  const where: Prisma.UserWhereInput = { AND: [userWhere(params), { email: { in: demoEmails } }, { roles: { none: { role: "ADMIN" } } }] };
   const total = await db.user.count({ where });
   const pages = Math.max(1, Math.ceil(total / 20));
   const page = Math.min(pages, Math.max(1, parseInt(params.page ?? "1", 10) || 1));
-  const [users, faculties, classes, guide] = await Promise.all([
+  const [users, faculties, classes] = await Promise.all([
     db.user.findMany({ where, orderBy: [{ email: "asc" }, { id: "asc" }], skip: (page - 1) * 20, take: 20, select: { id: true, name: true, email: true, passwordHash: true, active: true, roles: true, lecturer: { select: { faculty: { select: { name: true } } } }, student: { select: { academicClass: { select: { code: true, faculty: { select: { name: true } } } } } } } }),
-    db.faculty.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
-    db.academicClass.findMany({ where: params.facultyId ? { facultyId: params.facultyId } : {}, orderBy: { code: "asc" }, select: { id: true, code: true } }),
-    readFile(path.join(process.cwd(), ".data", "account-guide", "TAI_KHOAN_MAU.md"), "utf8")
-      .catch(() => readFile(path.join(process.cwd(), "TAI_KHOAN_MAU.md"), "utf8").catch(() => null)),
+    db.faculty.findMany({ where: { classes: { some: { students: { some: { user: { email: { in: demoEmails } } } } } } }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    db.academicClass.findMany({ where: { ...(params.facultyId ? { facultyId: params.facultyId } : {}), students: { some: { user: { email: { in: demoEmails } } } } }, orderBy: { code: "asc" }, select: { id: true, code: true } }),
   ]);
-  const passwords = accountPasswords(guide ?? "");
   const rows = [];
   for (const user of users) {
     const saved = passwords.get(user.email.toLowerCase());
@@ -43,13 +42,13 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
     return `/accounts?${query}`;
   }
   return <main className={styles.page}>
-    <Link href="/admin" className={styles.link}>← Quản trị</Link>
-    <h1>Tài khoản đăng nhập</h1>
-    <p>Mật khẩu mẫu lấy từ file tài khoản trên máy và được đối chiếu với database. Tài khoản đã đổi mật khẩu sẽ không hiện mật khẩu cũ.</p>
-    {!guide && <p role="status">Không đọc được file TAI_KHOAN_MAU.md. Vẫn hiển thị danh sách tài khoản, không có mật khẩu để đối chiếu.</p>}
+    <Link href="/login" className={styles.link}>← Đăng nhập</Link>
+    <h1>Tài khoản thử nghiệm</h1>
+    <p>Chỉ hiển thị tài khoản demo. Mật khẩu mẫu được đối chiếu với database; tài khoản đã đổi mật khẩu sẽ không hiện mật khẩu cũ.</p>
+    {!guide && <p role="status">Chưa có danh sách tài khoản thử nghiệm.</p>}
     <form method="get" className={styles.filters}>
       <label>Tìm kiếm<input name="q" defaultValue={params.q} placeholder="Tên, mã hoặc email" maxLength={100}/></label>
-      <label>Vai trò<select name="role" defaultValue={params.role ?? ""}><option value="">Tất cả</option>{Object.entries(roleLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+      <label>Vai trò<select name="role" defaultValue={params.role ?? ""}><option value="">Tất cả</option>{Object.entries(roleLabels).filter(([value]) => value !== "ADMIN").map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
       <label>Khoa<select name="facultyId" defaultValue={params.facultyId ?? ""}><option value="">Tất cả khoa</option>{faculties.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}</select></label>
       <label>Lớp<select name="academicClassId" defaultValue={params.academicClassId ?? ""}><option value="">Tất cả lớp</option>{classes.map(c => <option key={c.id} value={c.id}>{c.code}</option>)}</select></label>
       <div className={styles.actions}><button type="submit">Lọc</button><Link href="/accounts">Xóa bộ lọc</Link></div>

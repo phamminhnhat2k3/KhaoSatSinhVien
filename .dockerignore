@@ -9,7 +9,6 @@ playwright-report
 test-results
 coverage
 debug.log
-TAI_KHOAN_MAU.md
 
 src/app/messi
 tests/e2e/messi.spec.ts

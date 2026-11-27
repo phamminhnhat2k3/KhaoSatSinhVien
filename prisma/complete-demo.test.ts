@@ -50,9 +50,9 @@ test("mẫu thực tế đủ bốn dạng câu hỏi và thang 5/10/100, trả 
   expect(types).toEqual(new Set(["SCALE", "SINGLE", "MULTIPLE", "TEXT"]));
   expect(new Set(completeTemplates.flatMap(t => t.questions.filter(q => q.type === "SCALE").map(q => q.scaleMax)))).toEqual(new Set([5, 10, 100]));
 });
-test("hướng dẫn chứa đủ mọi tài khoản, lớp và phân công để thử nghiệm", () => {
+test("hướng dẫn công khai tài khoản demo nhưng không công khai Admin", () => {
   const guide = completeDemoGuide([{ email: "admin@demo.vn", name: "Admin" }], []);
-  expect(guide).toContain("admin@demo.vn");
+  expect(guide).not.toContain("admin@demo.vn");
   for (const account of [...completeStudents, ...completeTeachers]) expect(guide).toContain(`| ${account.email} | vitrung65 |`);
   for (const group of completeGroups) expect(guide).toContain(group.code);
   expect(guide).toContain("75 sinh viên");
