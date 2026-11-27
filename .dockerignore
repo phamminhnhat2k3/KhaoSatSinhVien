@@ -10,3 +10,7 @@ test-results
 coverage
 debug.log
 TAI_KHOAN_MAU.md
+
+src/app/accounts
+src/app/messi
+tests/e2e/messi.spec.ts

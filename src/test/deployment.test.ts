@@ -33,6 +33,9 @@ test("Docker deployment keeps secrets outside Git and exposes the documented por
   expect(example).not.toContain("vitrung65");
   expect(readme).toContain("docker compose up -d --build");
   expect(readme).toContain("http://localhost:3005");
+  expect(readme).toContain("git clone https://github.com/phamminhnhat2k3/KhaoSatSinhVien.git");
+  expect(readme).toContain("pnpm db:admin");
+  expect(packageJson.scripts["db:admin"]).toBe("node --env-file=.env --import tsx prisma/create-admin.ts");
   expect(packageJson.scripts.dev).toBe("next dev --port 3005");
   expect(playwright).toContain("http://127.0.0.1:3005");
 });

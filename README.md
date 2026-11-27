@@ -6,6 +6,20 @@
 
 Yêu cầu: Node.js 22.13 trở lên (khuyến nghị Node.js 24), pnpm và MySQL Server 8.0 trở lên cài trực tiếp trên Windows. MySQL Workbench là công cụ quản lý tùy chọn.
 
+### 1. Tải mã nguồn và chuẩn bị pnpm
+
+Cài Git, Node.js 24 và MySQL Server 8.0. Mở PowerShell trong thư mục muốn lưu dự án rồi chạy lần lượt.
+
+```powershell
+git clone https://github.com/phamminhnhat2k3/KhaoSatSinhVien.git
+cd KhaoSatSinhVien
+npm install --global pnpm@11.25.0
+node --version
+pnpm --version
+```
+
+### 2. Chuẩn bị MySQL và cấu hình
+
 Kiểm tra dịch vụ MySQL đã chạy trong PowerShell:
 
 ```powershell
@@ -43,39 +57,47 @@ pnpm db:migrate
 pnpm db:check
 ```
 
-Khởi động trang web ở `http://localhost:3005`:
+### 3. Tạo tài khoản admin trên database mới
+
+Mở `.env` và thêm hai dòng sau bằng email và mật khẩu bạn tự chọn. Mật khẩu cần từ 12 đến 100 ký tự.
+
+```dotenv
+ADMIN_EMAIL="YOUR_ADMIN_EMAIL"
+ADMIN_PASSWORD="YOUR_ADMIN_PASSWORD"
+```
+
+Chạy lệnh tạo admin sau khi migration thành công.
+
+```powershell
+pnpm db:admin
+```
+
+Lệnh từ chối email đã tồn tại. Sau khi tạo thành công, xóa hai dòng `ADMIN_EMAIL` và `ADMIN_PASSWORD` khỏi `.env`. Đăng nhập bằng thông tin vừa nhập để tạo khoa, học kỳ, lớp hành chính, giảng viên, môn và lớp học phần. Sau đó phân công học kỳ, thêm sinh viên và tạo đợt khảo sát.
+
+### 4. Chạy website
 
 ```powershell
 pnpm dev
 ```
 
-Nếu dùng npm, chạy `npm run dev`. Cả hai lệnh đều mở cổng 3005 theo script của dự án.
+Mở `http://localhost:3005`. Nếu dùng npm, chạy `npm run dev`. Giữ terminal mở khi sử dụng website. Nhấn `Ctrl+C` để dừng.
 
-Tạo dữ liệu mẫu **chỉ trên cơ sở dữ liệu thử nghiệm trống**. Lệnh seed xóa dữ liệu nghiệp vụ hiện có trước khi tạo lại; không chạy trên dữ liệu cần giữ.
-
-`pnpm db:seed` tự nạp `DATABASE_URL` từ file `.env` ở thư mục gốc dự án. `SEED_PASSWORD` được đặt trong terminal hiện tại; biến môi trường của terminal được ưu tiên hơn giá trị trong `.env`.
-
-Nếu terminal là Command Prompt (CMD, dấu nhắc dạng `C:\KhaoSatSinhVien>`), dùng:
-
-```cmd
-set "SEED_PASSWORD=THAY_BANG_MAT_KHAU_TOI_THIEU_8_KY_TU"
-pnpm db:seed
-set "SEED_PASSWORD="
-pnpm dev
-```
-
-Nếu dùng PowerShell 7, dùng:
+Những lần sau, mở thư mục dự án, bật MySQL và chạy `pnpm dev`. Khi cập nhật mã nguồn, chạy lần lượt.
 
 ```powershell
-$env:SEED_PASSWORD = Read-Host -AsSecureString | ConvertFrom-SecureString -AsPlainText
-pnpm db:seed
-Remove-Item Env:SEED_PASSWORD
+git pull
+pnpm install --frozen-lockfile
+pnpm exec prisma generate
+pnpm db:migrate
 pnpm dev
 ```
 
-Mở `http://localhost:3005`. Dữ liệu seed tạo các tài khoản `admin@demo.vn`, `giangvien@demo.vn` và `sinhvien1@demo.vn` đến `sinhvien5@demo.vn`; tất cả dùng mật khẩu đã nhập qua `SEED_PASSWORD`. Mật khẩu không được lưu trong Git.
+### Lỗi thường gặp khi chạy local
 
-Những lần sau, khi dịch vụ `MySQL80` đang chạy, dùng `pnpm dev`. Giữ terminal mở và nhấn `Ctrl+C` để dừng website. Không cần Docker khi chạy local trực tiếp.
+- `DATABASE_URL` thiếu hoặc không kết nối được MySQL. Kiểm tra file `.env`, dịch vụ MySQL và mật khẩu trong URL.
+- Cổng 3005 đang được sử dụng. Dừng phiên local hoặc container Docker đang dùng cổng này trước khi khởi động.
+- Email admin đã tồn tại. Đăng nhập tài khoản đó hoặc dùng chức năng quên mật khẩu khi đã cấu hình Gmail.
+- `pnpm db:seed` là bộ dữ liệu demo cũ có thao tác xóa dữ liệu. Chỉ dùng trên database thử riêng. Hướng dẫn khởi tạo phía trên dùng `pnpm db:admin`.
 
 ## Đưa ứng dụng lên server bằng Docker
 
@@ -94,7 +116,7 @@ openssl rand -hex 24
 
 2. Mở `.env` bằng `nano .env`. Thay các giá trị `CHANGE_THIS...` và `REPLACE...` bằng các chuỗi vừa tạo, theo thứ tự: mật khẩu MySQL root, mật khẩu MySQL của ứng dụng, rồi `AUTH_SECRET`. Dùng mật khẩu ứng dụng đó thay `YOUR_URL_ENCODED_MYSQL_PASSWORD` trong `DATABASE_URL_DOCKER`. Không dùng mật khẩu MySQL root cho ứng dụng. Mật khẩu hex do `openssl rand -hex` tạo không cần mã hóa ký tự URL.
 
-3. Nếu triển khai qua tên miền, sửa `APP_URL` thành địa chỉ HTTPS thực tế, ví dụ `https://khaosat.example.edu.vn`. Không để mật khẩu, `AUTH_SECRET` hoặc thông tin Gmail trong lệnh terminal hay tài liệu công khai.
+3. Sửa `APP_URL` thành địa chỉ người dùng sẽ truy cập. Dùng `http://IP-SERVER:3005` khi chạy qua IP, hoặc địa chỉ HTTPS thực tế khi dùng tên miền, ví dụ `https://khaosat.example.edu.vn`. Không để mật khẩu, `AUTH_SECRET` hoặc thông tin Gmail trong lệnh terminal hay tài liệu công khai.
 
 4. Build và khởi chạy:
 
@@ -106,7 +128,15 @@ docker compose logs --tail=100 migrate app
 
 Lần đầu, Compose tạo MySQL kèm vùng lưu dữ liệu bền vững, đợi database sẵn sàng, áp dụng migration rồi mới khởi động web. Mở `http://IP-SERVER:3005`. Để dùng HTTPS với tên miền, đặt reverse proxy phía trước ứng dụng và cho proxy chuyển tiếp đến cổng `3005`.
 
-5. Khi cập nhật phiên bản sau này:
+5. Trên database Docker mới, thêm `ADMIN_EMAIL` và `ADMIN_PASSWORD` vào `.env` như hướng dẫn local rồi tạo admin bằng dịch vụ migration.
+
+```bash
+docker compose run --rm migrate node --import tsx prisma/create-admin.ts
+```
+
+Xóa hai dòng này khỏi `.env` sau khi tạo. Database và ảnh trên máy Windows cần được xuất, nhập riêng nếu muốn giữ dữ liệu hiện có. Clone Git chỉ tải mã nguồn.
+
+6. Khi cập nhật phiên bản sau này:
 
 ```bash
 git pull
@@ -121,7 +151,7 @@ MySQL được lưu trong volume `mysql_data`, ảnh đại diện tải lên đ
 
 - [Thu hồi phiên khi đổi mật khẩu và quên mật khẩu qua Gmail](docs/MAT_KHAU_VA_GMAIL.md): link 15 phút, dùng một lần, chỉ lưu băm token. Cần cấu hình Gmail và APP_URL trên máy chủ để gửi thư thật.
 
-- Có [báo cáo PDF/XLSX chuẩn, nhập Excel trực tiếp và nhắc hạn tự động trong web](docs/BAO_CAO_EXCEL_NHAC_HAN.md). Máy chủ kiểm tra mỗi 15 phút khi đang hoạt động, nhắc đợt còn tối đa 3 ngày. Nút nhắc tay vẫn giữ, tránh nhắc lặp cùng sinh viên trong 24 giờ. Luồng đổi mật khẩu hiện tại không thay đổi.
+- Có [báo cáo PDF/XLSX chuẩn, nhập Excel trực tiếp và nhắc hạn trong web](docs/BAO_CAO_EXCEL_NHAC_HAN.md). Admin có thể nhắc sinh viên trong web. Bộ chạy nhắc hạn tự động hiện đã được tắt.
 
 - Nhập sinh viên, giảng viên và phân công bằng CSV UTF-8 có xem trước, kiểm tra từng dòng và ghi toàn bộ trong giao dịch. Nhắc sinh viên chưa hoàn thành trong web. Đối chiếu giảng viên cùng môn, đối chiếu học kỳ có điều kiện, ghi nhận hướng cải thiện và gửi nhận xét cho Admin. Admin in/lưu PDF để gửi nhà trường. Xem [quy tắc và hướng dẫn khai thác kết quả](docs/KHAI_THAC_KET_QUA.md).
 
