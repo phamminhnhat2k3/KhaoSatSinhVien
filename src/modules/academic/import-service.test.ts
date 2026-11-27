@@ -20,3 +20,22 @@ test("email trùng không phân biệt hoa thường và chuẩn hóa mã khi nh
   await commitImport(db, "admin", "students", raw.split("\n").slice(0,2).join("\n"), "password-test");
   expect(tx.user.create.mock.calls[0][0].data.student.create).toMatchObject({ studentCode: "SV01", academicClassId: "lop" });
 });
+
+test("nhập phân công lấy học kỳ từ lớp học phần và đối chiếu tên học kỳ", async () => {
+  const teacher = { facultyId: "f", user: { active: true, roles: [{ role: "LECTURER" }] } };
+  const tx = {
+    academicClass: { findUnique: vi.fn().mockResolvedValue({ id: "home", facultyId: "f", educationSystem: "REGULAR" }) },
+    courseClass: {
+      findUnique: vi.fn().mockResolvedValue({ id: "g", code: "A01", semesterId: "s2026", semester: { name: "Học kỳ 1" } }),
+      findMany: vi.fn().mockResolvedValue([{ id: "g", courseId: "A", teachingConfigured: true, teachings: [{ lecturer: teacher }] }]),
+    },
+    enrollment: { findFirst: vi.fn().mockResolvedValue(null) },
+  };
+  const header = "semesterName,academicClassCode,courseClassCode\n";
+  const result = await previewImport(tx as never, "assignments", header + "Học kỳ 1,LOP01,A01");
+  expect(result.valid).toBe(true);
+  expect(result.groups[0].semesterId).toBe("s2026");
+  const wrongTerm = await previewImport(tx as never, "assignments", header + "Học kỳ 2,LOP01,A01");
+  expect(wrongTerm.valid).toBe(false);
+  expect(wrongTerm.rows[0].error).toContain("thuộc Học kỳ 1");
+});

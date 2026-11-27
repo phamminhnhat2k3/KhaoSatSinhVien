@@ -68,7 +68,9 @@ test("hướng dẫn theo quyền, sửa xóa học vụ và biểu đồ tiến
     await expect(dialog.getByRole("status")).toHaveText("Đã cập nhật danh mục.");
     expect(await db.courseClass.findUniqueOrThrow({ where: { id: groupId } })).toMatchObject({ capacity: 35, code: `${tag}.02` });
     await db.courseTeaching.create({ data: { classId: groupId, lecturerId: lecturerProfile.id } });
-    await dialog.getByLabel("Môn học", { exact: true }).selectOption(altCourseId);
+    await page.reload();
+    dialog = await edit(`Sửa lớp học phần ${tag}.02`);
+    await dialog.getByRole("combobox", { name: "Môn học", exact: true }).selectOption(altCourseId);
     await dialog.getByRole("button", { name: "Lưu lớp học phần", exact: true }).click();
     await expect(dialog.getByRole("status")).toContainText("Không thể đổi môn");
     expect((await db.courseClass.findUniqueOrThrow({ where: { id: groupId } })).courseId).toBe(courseId);

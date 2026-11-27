@@ -41,7 +41,7 @@ export async function addStudentEnrollments(tx: Prisma.TransactionClient, studen
   await tx.enrollment.createMany({ data: ids.map(classId => ({ classId, studentId })), skipDuplicates: true });
 }
 
-export async function validateGroups(tx: Prisma.TransactionClient, semesterId: string, ids: string[], facultyId: string, educationSystem: string) {
+export async function validateGroups(tx: Prisma.TransactionClient, semesterId: string, ids: string[], facultyId: string, educationSystem: string, academicClassId?: string) {
   const teacher = { facultyId: true, user: { select: { active: true, roles: { select: { role: true } } } } } as const;
   const groups = await tx.courseClass.findMany({ where: { id: { in: ids }, semesterId, educationSystem, course: { facultyId } }, select: { id: true, courseId: true, teachingConfigured: true, lecturer: { select: teacher }, teachings: { select: { lecturer: { select: teacher } } } } });
   if (groups.length !== ids.length) throw new Error("Chỉ chọn lớp học phần thuộc khoa, học kỳ và hệ học của lớp hành chính.");
@@ -50,6 +50,19 @@ export async function validateGroups(tx: Prisma.TransactionClient, semesterId: s
     const teachers = group.teachings.length ? group.teachings.map(t => t.lecturer) : !group.teachingConfigured && group.lecturer ? [group.lecturer] : [];
     if (teachers.length !== 1 || teachers[0].facultyId !== facultyId || !teachers[0].user.active || !teachers[0].user.roles.some(r => r.role === "LECTURER")) throw new Error("Mỗi lớp học phần phải có đúng một giảng viên đang hoạt động trong khoa. Kiểm tra lại phân công giảng viên.");
   }
+  if (academicClassId && groups.length) {
+    const conflict = await tx.enrollment.findFirst({
+      where: {
+        student: { academicClassId, studyPlans: { none: { semesterId } } },
+        class: { semesterId, courseId: { in: groups.map(group => group.courseId) }, id: { notIn: ids } },
+      },
+      select: { student: { select: { studentCode: true } }, class: { select: { code: true } } },
+      orderBy: { studentId: "asc" },
+    });
+    if (conflict) throw new Error(
+      `Sinh viên ${conflict.student.studentCode} đã ghi danh lớp ${conflict.class.code} cùng môn trong học kỳ. Hãy điều chỉnh môn học riêng của sinh viên trước khi lưu phân công chung.`
+    );
+  }
 }
 
 export async function saveClassStudyPlan(tx: Prisma.TransactionClient, actorId: string, input: unknown) {
@@ -57,7 +70,7 @@ export async function saveClassStudyPlan(tx: Prisma.TransactionClient, actorId: 
   const group = await tx.academicClass.findUniqueOrThrow({ where: { id: data.academicClassId } });
   const ids = [...new Set(data.classIds)];
   await tx.semester.findUniqueOrThrow({ where: { id: data.semesterId } });
-  await validateGroups(tx, data.semesterId, ids, group.facultyId, group.educationSystem);
+  await validateGroups(tx, data.semesterId, ids, group.facultyId, group.educationSystem, group.id);
   await tx.classStudyAssignment.deleteMany({ where: { academicClassId: group.id, class: { semesterId: data.semesterId } } });
   if (ids.length) await tx.classStudyAssignment.createMany({ data: ids.map(classId => ({ academicClassId: group.id, classId })) });
   await tx.auditLog.create({ data: { actorId, action: "ASSIGN_CLASS_STUDY", entity: "AcademicClass", entityId: group.id } });

@@ -66,8 +66,8 @@ test.describe("trang học vụ và ghi danh", () => {
       await page.getByLabel("Mã môn học", { exact: true }).fill(tag);
       await page.getByLabel("Tên môn học", { exact: true }).fill(name);
       await page.getByLabel("Mã lớp học phần", { exact: true }).fill(code);
-      await page.getByRole("combobox", { name: "Học kỳ", exact: true }).selectOption(semesterId);
-      await page.getByRole("combobox", { name: "Khoa", exact: true }).selectOption(facultyId);
+      await page.getByRole("combobox", { name: "Học kỳ", exact: true }).first().selectOption(semesterId);
+      await page.getByRole("combobox", { name: "Khoa", exact: true }).first().selectOption(facultyId);
       await page.getByRole("combobox", { name: "Hệ đào tạo", exact: true }).selectOption("PART_TIME");
       await page.getByLabel("Sĩ số", { exact: true }).fill("40");
       await page.getByRole("button", { name: "Tạo lớp học phần", exact: true }).click();
@@ -83,7 +83,7 @@ test.describe("trang học vụ và ghi danh", () => {
     await page.getByLabel("Mã sinh viên", { exact: true }).fill(tag);
     await page.getByLabel("Email", { exact: true }).fill(studentEmail);
     await page.getByLabel("Mật khẩu khởi tạo", { exact: true }).fill(password);
-    await page.getByRole("combobox", { name: "Khoa", exact: true }).selectOption(facultyId);
+    await page.getByRole("combobox", { name: "Khoa", exact: true }).first().selectOption(facultyId);
     await page.getByRole("combobox", { name: "Lớp hành chính", exact: true }).selectOption(academicClassId);
     await page.locator(`input[name="courseClassIds"][value="${courseClass.id}"]`).check();
     await page.getByRole("button", { name: "Tạo sinh viên", exact: true }).click();

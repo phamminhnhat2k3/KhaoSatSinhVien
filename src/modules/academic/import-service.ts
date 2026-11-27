@@ -27,19 +27,18 @@ export async function previewImport(tx: Prisma.TransactionClient, kind: ImportKi
         row.resolved = target.id; row.data = data;
       } else {
         const data = z.object({ semesterName: z.string().min(1).max(200), academicClassCode: code, courseClassCode: z.string().min(2).max(60).transform(normalizeAcademicCode) }).parse(row.data);
-        const terms = await tx.semester.findMany({ where: { name: data.semesterName }, select: { id: true } });
-        if (terms.length !== 1) throw new Error("Tên học kỳ không tồn tại hoặc bị trùng. Dùng tên học kỳ duy nhất.");
         const group = await tx.academicClass.findUnique({ where: { code: data.academicClassCode } });
-        const cls = await tx.courseClass.findUnique({ where: { code: data.courseClassCode } });
+        const cls = await tx.courseClass.findUnique({ where: { code: data.courseClassCode }, include: { semester: true } });
         if (!group || !cls) throw new Error("Mã lớp hành chính hoặc lớp học phần chưa tồn tại.");
-        const key = `${group.id}:${terms[0].id}`;
-        const plan = groups.get(key) ?? { academicClassId: group.id, semesterId: terms[0].id, classIds: [], lines: [], facultyId: group.facultyId, educationSystem: group.educationSystem };
+        if (cls.semester.name !== data.semesterName) throw new Error(`Lớp học phần ${cls.code} thuộc ${cls.semester.name}. Kiểm tra lại học kỳ trong tệp.`);
+        const key = `${group.id}:${cls.semesterId}`;
+        const plan = groups.get(key) ?? { academicClassId: group.id, semesterId: cls.semesterId, classIds: [], lines: [], facultyId: group.facultyId, educationSystem: group.educationSystem };
         if (plan.classIds.includes(cls.id)) throw new Error("Lớp học phần bị lặp trong cùng phân công.");
         plan.classIds.push(cls.id); plan.lines.push(row.line); groups.set(key, plan);
       }
     } catch (e) { row.error = e instanceof z.ZodError ? "Sai định dạng tên, email, mã hoặc quyền trưởng khoa (yes/no)." : e instanceof Error ? e.message : "Dữ liệu không hợp lệ."; }
   }
-  for (const plan of groups.values()) try { await validateGroups(tx, plan.semesterId, plan.classIds, plan.facultyId, plan.educationSystem); } catch (e) { for (const line of plan.lines) rows.find(r => r.line === line)!.error = e instanceof Error ? e.message : "Phân công không hợp lệ."; }
+  for (const plan of groups.values()) try { await validateGroups(tx, plan.semesterId, plan.classIds, plan.facultyId, plan.educationSystem, plan.academicClassId); } catch (e) { for (const line of plan.lines) rows.find(r => r.line === line)!.error = e instanceof Error ? e.message : "Phân công không hợp lệ."; }
   return { rows, groups: [...groups.values()], valid: rows.every(r => !r.error) };
 }
 export async function commitImport(db: PrismaClient, actorId: string, kind: ImportKind, raw: string, password: string) {

@@ -17,7 +17,7 @@ function database() {
     courseClass: { findMany: vi.fn().mockResolvedValue([studyGroup()]) },
     classStudyAssignment: { deleteMany: vi.fn(), createMany: vi.fn() },
     studentProfile: { findUniqueOrThrow: vi.fn().mockResolvedValue({ academicClass: { facultyId: "f", educationSystem:"REGULAR" } }) },
-    enrollment: { deleteMany: vi.fn(), createMany: vi.fn() },
+    enrollment: { findFirst: vi.fn().mockResolvedValue(null), deleteMany: vi.fn(), createMany: vi.fn() },
     studentStudyPlan: { deleteMany: vi.fn(), create: vi.fn() },
     auditLog: { create: vi.fn() }
   };
@@ -97,4 +97,15 @@ test("chuyển lớp kiểm tra môn riêng với khoa hệ mới và phân côn
   await expect(checkStudentPlacement(database as never, "sv", "target")).resolves.toBeUndefined();
   target.educationSystem = "DISTANCE";
   await expect(checkStudentPlacement(database as never, "sv", "target")).rejects.toThrow("Không thể chuyển lớp");
+});
+
+test("đổi phân công chung kiểm tra ghi danh bổ sung trước khi thay lịch lớp", async () => {
+  const tx = database();
+  tx.enrollment.findFirst.mockResolvedValue({ student: { studentCode: "SV01" }, class: { code: "A02" } });
+  await expect(saveClassStudyPlan(tx as never, "admin", { academicClassId: "home", semesterId: "s", classIds: ["g"] })).rejects.toThrow("SV01 đã ghi danh lớp A02");
+  expect(tx.enrollment.findFirst.mock.calls[0][0].where).toEqual({
+    student: { academicClassId: "home", studyPlans: { none: { semesterId: "s" } } },
+    class: { semesterId: "s", courseId: { in: ["A"] }, id: { notIn: ["g"] } },
+  });
+  expect(tx.classStudyAssignment.deleteMany).not.toHaveBeenCalled();
 });
